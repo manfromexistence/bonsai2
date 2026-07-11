@@ -1,0 +1,65 @@
+# DX GitHub Actions temporarily disabled.
+# Controlled deactivation requested by essencefromexistence to preserve limited GitHub Actions minutes.
+# Keep this workflow disabled until essencefromexistence explicitly re-enables GitHub Actions for this repository.
+name: Hub Audit
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  hub-audit:
+    name: Hub policy audit
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate required hub files
+        shell: pwsh
+        run: |
+          $required = @(
+            'README.md',
+            'CURRENT_STATUS.md',
+            'AGENTS.md',
+            'docs/policies/archive-policy.md',
+            'docs/policies/archive-manifest-schema.md',
+            'docs/policies/artifact-policy.md',
+            'docs/policies/backup-exclusion-policy.md',
+            'docs/policies/ci-policy.md',
+            'docs/policies/maintainability-baseline.json',
+            'docs/policies/maintainability-policy.md',
+            'docs/policies/restore-runbook.md',
+            'docs/policies/source-control-policy.md',
+            'scripts/audit-hub.ps1',
+            'scripts/check-maintainability.ps1',
+            'scripts/test-backup-exclusions.ps1',
+            'scripts/write-archive-manifest.ps1',
+            'scripts/write-artifact-inventory.ps1'
+          )
+          $missing = $required | Where-Object { -not (Test-Path -LiteralPath $_) }
+          if ($missing) {
+            $missing | ForEach-Object { Write-Error "Missing required hub file: $_" }
+            exit 1
+          }
+
+      - name: Run hub audit script
+        shell: pwsh
+        run: ./scripts/audit-hub.ps1 -Json
+
+      - name: Validate backup classification policy
+        shell: pwsh
+        run: ./scripts/test-backup-exclusions.ps1 -Json
+
+      - name: Validate maintainability guard
+        shell: pwsh
+        run: ./scripts/check-maintainability.ps1 -Json

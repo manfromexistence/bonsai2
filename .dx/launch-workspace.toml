@@ -1,0 +1,48 @@
+[workspace]
+name = "DX May 22 Launch Hub"
+date = "2026-05-21"
+launch_target = "2026-05-22"
+root = "G:\\Dx"
+strategy = "junction-hub-before-launch-physical-move-after-launch"
+
+[paths]
+code = "G:\\Dx\\code"
+zed = "G:\\Dx\\code"
+dx_www = "G:\\Dx\\www"
+dx_cli = "G:\\Dx\\cli"
+dx_agents = "G:\\Dx\\agent"
+website = "G:\\Dx\\website"
+www_inspirations = "G:\\Dx\\www-inspirations"
+flow = "G:\\Dx\\flow"
+forge = "G:\\Dx\\flow\\forge"
+metasearch = "G:\\Dx\\flow\\metasearch"
+providers = "G:\\Dx\\flow\\providers"
+serializer = "G:\\Dx\\flow\\serializer"
+rlm = "G:\\Dx\\flow\\rlm"
+token = "G:\\Dx\\token"
+
+[source_paths]
+code = "G:\\Dx\\code"
+zed = "G:\\Dx\\code"
+www_inspirations = "G:\\WWW"
+flow = "G:\\Workspaces\\flow"
+token_primary = "G:\\Dx\\inspirations\\agent-archive\\cursed\\token"
+token_secondary = "G:\\Workspaces\\flow\\trash\\token"
+tokenjuice = "G:\\Dx\\inspirations\\openclaw\\extensions\\tokenjuice"
+
+[rules]
+physical_move_before_launch = false
+preserve_source = true
+preserve_models = true
+preserve_inspirations = true
+allow_rebuildable_cleanup = true
+avoid_repeated_full_builds = true
+
+[checks]
+zed_final_runtime = "just run"
+lightweight = [
+  "git status --short --branch",
+  "git diff --check",
+  "targeted conflict-marker search",
+  "targeted crate/package checks only after coherent milestones",
+]
