@@ -971,3 +971,35 @@ Watching 1 files: dx  (refresh: 2s)  Press Ctrl+C to stop
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+Now in our g:dx/serializer create a fix command where it will like lint, format the file like if its llm file then will be token efficient and if its human then properly formatted and fix small errors and things like that and use that in our g:dx/script/examples/dx/dx file as there even its okay to use space as separator in some table but still comma has been used so please do this correctly!!!
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Good, now please do a release build of it and use just command that updates the dx-token and dx token binary and set it up with incremental cache and 12jobs and connect g:dx/cli means "dx token" correctly to our g:dx/token project!!!
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, I very like react framer-motion, motion pacakge and gsap and animejs libraries but don't know how they have that smooth spring, dumping, and soft animations and scroll-based animations so in plain html, css and js please do those animations!!! that is way smooth like how those pacakges does!!!
+
+Good, now please update the g:dx/script/examples/dx/dx file with latest human format and use that fix dx serializer command check does it solves the files to proper human format or not
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, its not we need to use the same css math everywhere as its breaking other animations so please make all animations separate + user text select none + use vercel like light and dark theme and dark them as default no grid border in the background and copy css copy button and also use vercel geist font globally by defautl
+
+Now its should be just Human and LLM not normal and loose and compact as other format just its flavours of humand llm so please update all the docs files in the g:dx/serializer with right default and also test all commands like converts, llm, human, machine, compact, loose correctly!!!
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, all these animations are showing so fast so please give proper time to show the smooth animations and also the inside scrolls of the preview is showing so please make more interactive demos not simple text effects and cheap animations
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now again did you manually edited that file - if so use the dx-serializer commands check does they can do that or not if anything don't works from converters to formats or anything in the dx-serializer please fix it and make it battle-tested and check it brutally!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please create a dx-serializer watch command that checks a folders fixes dx-serialier format and formats and beautifies them and fix the dx or sr human file and generates .llm, .loose, .compact and .machine files in the .dx/serializer folder and does all table sorting and things like that in human file when changed like a daemon so please do that and start on the g:dx/script/examples/dx folder and remove that .compact and .loose form that root and make sure that we can generate between all these files 5 formats to each another correctly and also to convert to yml, json, jsonc, toon correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
