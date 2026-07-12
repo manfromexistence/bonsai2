@@ -1003,3 +1003,94 @@ Now please create a dx-serializer watch command that checks a folders fixes dx-s
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+No even the .loose and the .compact will be in the .dx/serializer folder and also does 5 formats to each another correctly and also to convert to yml, json, jsonc, toon works??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+And also the human format will have one line gap between sections and also in here , already handles that "" - its not needed I specially told you that then why its still there??
+
+Now even dx-serializer will be configurable with config section like:
+  serializer[name format path generate](
+    human, human, *, null
+    llm, llm, .dx/serializer/*.llm, true
+    machine, machine, .dx/serializer/*.machine, true
+    loose, loose, .dx/serializer/*.loose, false
+    compact, compact, .dx/serializer/*.loose, false
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Are you serious I meant that dx-serializer rust crate can understand that we are not talking about the g:dx/script/examples/dx/dx file!!!
+Now back to the g:dx/script/examples/dx/dx fiel no manual updating file - use cli serializer command and as you can even when there is no need to for commas but still we are using that so please fix it crrectly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please create or update just file that has just build that builds our g:dx/serializer in 12 jobs and sets it up for both dx-serializer and "dx serializer" by connecting to g:dx/cli dx binary correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please check the g:dx/cli and there please create a "dx init" command and there if we do that command from any folder then it will create that folder as dx project as git does and it will just look for justfile or other configs and turn them to "dx" extension file "script" configuration so please check the dx-serializer at the g:dx/serializer and check if its can understand and parse script configs correctly and we need to convert exiting justfile of the current dir to script sectiosn dx-serializer configs correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+In this time what is the current best free trier database that gives the best free stuffs to free users, I can even do credit card verification but I want month tier means for my nextjs project that has the most free tier!!! So please rank 10 database like these correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Wait it should write "dx" file in the script sections as script is a dx-tool so in the dx config file we can control it so please fix it and run the "dx init" at the g:dx/script folder and check if its creates dx file with script section and .dx/serializer folder with llm and machine format or not
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+The dx in your PATH is the globally installed one from AppData\Local\dx\bin, not the development build. Let me build a release version and install it:
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+That is good but now please look for a valid cleaver way to use unlimited database with unlimited or sway to much database as for image we can use imgbb and files we can use catbox but for database please find a like these!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now what about the no values fields we need to so soemthing so first identify all errors and problem of the file and then update the dx-serializer cli so fix all these problems correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in latest nextjs, tailwindcss and "framer-motion or motion" animation packge please recreate this ai chat windows and and make smooth animated ui like the images I gave you!!! Use vercel light and dark (default) and also use vercel giest font globally default!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please do these:
+1. On the left there will chat minimap and hover interactions and hovercards with animations
+2. On right there will floating sidebar on the right top right and also there will screen like Terminal, Brower, Review, Sidechat, Files Sidebar with smooth animations
+3. Everything will be responsive for all screen no scrillbars unwanted everything should responsive
+4. When clicked on the mdeo picker there will be a slot like smooth animation  and there will left white like dot in the model mode picker  so like make things prfessional and also make it draggable with magnet sao every we click close it will active a mode near it correctly
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+I already have a side bar, so in the chat UI you don't need to implement any side bar. Just create the chat response UI with right side bars. And by default, there will be a floating top right side bar showing with changes sources and like it will show an animation of coming from top right to the top right fixed position. And at the left chat mini map, it will show the mini map of the chat, not the chat messages, not the new chat and other chats. And clicking that will position the chat messages with this smooth animation to the center viewpoint. And on the right side, there will be five items. One files, two terminal, three browser, four chat, and fifth review side bar. And make those five side bars in the right side, all functional and connected. And also at the chat input box, at the AI provider, there is ultra and other AI provider modes. There has a slot like UI. So there are also exit dots. So when we click on the dots, it's working, but if we click close or near the dot enough, then it's not working. But as the dots are small, it's really hard to click on the exact place. So make sure that we implement a gravity or magnetic magnet like system where even we click close, it will like select the closest option. And we can drag and drop both vertically and horizontally. That and on clicking on the ultra, it will show a thunder with splash and glowing animation. And also show a sound. And in the chat input box, implement the full access and access select with mic chat input. And make sure that it's completely functional and connected with the right side bar. And implement smooth motion animations.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in here at our tui we are hardly any big crates but still its way too much crates - does its all for dx-flow as its way big - now like in rust crates cargo is there any way to know what is the biggest crates and things like that and give me summary of why our dx-tui is so big right now in crates
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please safely like comment out the usage of these: 1. dx-agents (955 crates) — agent runtime with SQLite, HTTP, crypto, image, WebSocket
+2. dx-flow (857 crates) — ML inference + audio pipeline (ONNX, llama, FFT, tokenizers)
+3. russh (447 crates) — SSH with full crypto stack  and first tell just don't anything - like in what place are we using those 3 crates??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Loose or Verbose
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now the UI is works correct, but at the chat input box when we will keep inputting, it will grow, grow at a max height and will stop growing, and in the right of the chat input box plays show. Chat anywhere UI components and also in the chat input box implement at special character suggestions box and slash special character suggestions box and show options and like plugins and show like tab icons too, small widgets in the chat input box, and also implement image and file and other inputs in chat input box. And also when we click on the my, it will show a vercel like professional UI. And in the text input box it will show like the sound waves. And when there is any kind of plugins or attachments in the chat input box, it will show and render them. Like virtual chat UI components and using transition animations. And the project files right panel needs a real files and folders, logos and also text highlighting in them. And also like implement monaco code editor so that we can actually edit files and in all places, even in the code editor implement virtual like light and dark theme with their theme colors. And dark if the default theme. Make everything more functional and responsive and implement more smooth animations.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, opencode zen gives their free 7 models free for anyone without any api keys so please research about to use those 7 free models in a nextjs tsx codebase to get free ai in my nextjs typescript and write OPENCODE.md file in the g:dx folder
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Always use 12 josb for check, run and build correctly and fast!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
