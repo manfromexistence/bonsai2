@@ -1094,3 +1094,145 @@ Always use 12 josb for check, run and build correctly and fast!!!
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+Now things are working but here is the problem so in the chatinput when we do enter first them it just bugfully create a newline + and also from the splash screen to left arrow show splash screen and also in that file browser screen the eagle sound shows so much so like if trigger it will show in that time not keep mind of all inteactions and just run it one after one as its too anooying so please fix that correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+In the model picker instead of sora, terra put the 7 free models in our model modei provider in our chatinputbox and also remove hardcode special character hash symbol I told you add its so when we write a special character it shows that suggestions box to put it all the time and by default the chatinput is showing 2 lines but it should show in one line and also when it grows pass one line by inputs it be on top fo the bottom actions button and in the top will get full witdth a bouncy animation correctl!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in the messge-list right sidebar please remove the left border and + and when we click ctrl+c and exit the app with train animation if its ends and if we do again ctrl+c to do instant exit then please clear the screen and show a sessions details to continue current chat dx session and also the 6 free model please directly add this so we can get response and use tui-markdown in the messagelist and show models switcher and show 6 models and put big pickel as the defualt model!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, do you understand our dx-serializer 5 format and if so then plase check the g:dx/dx file and check if its dx serializer human format or not if not then please make it!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in our message-list please do these:
+1. In that chatinput bottombar currenty there is Flow, |Agent, and Big Piclet but there the Agent means the Ask, Write, Plan, Goal and Ask is the defulat and it will be in the most left and then there willl Local, Remote and then will be models And it will show Model and their Provider so in here Big Pickel, Opencode Zen and in the right ther ewill be 248.9K (25%) · $0.11 · Current diffs +11, -42
+2. Please again connect to dx-agent so that we can connec to channels with our local g:dx/agent dx-agent and also g:dx/flow dx-flow for local model running and dx flow will show local models as models to choose from the ai models menu and create a channel menu and show all channels of dx-agents and check is connect or not and things like that and also now if we don't have a diff then create it and it will now be a full screen differ left files in tree strsution with collapasible expand and collapase folder and differs in the right with scrollbar correctly
+3. In the message we are not showing thinking, subagents or thing like that and also no command expand and collapse so please integrate it correctly
+↑↓ history · / cmds · @ mention · Alt+Enter or Ctrl+J newline
+Why need to scan the c, g, and other drives of user for local gguf models not hardcode models and initializer dx-flow and llama.cpp means dx-flow so its run any local models faster and use opencde zen 6 big piclel as defualt
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in the bottombar right there will only be Actual diffs +0,-0 not "Currnet Diffs" text green for addition and red text color for the remove in diffs and also use vercel theme colors in the models and things like that and also there will center do separator in the right options in our bottombar and also by clicking on the tab will change the agent means if click tab it will change the ai agent Ask... and things like that and also how much menus we have by clicking 0-9 we will show frist 10 menu and by clicking ctrl+0-9 for other menus so in this way we will show all menus and also clicking / command is showing no suggestions so both for / and @ command show suggestion menu in the top of the chatinputbox!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please do these:
+1. You are using blue hardcode color so please use our theme colors and the suggestion me items with are compact so please give it full width and also at the "Ask/Write/... every ai profile will have a different color and also please use theme muted color like the Remote/Local in the ai model and also for the ai provider use muted foreground color and also in the right if its less then thousand then please show just numbers correctly now much token we are really using and also even through we are using big pickle but still it showing mimo2.5 so please fix this
+2. Clicking on the same key-combo will toggle the menu means if click 0 then it will show a menu and when click it again then we will close and keep toggleing!!!
+3. And current the background of our tui is fully black so please make it transparent and also in the bottombar center please show tips that we were showing but it was not changing so please make sure it changes and put latest valid tips correctly and if the width is small then we will not show tips to save space!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1. Use pure red for red color in the diff -0 and we use Alt+enter for newlines
+2. Use these colors for these ai profiles:
+  Goal: #ffae04;
+  Ask: #2671f4;
+  Write: #747474;
+  Plan: #525252;
+3. At the tui start there is keyboard sound or just a sound showing so please make play chatinput delete sound on tui start and also at the slash screen fonts in some fonts text font tiltle and the "Enhanced Development Experience" description is being huge for some reason so please fix that and also 
+4. Remove the eagle sound in the file browser screen and in the splash screen play matrix screen sound and when clicking ctrl+c one its show train animation so after that animation stop clear the screen of the tui first and then show sessions contion text and then stop and if clicked ctrl+c twice then also clear the tui fully first and the show the continue text and then stop + And everything selectable event the tui text of our whole tui!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in our dx-tui please add auto chat compaction if conext, full lsp support, and opencode like thiking, commands, subagents showing look at the "G:\Dx\zzz\opencode" and mainly look at the 75+ providers supprot with models.dev and also /connect new provider add so please add these in our g:dx/tui dx-tui project correclty folder and learn what it does in rust correctly!!! And also look at this omnirouter typescript project: "G:\Dx\route" and in there only look at the token saving with rtk and other techines and if possible then use rust crates and save tokens and connect that with our tui so that our ai agent can save token all the time correctly - and then the plan mode requires options to select in the chatinput options and ask for to go the folder if not current anda also ability run commands, formatter, linters and lsp like "G:\Dx\zzz\opencode" and also goal model needs a time of goal running the goal mode will keeep the agent running until the goal is complete and also we chat name generation like how opencode does and also tasks generation that we will show in our right sidebar tasks accorions with mcp, plugins and lsp so please make everything funtional correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Good, now please create a big TODO.md and please all the features and keep working on it until you complete it 100 out of 100 production-ready and professional tui that beat opencode!!! Look for any features that you don't have and create that TODO.md file and keep working marking todo complete and keep doing it until you make our dx-tui with fully connected with dx-agent(has that channels and can send sessions to telegram and other social media and can connect and manage social media and also please create a new ai profiel at the Ask, Plan, Goal, Write and new Agent and connect dx-agent so all providers opencode has 75+ with all providers dx-agent has with ominrouter at the g:dx/route) and dx-flow(Running local text models, stt and tts models and create tui ui for to handle tts and stt correctly) and beat opencode and 100 out of 100 production-ready and professional tui!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+And always use jobs 12 for cargo chech, cargo test and cargo run, and build and do it with professional and professional, small and maintainable code!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please do these:
+1. At the Ai profile Write and Plan profile use unique text colors
+2. On the first propmt we will send opencode like tools to generate ai chat name and also create todos if its a big taks and create we will show in our right sidebar tasks, with commands and put to be "DX" instead of the opencode and try to put only prompt that are need not all big propmts that is 8K like optimize the propmt correctly
+3. After we show answer show First Ai Profile, Model name, Time it took in the bottom of the ai response
+4. Now Also create user wher user can set name in menu and it will show instead of User and rename that to be You by default not User
+5. The right sideabr after the chat name there will: So no VCS anents and also don't put ai slop details put real values and items in the right sidebar!!! and don't show our tech stack that is ai slop like local means dx-agent, flow please don't show these types of our tech stack secrect and also nicely strcture the rightbar item
+- Tasks
+- Subagents
+- Lsps
+- Plugins
+- Mcps
+
+Now please fix these typo LSPs - LSP and MCPs to MCP and also its showing this:
+11:04 PM                                                                                                                                                    ▼ Subagents                              Hi there! I’m MiMo-v2.5, a large language model created by the Xiaomi LLM Core Team. I’m here to help with answering questions, having conversations, and     —                                    
+  assisting with various tasks in a friendly and respectful way. I have a 1M-token context window, so I can handle quite long and detailed inputs.            ▼ LSPs                                                                                                                                                                                                 ● rust-analyzer · Rust               
+Ask · Big Pickle · 4.8s        
+So Mimo even through we are showing big pickle and also we are only keeping the chatname as the user propmt but it will come from ai means ai will generate a chat name based on the prompt so please learn opencode codebase "G:\Dx\zzz\opencode" and learn how they send the tools and opencode agent and replace that with "Dx - Enhanced Developmeent Experience" and put chat name and tasks with teminal commands and other details knowledge correctly and make sure that our dx-tui can use all of those correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+So like opencode please recreate it in our dx-tui with rust and make it more token efficient, professional and prduction-ready and make chat name generation and others also works fully 100 out of 100 prodution-ready and proefessional codebase!!! And brand it "Dx" correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, its overflowing the terminal screen and we are not showig the tool calls and other markdonw correctly and also there is huge padding in the message list and I told you that the ai agent will generate the chat name but it still just my propmt so please fix it make sure that ai generates the chatname and if we get that generated chat name then we show it and replace it with our propmt in that right sidebar correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, in the right-sidebar the chat name and its loading its showing boxes until it finished so please makeit like Geneneting... shimmer text instead of all of that and also now the You user message is not showing in the chat messagelist and also we are showing the ai output token not the actual token that we are sending and input and out real ai context - So like opencode please do it correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now if we click on the right sidebar it going different folder idk now so please make sure it don't happens correctly!!! And now we are rendering markdown but while generating its showing markdown symbols so please make sure that it don't show that correctly and also in the bottombar right there is up and token and down symbol and token then a separte with percentage but it will be input and out all added token with 10.5k (5%) like this and also it now had a big right gap in the right options so please make sure that don't happens
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, in the bottombar around the center dot separator there will one left and right like space gap and no need to show tooltip when the rightsidebar chat name is generated and also its still showing raw markdown symbols while generating so please make sure that we render the markdown preview not the markdown symbols at all even while generaing or thinking!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now still seeing raw markdown symbols but I only want to see markdown preview correctly and also tool, terminal, subagents and other stuffs will render correctlly with accordion so we can expand and collapse those and by default collapse those to like make the output and simple but like make everything look, professional and prodution-ready 100 out of 100 and also we need to show also thinking with accorion tui correctly:
+- Thought: 676ms
+The user said "hi". This is a simple greeting. I should respond concisely. Let me just say hello back. Since this is a direct greeting, I should respond in a friendly but brief manner.
+Hi! How can I help you today?
+
+And also no need to show Dx and local time when we started the ai in the ai output in hte message in the top of the ai output!!!
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now don't do anything and just tell me can we currently do these and if not then how hard it is to do these??
+
+Now when we click 0 it should show ai model provider menu and first there will "Flow" provider its dx-flow at the "g:dx/flow" which can run local gguf models - so we need to first local gguf models render all gguf model that is available in the os and then opencode zen 6 models and then other ai provider that even opencode supports by default 75+ and like opencode can we create new ai providers and make with /connect correctly and configure models too!!! and also by connecting with "g:dx/agent" dx-agent we can connect to social channels like telegram and others and we connect connect and configure channels correctly by clicking 1!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Awesome now please complete everything professionally and make things prodution-ready 100 out of 100
+git add . && git commit -m "feat: tui"
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Okay, now in this os we have gguf models so please move those to the g:dx/flow/models folder if not already and also if don't find any models in the flow models path then we will do all drives if we choose flow and if already present also can do full drive scan with option but not need in that time!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+In the message-list ai output we are still not showing thinking with time with accordion and also the 0 and 1 menus are not showing and also when we clicking ctrl+9 we will do flow load models and please show 0 and 1 models correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, in our messagelist please put a little more padding right to the message section not the right-sidebar and also at the thouth it toggleing when we click on the empty space in the top not in the thouths as its showing the select of the section  and that is having its background so in there put padding 1 at that int he messages - Now please look at the other menus and create 0 and 1 menu like as current menus you create is so bad and also it always show generating even I get a answer but the chat name is not generated so please fix this error too correctly!!! Some fonts in the splash screne figlet fonts are broken so please fix them and also it sounds a keypress when tui shows so please don't play that sound but the sound that shows from splash screen to message-list screen please play that sound and also in splash screen please play matrix screen sound!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now all the fonts are not showing at all and also the menu of 0 and 1 should be like the 2 number themes models one full rows with just the model names and a label not cramed and useless text make all items menu items correctly and clicking the 0 and 1 again will close menu too correctly and now we are not again genearting the chat name so please generate it and render it and show "Generating..." shimmer text and render the generated chat name correctly
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, some fonts are broken so please render all figlet fonts in the splash screen correctly + At the model 0 menu flow is showing 400+ menu items but it only has 3 models then what are those items cargo or things like that so please fix that correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
