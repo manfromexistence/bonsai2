@@ -1402,9 +1402,12 @@ Good, now the its version should be 1.0.0 and its "Dx" product called "Dx TUI Ed
 
 We need to create a new ai profile called "Multi" Where first check do we have queued 1, 2... system or not in other ai profile we can send one prompt at time with steer putting it directly in current running queued will send the propmt later but in "Multi" ai profile we can send mutiple propmt and that will be handled different ai models same at the same time at once connectly!!!
 
-And also create a new "Automation" ai profile that runs after some time that the user has set like faster every 5, 10, 15, 30 or custome minues or in date dat or a custom time and our dx-tui will do that in that interval correclty!!!
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+And also create a new "Automation" ai profile that runs after some time that the user has set like faster every 5, 10, 15, 30 or custome minues or in date dat or a custom time and our dx-tui will do that in that interval correclty!!!
 So both for new "Multi" and "Automation" please create a use a custom text color that is bright and aligns with our theme but is uniqe correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 And now check our all ai profiles one by one like:
 1. Ask
@@ -1416,11 +1419,169 @@ And now check our all ai profiles one by one like:
 7. Agent
 and tell me what they really do right now?? Brutally check them and write their details in the g:dx AI_PROFILE.md file
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 Now, what do you think about the dx-tui do you think it will beat opencode that has all features or opencode but in rust and also has hermes-agent like auto ai update, deerflow like multiple ai orchestration and openclaw like agent mode and has 7 ai profile  Ask, Write, Multi, Plan, Goal, Automation, Agent totally in rust rataui not opentui which is zig with typescript and splinejs so the tui feel more faster and better as rataui is very mature that opentui that opencode uese!!!
 Do you think our dx will be a game changer??
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Dx Flow and Dx Agent!!!
+Now brutally judge our dx-tui create BRUTAL_THUTHS.md file and compare dx-tui against opencode and tell me where dx-tui loses and needs an improvement in g:dx folder
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, if I opensource it then can I make the code more restrective - like make it more faster other to steal my or has to use the same license - the idea is simple I want free code to steal but don't want my code to be stolen!!!
+git clone https://github.com/helix-editor/helix
+Please build this project in release with jobs 12 and give me command to run it!!!
+cargo build --release -j 12
+
+Now, enough with joking - so for now I will fork fresh and opensource the code as I am working forking helix rust code editor too which is another rust code editor but completely free with MIT license - So I can learn form the fresh codebase and recreate it completely new in the helix right - so I will be doing that in the background and when I finish doing that then I will closed source the codebase correctly!!!
+
+Now please look this fresh codebase deeply and carefully and check how much rust files and how complex this codebease is files and folder strcuture and then in the g:dx folder please create FRESH.md file!!!
+Now remove test files counts and look at the main code and how much average line are that are pure logic and things like that and update the FRESH.md file
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Please look at the g:dx/BRUTAL_THRUTHS.md file and just mention that we are still working the dx-tui at the g:dx/tui folder and 
+AI Providers          30+          1      → OpenCode ×30 -> In the g:dx there is a providers folder that has 200+ providers so we will add it later into dx-tui so dx-tui wins big here!!!
+Tools                 18+          12     → OpenCode +6 -> We need to work on this now
+MCP Support           Full         None   → OpenCode -> We need to work on this now
+LSP Integration       10 ops       None   → OpenCode -> We need to work on this now
+Plugin System         Mature       Planned → OpenCode -> We need to work on this now
+Reasoning             Full tiers   Basic  → OpenCode -> We need to work on this now
+Permission System     Granular     Basic  → OpenCode -> We need to work on this now
+TUI Features          Rich         Basic  → OpenCode -> We need to work on this now
+Agent System          Mature       Solid  → dx-tui competitive
+Parallel Subagents    Yes          Yes    → TIE (both good)
+Session Persistence   SQLite       JSON   → OpenCode -> We need to work on this now
+SDK/API               Full         None   → OpenCode -> We need to work on this now
+Performance           Good         Excel  → dx-tui
+Binary Size           ~200MB       ~30MB  → dx-tui
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now anywhere you see "We need to work on this now" please actually start working and complete it 100 out of 100 prodution-ready and professional codebase and always use jobs 12 and complete all tasks correctly in our dx-tui at the g:dx/tui folder!!!
+
+What image can save update 50+% more tokens than text in ai llm?? What - and does that apply all model that support image input??
+
+Now, how about glm 5.2, opencode free models and deepseek models does this image trick work there?? And also is this only a cli if I make custom cli then can I add support for this or not??
+
+And how it can save token on image then text that is insane right and also if so then we make specific type of image from that any ai can save the token but get the text correctly too - is this possible to do this and someone has tried this or not??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please do these:
+1. Fix all clippy warnings and errors
+2. There is a toast in the top right whenever we start our tui please make sure it don't shows
+3. And also show the bottombar right spinner all the time just not spinning with rainbow colors just muted color and show that all the time correclty anda also when we are in other splash screen show all tips one by one with animation and when we click on the left arrow key please don't show intro and outrol show it when clicked up and down on the spash screen + And when we do exit and when the train is showing please clear the whole tui first and then show the train animation and then clear the tui screen and after the train animation and when clicking again on ctrl+c while train please stop the train and just clear everything and stop and make sure that always show sessions details after clearing everything and then stop!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+git clone https://github.com/JustVugg/colibri
+Does this glm 5.2 model running of colibri works on all moe models and does - so please tell will it work for deepseek v4 pro and flash and how much space will it have as I have 24 vram and 500GB space ssd with windows 11 os!!!
+
+On the message-list screen please don't play any sound + and the kepress sound is playing one after one but key press can be so fast but playing sound is not that possbe so please lower that volume and play those sounds on keystrokes one by one correctly + and please put a gap between diffs and the spinner and also the diffs menu is toally usefull and don't work sit should show line number and also the left file sidebar also don't work with the scriplbbar not work s to in the diff screen so please fix these!!!
+
+Now, a rainbow glow line in the top of the spinner is showing so please remove that and also make text on the cli selectionable like how we do in the chatinput + and then tell me is the items in the right-sidebar is hardcode or real??
+
+Now to run minimax m3 and deepseek v4 flash locally with 60 tokens/s how much gpu or hardware we need and what is the price of it in bd as I already have 24vram, 515MB integrated ryzan gpu and 500GB ssd!!!
+
+Now current our os has 24GB vram but previously it only had 8gb and it wan  crassing when we do big prust project like zed code editor but what about current os so what we max can do until it crashese - just tell me!!! - Like I want to run anything terminal command that crash my intentially - so how to do that??
+
+Now remove the line that shows bugfully on the top of the and show rainbow in the bottombar right spinner correclty
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Please tell me how space is the g:dx/ folder node_modules and cargo or other build folder cost - just do research and don't delete anything and also just g:dx folder not the whole g drive!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now the colibri is path of running big moe model locally while being smart so please check h3, minimax 3, deepseek spark and check how much they actively move so that like glm came from 40GB to only 9GB then we make these too fast like that and even just getting around 10 tokens/s on my os is fine on those models!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Dx Flow and Dx Agent!!!
+Get-CimInstance -ClassName Win32_Processor | Select-Object LoadPercentage
+cargo build --release -j 12
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please check f:.codex and list all the .sqlite files you see and what those files??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+You evil - you just loasted I use codex for more than 1 month and only get lost of that as codex remove weekly to monthly so I have to just recreate it in monthly and you will loose!!!
+
+
+Here's the full listing of all .sqlite files found in F:\.codex:
+#	File	Size
+1	F:\.codex\state_5.sqlite	50.5 MB
+2	F:\.codex\memories_1.sqlite	3.0 MB
+3	F:\.codex\.codex\logs_2.sqlite	17.1 GB
+4	F:\.codex\.codex\state_5.sqlite	176 KB
+5	F:\.codex\.codex\memories_1.sqlite	4 KB
+6	F:\.codex\.codex\goals_1.sqlite	136 KB
+7	F:\.codex\sqlite\state_5.sqlite	45.8 MB
+8	F:\.codex\sqlite\memories_1.sqlite	172 KB
+9	F:\.codex\sqlite\goals_1.sqlite	24 KB
+What are these files?
+These are internal SQLite databases for OpenAI's Codex CLI (the AI coding assistant). They store:
+- state — Application/session state and configuration
+- memories — Persisted context and facts the AI remembers across sessions
+- goals — Task tracking and goal management
+- logs — Full conversation/session logs (this one is 17+ GB!)
+The sqlite/ subfolder appears to contain older backups/snapshots from June 15.
+
+You are just a loaser and can't let a genius programmer like me to have ai free token as dump people are wasting millions on centering a div and a man is a genius in programming can't use a ha afa ck that you smartly created - YOU RAT - peice of shit!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in our dx-tui previously we need ffi but now we don't so can you just safely remove that ffi and it related code as safely as dx-tui is teh full tui now no ffi needed or what so ever!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please combine all these 3 and in our omniroute please add more than 300+ providers!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+So after all these deep-dives what flaws you found in our dx-tui??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please create professional git commit and please lint and format all files
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please work on our dx-tui and make it 100 out of 100 prodution-ready and professional codebase by fixing all flaws!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please check g:dx/serializer and its docs folder carefull and check the llm and compact formats more carefully and tell do you understand dx-serializer llm and compact format or not and check brutally how much token efficient it is than toon, json, yml, jsonc and brutally judge it!!!
+Ohh, and you can count real token by using "dx token --help" command
+Now, its "dx token --help" a separate dx tool to count llm token with differ ai tokenizers at once!!!
+No, need to use dx-token just understand dx serializer llm and compact format correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+So, on average how much we are token efficient then json - wait go to g:dx/token and build it in release with jobs 12 and then please use that and install it in the path globally and then use dx-token to count real tokens of files!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+First please create json files, yml files and jsonc files and dx serilaizer compact file in the g:dx/serializer/benchmarks folder for different datasets that are fair - then please search for toon cli and install it using npm and convert those json to toon files and compare all formats in the g:dx/serializer/benchmark!!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Wait are you not using official json to toon converter npm cli?? if not then please use it actually!!!
+No, there is no hand rewrittne toon what are you talking - you just made that up?? give full details use created broken toon?? where did you learned it from??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Dx Tui markdown table render!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Is that the max token save that our dx serializer compact can - I want more than 70% token saving!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
