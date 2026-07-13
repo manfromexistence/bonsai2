@@ -1233,6 +1233,194 @@ Now, some fonts are broken so please render all figlet fonts in the splash scree
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+Now pleae build this project, lint and format all files and make everything professional, prodution-ready and 100 out of 100 codebase!!!
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now the left chat indicator should be fixed and also the right floating workspace sidebar should have shadcn-ui hovercards and show details correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please replace the ai model picker ui from current grid cell to this graph solts styles ui correctly and also look at the g:dx/3 as the model picker from there so if any audio or assets need then use that correctly and just replace the hardcode sol, terra to real opencode 6 models and also keep that ultra slot animation correctly: 
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Good, now please update that model picker so the lines and the circle stays insdie the model picker and like the has drag and drop more better and also clicking on ultra should fill full and also clicking on close dots should work and actually click the closes dot
+
+Now please remove that dot in the left minimap and also use project hovercards at the right floating workspace sidebar with smooth animation for the branch, and other stuffs and at the chatinput instead of using reasoning and default put all the 6 models on the left and put low, medium, high, options and if the hight is the most high optoins in those models then instead of untlra the high will be in that ultra place and the ulstra lsot circle is still not fully in the top so please fix that too!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Just look at the "G:\Dx\website\inspirations\landing-page-animations" and copy its animated landing sections to our website and add it befor the footer and only copy real files no sloppy versions real files copy and don't copy header or footer we already have that in our website just copy the sections and put animated sections before our g:dx/website foooter and reband it as our dx not that project!!!
+Now the ultra ball is not going to bottom correctly so please put it in the bottom and also no need to do visisbe the background color just add a line of the circle at the model graph from left to circle connected and it should connnect to circle center correctly and the graph still don't fill the full width gap!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+At the model picker the models should have shadcn-ui scrollare and on the top there will ai model provider circle avatar like logo and most top a searchbar to search provider and also at searchbar right there will options to fiter by free and other badge using all shadcn-ui components and in the bottom modle price instead of saying close and the same mode and also the ultra will be the like the max priced of that model means if ai model max has high then high will be shown in that slot and the slot shold height of the models list and also there is circel shodow init remove that on toggle on it don't goes to top so please make sure that it goes to top and comes bottom on toggle correctly - so please use the lite-llm or models.dev model to know about model price, context and other details in show it the most bottom of the ai model menu correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now look at this "G:\Dx\canary\shader" project and copy its shader files correclty to show shadcn in our top of our footer please add a rounded cta and use random shader as the background!!!
+Copy real files and integrate correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Look at the g:dx/tui and the g:dx/agent and g:dx/flow and tell me is dx-agent and dx-flow is connected corrctly in the g:dx/tui or not??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, in this dx-tui the model answer is only showing one req and stopping like opencode "G:\Dx\zzz\opencode" we need to do keep ongoing call until the model completes the tasks renter terminal commands, throuths, subagents, permissions and handle and also handle ai "Ask, Write, Goal, Plan" correctly and list what these needs we don't have in in our dx-tui and create TUI.md file with all message-list features that we don't have and not like this
+[0] You
+In this repo please do create a professional git commit correctly
+
+[1] DX
+Let's check the current state of the repo to see what needs to be committed.
+
+```bash
+git status --short
+```
+```bash
+git diff --cached --stat
+```
+```bash
+git log --oneline -5
+```
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+In this project please setup cargo job to 12 and also build check this project and also check what is the current default this in thos fresh code editor tui??
+Awesome now please build it in release with jobs 12
+Now please complete all tasks and make this professional, prodution-ready 100 out of 100 codebase!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please list all the features and todo that we don't have in our dx-tui message and also in our message list please put padding right to the chatinputbox and also the loader please also put padding right and also at write that to TODO.md file
+On goal-mode in the bottombar center we will show a timer instead of the tips - means in the message-list we will show actions instead of tips based on teh ai profile and things like that and also in hte plan mode like opencode we will hosw options in the cetner of the bottombar and also persimissions options in the bottombar center with hover button and things like that so please learn from "G:\Dx\zzz\opencode" for plan mode and make our dx-tui plan mode correctly - that shows a bigger tasks based mode where we will keep wroiking until the goal is comlplete an d also please check the "G:\Dx\zzz\opencode"
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now look at this "G:\Dx\agent\inspirations\hermes-agent" auto update logic of ai and implement that in our dx-tui too correctly!!! And also update our dx-tui Agent ai profile to have soul.md and other agent like markdown files correctly!!! "G:\Dx\agent\inspirations\openclaw" and look at this "G:\Dx\agent\inspirations\deer-flow" for multiple ai agent orchestration logic in rust and connect it with dx-tui correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Hermes agent also has "G:\Dx\agent\inspirations\hermes-agent" has ai auto create skills update sucewssful work in python so please recreate that in our dx-tui by defualt so our dx-tui can also have that auto ai agent update that hermes-agent has and also like openclaw we need soul.md and things like that branded as "Dx" At set that in our dx-tui ai "Agent" profile correctly from this "G:\Dx\agent\inspirations\openclaw" openclaw source code correctly turn both that hermes ai auto update in rust and also the agent like profile of openclaw in rust correctly and connect it with our dx-tui correctly!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now as you can see our agent loop is not working that good in our dx-tui and message-list is not handing so please handle messages correctly:
+[0] You
+Now, please check what is the current git status in this repo and please tell me what changed
+
+[1] DX
+<think>
+The user wants to know the current git status of the repo at `G:\Dx\tui`. I will use the `shell` tool to run `git status`.
+</think>
+
+```command name="shell" title="Terminal" status="running" git status
+… running
+```
+
+```command name="shell" title="Terminal" status="done" git status
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+```
+<think>
+The user wants to know the current git status and what changed.
+The previous `git status` command showed that `README.md` is modified but not staged.
+I should use `git diff` to see the specific changes in `README.md`.
+</think>
+
+```command name="shell" title="Terminal" status="running" git diff README.md
+… running
+```
+
+```command name="shell" title="Terminal" status="done" git diff README.md
+diff --git a/README.md b/README.md
+index ec5367d..af6a2e5 100644
+--- a/README.md
++++ b/README.md
+@@ -2,7 +2,7 @@
+ 
+ DX TUI is the Ratatui shell launched by the root `dx` command. It combines the DX splash,
+ chat input, command/menu surfaces, animation carousel, and embedded file-browser engine in
+-one terminal experience.
++one terminal experience!
+ 
+ ## Project status
+ 
+
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+
+```
+<think>
+The user wants to know the git status and what changed.
+I have already run `git status` and `git diff`.
+
+The git status shows:
+- `README.md` is modified but not staged for commit.
+
+The git diff shows:
+- `README.md` line 5: "one terminal experience." was changed to "one terminal experience!" (an exclamation mark was added).
+
+I should provide a concise summary.
+</think>
+The current git status shows one modified file:
+
+- **`README.md`**: An exclamation mark was added to the end of the sentence "one terminal experience.", making it "one terminal experience!".
+
+There are no staged changes.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+In our tui - we also need to show differ with line numebs and syntax highlighting and the thouths and thinging will collapsed by default and while showing comamnd we will show lines and show expand option click to expand instead of showoing all terminal big output one by and also need to show commands, subagents ui correclty in our tui message list!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now at the message-list please put a big padding right in the bottombar as the rainbow spinnter show in that so we need to like show padding-right when its shows means while ai is working!!!
+
+And like opencode at the "G:\Dx\zzz\opencode" folder we need to create Todos and tasks and show that in the the tui messag-list and the right sidbear and for the thouths and other place we need to use our dx-tui theme colors properly so they look professional correctly!!!
+Tood and task creating means opencode has Todos taks creation system in the Build ai agent so in our ai profiles we should be able to create Todos and render it in the sidebar and the todo like how we are showing chat name with generating shimmer and things like that!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please brutally check our dx-tui and tell me like hermes-agent "G:\Dx\agent\inspirations\hermes-agent" do we have auto ai update or not and also like deer-flow "G:\Dx\agent\inspirations\deer-flow" can we do multiple ai agent orchestration or not?? Give me brutal thruths!!!
+
+Now, please make our dx-tui Auto AI Update and Multi-Agent Orchestration 100 out of 100 prodution-ready and professional codebase!!!
+Awesome now like this please keep working and make dx-tui Auto AI Update and Multi-Agent Orchestration 100 out of 100 prodution-ready and professional codebase!!!
+Now, do we have Auto AI Update and Multi-Agent Orchestration at hermes-agent and deer-flow level or not - give me brutal thruths!!!
+
+Good, now please build it in release with jobs 12 and give me command to run it myself!!!
+Good, now the its version should be 1.0.0 and its "Dx" product called "Dx TUI Editor" so please brand it safely correctly and build it in release with jobs 12
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+We need to create a new ai profile called "Multi" Where first check do we have queued 1, 2... system or not in other ai profile we can send one prompt at time with steer putting it directly in current running queued will send the propmt later but in "Multi" ai profile we can send mutiple propmt and that will be handled different ai models same at the same time at once connectly!!!
+
+And also create a new "Automation" ai profile that runs after some time that the user has set like faster every 5, 10, 15, 30 or custome minues or in date dat or a custom time and our dx-tui will do that in that interval correclty!!!
+
+So both for new "Multi" and "Automation" please create a use a custom text color that is bright and aligns with our theme but is uniqe correctly!!!
+
+And now check our all ai profiles one by one like:
+1. Ask
+2. Write
+3. Plan
+4. Goal
+5. Multi
+6. Automation
+7. Agent
+and tell me what they really do right now?? Brutally check them and write their details in the g:dx AI_PROFILE.md file
+
+Now, what do you think about the dx-tui do you think it will beat opencode that has all features or opencode but in rust and also has hermes-agent like auto ai update, deerflow like multiple ai orchestration and openclaw like agent mode and has 7 ai profile  Ask, Write, Multi, Plan, Goal, Automation, Agent totally in rust rataui not opentui which is zig with typescript and splinejs so the tui feel more faster and better as rataui is very mature that opentui that opencode uese!!!
+Do you think our dx will be a game changer??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Dx Flow and Dx Agent!!!
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
