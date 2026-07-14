@@ -1747,8 +1747,15 @@ In chatinputbox bottombar center put these all the time in all ai profile:
 1. Up arrow symbol and clicking it will go the message-list top
 2. Down arrow symbol and clicking it will go the message-list bottom
 At the Diff view
-3. And in the diff right panel still showing the line number of before and after in the top static in the right panel please remove that correctly
+3. And in the diff right panel still showing the line number of before and after in the top static in the right panel please remove that correctly as I don't have what it is but its a very bad ui!!!
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+Now, in our message screen please do these
+1. In the user promt please remvoe the You and lable just show the message and make sure if the user has has image, file, or codex, markdonw we will render it correctly and our box border has left paddin but not right padding so please put right padding too in our user prompt bubble
+2. In our right sidebar only one word of the chat name or 3 or 4 character is showing - so please make sure to generat a correct small chat name not one world and show it correctly
+3. In our message-list please make the chatinputbox bottombar right side to have padding as the right sidebar and the spinner is too close some padding will fix it
+4. In the right sidebar if the Tasks has no items please show "No Tasks Yet" and also if there is tasks please render it correctly and render all states of todos and tasks and and complete remove them too correclty!!!
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
