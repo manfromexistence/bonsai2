@@ -1759,3 +1759,15 @@ Now, in our message screen please do these
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+There is big problem in the markdown rendering in the message-list everything is showing but some text is bugly showing on top of everything fixed and also in the right some blocks are showing so please fix these tui markdown rendering some characther showing on top of everyhing fixed problem correctly!!!
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, tools calls, shell is not working and only doing one req even and also even through now in the user propmt buble even through we don't have the "You" lable but still wasting space on it and we are not doing multiple reqs and getting full ai agent loop correctly - but it should work on every ai profile correctly!!!
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+What is the current git status of this codeabse
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
