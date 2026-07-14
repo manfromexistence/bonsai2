@@ -1658,3 +1658,33 @@ Now the "Run" is wrong "[r]Run" and remove the plan from the the bottombar cente
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+Good, now in the examples folder please create a "dx" extensionless file and then please try to convert it to json, jsonc, toon (using nodejs official toon cli), yml vs all 5 dx format and check who is the most token efificient format!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please do these:
+1. bring the dot center seprator back between differnts stuffs
+2. In the diff screen there id git diff command other useless details in the diff right panel and also diff screeen left file browser the click files is not working and also the files tree collapse or anything is not working!!!
+Some fonts in the splash screen is being cut off in the bottom so please fix those too correctly!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, please do these:
+1. Some fonts in the splash screen is being cut off in the bottom so please fix those too correctly!!!
+2. Still seeing the diff Files sidebar items are not funtional and just dummy!!!
+3. The dot center separator has no right padding - has left padding but no right padding!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+And remove the examples folder - create a new one just create a json file and then use dx-serializer and convert json to dx-serializer 5 format by using the dx-serilaizer cli not manually and also use toon npx offficial cli (web search about it first) and generate json to toon and also use cli to convert json to jsonc and put all the details to examples/README.md file correctly!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now make the make the dot center separator bigger in size and also lower the gap space between the spinner and the diff button and also diff screen just dummy and peice of shit!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Please render top 25 avengers characters and give me a big thing that they did in a table!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
