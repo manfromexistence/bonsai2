@@ -1688,3 +1688,18 @@ Please render top 25 avengers characters and give me a big thing that they did i
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+1. Inside the through the markdown shows raw symbols no markdown table or any markdown renderer
+2. At the diffs the left files active border are going after one click and its not coming back again means we can't select anything after that from the files and also there is "@@ ... @@" section that is looking ugly and also please show syntax highlighting and more lines around the diffs correctly!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+In the diff view screen:
+1. if we do drag scroll then even we do just drag but it its in that drag scroll state
+2. The left files sidebar is just collapsing the folder even through we click on file options
+
+At the bottombar please put a gap between diff and the spinner + comment out the provider ai model leve means Medium, Hard, Ultra, Pro, Low and only show that in the message-list answer action next the model with a separator no need to keep showing it in the bottombar all the time!!!
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
