@@ -1620,3 +1620,9 @@ Please list all the avengers and their characters real names in a table
 
 -----------------------------------------------------------------------------------------------------------------
 
+Now the current markdown is not being scrollable in the message-list and also clicking the message-list highlight the whole response so please don't do that only do that manual selecting and use white for the manual select background and black color for the manual select text color + And also please look at the g:dx/fresh and check how its scrollbar is draggable and make our dx-tui all scrollbar draggable via mouse correctly[fresh](file;file:///g%3A/Dx/fresh) 
+
+No big explainations or No, need to create implementaion plan, tasks, or walkthrough - just please fix it correctly!!! Just do as I say as token efficienlty as possible as I am 7+ old experience programmer no a vibe coder - So, I know most of the stuffs!!!
+
+-----------------------------------------------------------------------------------------------------------------
+
