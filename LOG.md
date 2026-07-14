@@ -1723,3 +1723,32 @@ At the message screen now thouths and markdonw is showing but when todo, subagen
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+1. In our diff view the scrollbar is not draggable so please make it correctly
+2. In the message screen mesage-list inside the thouths if there is ```markdown it showing it in plan text so please fix that state
+3. When there is thouth we will by default do expand and then be collapse after the lines is more thant 5-6 lines!!!
+4. Now in even "Write" Ai profile it now rendering terminal command and showing it output by defualt expanding showing 5-6 lines and then collapse after that and a we will be showing the latest outputs of the terminal command in the ui so even it don't get too much height but still it viewable correctly with "Click to expand" text button - currently we are not "Write" as agent loop and show shell at all just one req and its off so please make it correctly!!!
+
+▼ Thought: 3.5s
+  │ We need to check git status. Use shell to run `git status`.
+
+<shell command="git status"/>
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+In the diff panel please do this:
+1. At the left file please show (+ Addition, -Deletion) with a () around it
+2. In the right diff panel there was duplicate line number, additon and deletion line I remove it but it still its wasting space so plase fix and also remove the 1st line that shows +$, -$ so please remove that so in the right diff panel only code will show topbar other that the main topbar and also even I scrolling but the left line number are not scrolling so please fix that correctly!!!
+3. In the diff please use a good rust-crate that shows syntax hgighlighting for most the progamming lanuage instead of just highlighting some vars!!!
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+In chatinputbox bottombar center put these all the time in all ai profile:
+1. Up arrow symbol and clicking it will go the message-list top
+2. Down arrow symbol and clicking it will go the message-list bottom
+At the Diff view
+3. And in the diff right panel still showing the line number of before and after in the top static in the right panel please remove that correctly
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
