@@ -1630,6 +1630,6 @@ Now, the manual select of the message list items is not wokring + the todos and 
 
 -----------------------------------------------------------------------------------------------------------------
 
-
+Please complete the tasks I gave you in our g:dx/tui and complete all tasks and then please make the dx-tui mesage screen message rendering to have more lines gaps so things can be more visible and beautiful and also please use more beautiful colors in the message-list for think, sheel command, code diffs and show thene with previous and after with line number and green and red diffs correctly in the tui and also make all the accordions in the mesage-list funtional correctly and makeit 100 out of 100% prodution-ready and professional codebase correctly!!!
 
 -----------------------------------------------------------------------------------------------------------------
