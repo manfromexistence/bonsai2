@@ -1639,6 +1639,22 @@ https://github.com/diegosouzapw/OmniRoute
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
+In our dx-serializer g:dx/serializer this project there is a bun serializer project that only generates dx-serializer compact format from json and there is also a rust dx-serializer that has 5 formats right?? Now please tell me does all format conversion between 5 formats and json, toon, jsonc, yml works or not give me brutal thruths!!! And write BRUTAL_THRUTHS.md file
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in the plan mode when options has camed - in our dx-tui we will show the steps in the top and options with active the 1st one by default and hover and active funtiona and in the bottom some tips to tab select with up and own arrow and enter to config and esc to dismiss and if we choose one thing then we will go to the next quersiton and in the otp the chatinputbox will show tabs with active button like ui so everything look good like how opencode handles it in the "G:\Dx\zzz\opencode" with confirm as the last tab and recreate it in our dx-tui plan mode options correctly!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now please fix all these errors 100 out 100 production-ready and professoinal codebase!!!
+Write · Remote · Med · Big Pickle, OpenCode Zen         [fmt] [lint] [plan]           0 (0%) · $0.00 · +3513, 
+what Med means in here?? and safely remove or commen it and also fmt and lint is not working and in the please put run instead or Run and make it actually do something like if its a nextjs project or nodejs project then it runs the "bun run dev" or a runnig command that we find the codebase its a smart command that like runs the command based on the project python, go, rust, nodejs, php, cpp, c or anything and means just ties to run run the most obisous thing by default and we can also configure the commands and the fmt and lint is not working so please fix that correctly and look at the g:dx/serializer as there is a "dx" extensionless config file in human format so please integrate dx-serializer in this project so that our dx-tui can understand "dx" extensionless config file tui section and like we can set run, fmt and lint to run a specific custom command that the user wants!!!
+And also make the dx-tui version to 1.0.0
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now the "Run" is wrong "[r]Run" and remove the plan from the the bottombar center and like put hover button active and remove the [] bracket from them and just show background and text color on how and also in the bottombar right the spinner and the diff has so much gap so please lower the gap + and also the diff screen is not working at all there is top right tooltip when going to diff so please remove it and also the diffs screen not funtional nothing is working the scrollbar and the lines should show background color for color green for addition and red for deletion not useless text need in the diffs just show code with lines numbers in the left with left file browser acrrodion collapsing and toggling and also the code scrollbar is scrolling as current not scrolling and also should have that drag and drop scrollbar that we have in our dx message screen message-list correctly!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
