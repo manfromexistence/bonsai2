@@ -1626,3 +1626,10 @@ No big explainations or No, need to create implementaion plan, tasks, or walkthr
 
 -----------------------------------------------------------------------------------------------------------------
 
+Now, the manual select of the message list items is not wokring + the todos and other accorions of the message list is not toggleing and just showing runnin... but there should show real values and also in the right sidebar please rename LSPs to LSP, MCPs to MCP and please by default make all accordions in the right sidebar to be collapsed only by defualt expand the Tasks accordion in the right sidebar in there put checkbox empty and checkbox complete sysmbo when the todo is complete and update it correctly!!!!
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------------------------------------------------
