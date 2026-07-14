@@ -1703,3 +1703,10 @@ At the bottombar please put a gap between diff and the spinner + comment out the
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+Now only 3 problem left:
+1. in the message list thought the text is not wrapping and also these is left line but its not like puting text unorganized
+2. the message-list table in the 1st row ever colum has a different background so please remove that different background
+3. The diff left files panel is still just really hard to select files as its just end up collapsing the folder and wrong file click so please fix that correclty!!!
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
