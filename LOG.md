@@ -1710,3 +1710,16 @@ Now only 3 problem left:
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+Now, in this project at the diff view the left files panel is acting weired like its not making the files and items clickable and also in the top there is line +, and - bro put line number "$ Line, $ Addition, $ Deletion" and show that in the diff panel topbar fixed
+
+At the message screen now thouths and markdonw is showing but when todo, subagent or tool calling please make it professional and render then with actual terminal output not just dummy "running..." and show otuptu with click to expand buttton i the bottom so that we can expand and collapse shell output , handle websearch, tool calling, READ, Write with syntax highglining line number and with diff in themessage list professionl and correctly!!! And also handle subagent and all things correctly learning from "G:\Dx\zzz\opencode" handle all ai profiles:
+1. Ask
+2. Write
+3. Plan
+4. Goal
+5. Multi
+6. Automation
+7. Agent
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
