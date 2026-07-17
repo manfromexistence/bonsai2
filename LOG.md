@@ -2045,4 +2045,13 @@ I am already running the bun run dev so you don't have to and still the ai provi
 https://github.com/comfy-home/misc-RatatuiComfyTabs
 https://github.com/joelmgallant/terminal-vibes.git
 
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+NO, the thing is I created flow backend so please just comment that flow backend agent loop and make the zen agent loop the defualt correctly as its the right one!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
