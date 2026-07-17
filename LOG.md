@@ -2009,3 +2009,40 @@ Now in the ai response remove this "◆ · ·" from the top" + there is still a 
 In here at the sidebar at the chats the chat items has a branch in the 2nd line but I want the make the chat items 1 line + in the ai ai screen at the ai response the speaker icon is yellow so please make it use the theme color as other actions icons!!!
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Please give me brutal flaw of our dx-tui and compare it against opencode, claude-code, grok-cli, codex-cli and others and write to BRUTAL_FLAWS.md
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+You are points are good, but - editor is good, what is wrong with it?? - and you are comparing code with stars with popularity and stars if we launch we will get more stars then them and will get more popular as it has way more features - give me brutal thruths!!! but be honest!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, in the brutal thruths please write that the editor and the file browser is already prodution-ready so as we are focus on launching so its not smart to do make it like more better while the chat tui has real problem so please - mention we only care about the tui flaws and editor and the file-browser is already complete - list all brutal flaws of our chat tui!!!
+
+This not needed - as we have other thing planned "| 9 | **Public SDK / API** | OpenCode, Codex CLI | Third parties can build on top. Ours has no external API. | 2-3 months |" and we have 300+ providers - didn't we connected with dx-providers in the g:dx/providers
+
+Good, now please look at the g:dx/agent and the g:dx/flow and tell me did you connected with them in our dx-tui or not as those are created by me too - dx-agent should have real agent loop and dx-flow can run local text, tts and stt models the fastest locally!!! So brutally check are we using it right or not?? and in our dx-tui there is Agent profile and I am thinking to use the dx-agent that ai profile!!!
+
+Now, how much they are setup, like I want that dx-agent only the agent profile but for other we will use the current agent loop and what are the main problems in our agent loop that uses opencode zen models??
+
+NOW THE DEFUALT model is opencode zen big pickel but please dx-flow local model running and minicpm5 1b tool calling one not the defualt minicpm!!!
+
+Now, in our rust tui I am planning to use llama-server connect with http with llama.cpp - now will it the the fastest way to run it locally then directly using llama-server and the difference is very low - is it true or false - please give me brutal and honest thruths!!!
+
+Now is our dx-tui has two tokio runtime - one for the tui and one for the dx-code editor - so please tell me what should we do there??
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now, I got the thing - now I did it and it took a lot time to do connect llama.cpp directly so please figure out a way that makes that time and effort useful - but don't list boring stuff please like give me real stuffs that http can do for local model!!!
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now current its only showing things after the full things is complete in the chat screen message list and please change the "Working..." shimmer with "Thinking..." andplease fix the tui sctreaming message correctly
+
+I am already running the bun run dev so you don't have to and still the ai provider logos are not showing in the chat screen model popoer!!!
+
+https://github.com/comfy-home/misc-RatatuiComfyTabs
+https://github.com/joelmgallant/terminal-vibes.git
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

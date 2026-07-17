@@ -1,50 +1,42 @@
-workspace(
-  name = DX
-  root = G:/Dx
-)
+[workspace]
+name = "DX"
+root = "G:/Dx"
 
-paths(
-  cli                = cli
-  www                = www
-  website            = website
-  forge              = forge
-  check              = check
-  style              = style
-  js                 = js
-  build              = build
-  py                 = py
-  py_package_manager = py-package-manager
-  native             = native
-  icon               = icon
-  media              = media
-  serializer         = serializer
-  dx_agents          = agent
-  inspirations       = inspirations
-  cache              = .dx/cache
-  dx_home            =
-  global_cache       =
-  cargo_home         = cli/.cargo-home
-)
+[paths]
+cli = "cli"
+www = "www"
+website = "website"
+forge = "forge"
+check = "check"
+style = "style"
+js = "js"
+build = "build"
+py = "py"
+py_package_manager = "py/package-manager"
+native = "native"
+icon = "icon"
+media = "media"
+serializer = "serializer"
+dx_agents = "agent"
+inspirations = "inspirations"
+cache = ".dx/cache"
+cargo_home = "cli/.cargo-home"
 
-tools(
-  scoop_root  = G:/Dev/Tools/Scoop
-  local_bin   = cli/tools/bin
-  ffmpeg_dev  = cli/tools/ffmpeg-dev/ffmpeg-8.1.1-full_build-shared
-)
+[tools]
+scoop_root = "G:/Dev/Tools/Scoop"
+local_bin = "cli/tools/bin"
+ffmpeg_dev = "cli/tools/ffmpeg-dev/ffmpeg-8.1.1-full_build-shared"
 
-dx_www(
-  manifest   = www/Cargo.toml
-  package    = dx-www
-  bin        = dx-www
-  target_dir = www/target
-)
+[dx_www]
+manifest = "www/Cargo.toml"
+package = "dx-www"
+bin = "dx-www"
+target_dir = "www/target"
 
-media(
-  default_player     = mpv
-  terminal_renderer  = tplay
-  terminal_fps       = 12
-)
+[media]
+default_player = "mpv"
+terminal_renderer = "tplay"
+terminal_fps = 12
 
-tui(
-  launch_llm_by_default = false
-)
+[tui]
+launch_llm_by_default = false
