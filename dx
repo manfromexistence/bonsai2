@@ -10,11 +10,10 @@ paths(
   forge              = forge
   check              = check
   style              = style
-  js                 = js
+  desktop            = desktop
   build              = build
   py                 = py
   py_package_manager = py/package-manager
-  native             = native
   icon               = icon
   media              = media
   serializer         = serializer
@@ -22,6 +21,7 @@ paths(
   inspirations       = inspirations
   cache              = .dx/cache
   cargo_home         = cli/.cargo-home
+  tui                = tui
 )
 
 tools(
