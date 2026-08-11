@@ -59,6 +59,17 @@ Current pages:
 - [`icon.md`](icon.md): DX Rust icon search, local catalog, compressed index, CLI, web, and WASM achievements.
 - [`build.md`](build.md): DX Rolldown fork, machine-cache, package-json cache, and benchmark-governance achievements.
 - [`tui.md`](tui.md): DX TUI terminal shell and adapter achievements.
+- [`mobile.md`](mobile.md): DX cross-platform application and AI workspace.
+- [`os.md`](os.md): DX operating-system integration workspace.
+- [`script.md`](script.md): DX Rust command-runner workspace.
+- [`token.md`](token.md): DX token-counting utility.
+- [`train.md`](train.md): DX local model training and Studio workspace.
+- [`tree.md`](tree.md): DX directory-listing utility.
+- [`website.md`](website.md): DX frontend and shadcn/ui website workspace.
+
+The following folders are intentionally excluded from dedicated documentation:
+`.dx`, `agent`, `bin`, `diffusion`, `go`, `hexxed`, `n8n`, `native`, `pi`,
+`providers`, `scripts`, and `zzz`.
 
 ## Canary Folder
 
