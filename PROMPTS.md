@@ -216,3 +216,6 @@ Please downlaod latest toon cli and convert that tools.json to tools.toon file a
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+So look at the key.dx file and in there I have maid the keys to the lowest 949 token so in the descriptions.dx file there is descriptions now I want to add that keys "" descriptions with those real descriptiones in the descriptoions.dx file newline means next descripition so plese create a nodejs script to part that keys.dx and add those - first if the descriptions id like really just simple then we don't need to add it but if its like important then we should add it as today ai models already know the 
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
