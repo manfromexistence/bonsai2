@@ -1,5 +1,12 @@
 # G:\Dx is a hub repository. Child folders are independent repositories,
 # archives, runtime state, or pinned tools and must not be absorbed here.
+!/build.ps1
+!/tokens
+!/backup.json
+!/keys.dx
+!/descriptions.dx
+!/PROPMPTS.md
+!/README.md
 
 /*
 
@@ -30,7 +37,6 @@
 !/templates/dx-starter/*
 !/templates/dx-starter/.dx/
 !/templates/dx-starter/.dx/*
-
 /.dx/*
 !/.dx/launch-workspace.toml
 trash/
