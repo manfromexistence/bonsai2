@@ -218,6 +218,18 @@ Please downlaod latest toon cli and convert that tools.json to tools.toon file a
 
 So look at the key.dx file and in there I have maid the keys to the lowest 949 token so in the descriptions.dx file there is descriptions now I want to add that keys "" descriptions with those real descriptiones in the descriptoions.dx file newline means next descripition so plese create a nodejs script to part that keys.dx and add those - first if the descriptions id like really just simple then we don't need to add it but if its like important then we should add it as today ai models already know the 
 
+Create a ai agent orb that will its eyes and one mouth animated the eye will blink and will have all kinds of hover, click, dblclick and all kinds of interactions response in cute face and will have physics behind it and will be complete by code and new emotion creator correctly so we have to put serious smooth framer motion animations in it and will be like these images - and mostly be vercel dark theme by default with vercel light theme and on strong emotions there will rainbow aniamtion smooth color glow around its circle correctly!!!
+
+This is a system instruction prompt dx-tui and its current 495 tokens so please first rebrand this as "Dx - Enhanced Development Experience" Its a superapp created by EssenceFromExistence and dx has a entire ecosystem in it with tui, desktop, mobile, cli, website and its the fastest, cheapest, most performant one
+
+1. tool schema = 950
+2. dx serializer compact/tool schema helper = 25
+3. system prompt = 125
+4. user info = 25
+5. git status = 25
+6. mcp+skills+hooks+plugins+connects+channels = 50
+7. dx tools = 50
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 1. First Prompt + Dx tools
@@ -225,3 +237,9 @@ So look at the key.dx file and in there I have maid the keys to the lowest 949 t
 3. Channel
 4. Plugin
 5. Connect
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
