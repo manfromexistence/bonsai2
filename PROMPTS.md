@@ -238,8 +238,45 @@ This is a system instruction prompt dx-tui and its current 495 tokens so please 
 4. Plugins
 5. Connects
 
+So after taking actions via openclaw, and hermes-agent's auto update skills loop we now have grok bot's record a skills so what is the latest ai agents powers that can go viral as I am creating my ai agent so I need ideas that are thses types of uniqe and game changing!!!
+
+I have a game changing latest and unique idea - so latest grok build has a record a screen but we will have all the time daemon that will record whatever you do in the screens like  a log in markdown files like it will have like this:
+1:08PM=actioins
+So its record a screen but in text markdown that any agents can then just search that markdown file with the time frame so anyone can just tell ai agents that what I did with an app or any time and the ai agents check when the user did and user did like the keyboard inputs, mouse postions and app opened in what positions or state
+
+
+Its the best so its records all the things the user did in markdown text so any agents can use this and keeps user privacy at the same time as its just records actions in texts so its becomes just enough good state for usefull but not that it drains too much resources as its will just records user actions and if some times actiosn are same then there will be same text and we will divide this in files and folders so its not a gian file that we can't feed to ai agent - so it sucsessfully records everything and in the best way possible and openclaw was 24/7 agent buts it not only does everything but also does 24/7 recording - now we can do that cause we are in rust so many less softwares has this so openclaw, hermes-agent or others can't do it the best way as rust is the best language that can pull this of - keeping alive all the time but still be nothing a big fat deaemon!!!
+
+So we can be more viral than openclaw - just think about it!!!
+
+That is awesome now in our model picker we have hardcoded the local 2 models so please remove that there won't be like that hardcoded models so in the default free models like the grok models and the opencode zen free models + openroute or anyt other free models without any api keys and then connected providers models and make sure alongisde the models we will show `[model name] (provider name)` in the /models suggestions and is there any way to shows opensource gglm models and make search filter so please in /model suggestions box please we will gglm model names and clicking on them we will download those model in the os dx cache folder like LOCALDATA dx/flow/models/llm folder and we will show the models in that folder on any os in our tui in the /models suggestion not hardcoded models name!!!
+
+That is awesome - now the whole point of our dx-memory is then when the dx-memory daemon is on the markdown text will see in a way so that by reading those logs any ai agent can know what the user is doing so please start that daemon and tell me what I am doing right now and if it matches my actual task them our dx-memory is complete and also tell me what is the files and folders are we using  for our dx-memory markdown file creation and how much os ram and other resources are we using and if its not hardware best os performance then plase keep making our dx-memory the best possible to be in hardware limit as its need to be working all the time on user os so it needs to be battle-tested, production-ready and professional 100 out of 100!!!
+
+Is there any groundbreaking packages turn images to the most efficent sized data so it can take time to process but I want to be moved liked the smallest version of that image - as you are right that we should make our dx-memory more better as our text will be the default one but we will also support miages on big events that will make our dx-memory the best!!! so please best images compressions or like zstd to xomplesss it and how much we can comporess it??
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1. Other interactions of up and down arrow should be silent while the extension menu is open
+2. Auto Update
+3. Agent
+4. Record Actions
+5. Channels
+6. Plugins
+7. Connects
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+Now, don't do anything and just understand - we use xai grok build fork and created our dx-tui as adding lots of features so yeah we have keep up to date with as they are a big company so free work from them so why not by our top priority that our dx-tui based features all stays as in the grok-tui from them they have topbar in a tui, bro its a waste and we moved it to our bottom bar right and then the chatinputbox top line at bottombar left saving space for the actual messages what actually matter so they update they do there should reflect on our tui bottombar right so do you understand the situation and create AGENT.md file so every next ai agents understand this!!!
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+That is awesome now please create first AGENTS.md file with TODO.md, CHANGELOG.md file and update README.md file with what you are doing and out of 100% what is the status so everything you do falls correctlys and professional 100 out of 100, production-ready!!!
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+In the tool scheme we are sending 26 tools right?? use "token help" and its ai command to know about the token
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

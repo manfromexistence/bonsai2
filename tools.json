@@ -1,0 +1,778 @@
+[
+    {
+        "name": "run_terminal_command",
+        "description": "Run a shell command and return its output.\n\nUsage notes:\n  - You can specify an optional timeout in milliseconds (up to 36000000ms). If not specified, foreground commands exceeding the default timeout will be automatically backgrounded instead of killed. You will receive a task id to check output later. Background tasks are not bounded by the default: with timeout omitted or 0 they run until they exit or are killed; a positive timeout still applies.\n  - Timeout enforcement: when the timeout fires, the wrapper terminates the child's Job Object, killing every descendant process immediately (no graceful-termination grace period). `timeout: 0` in `background: true` mode disables the wrapper timeout entirely; the child's lifetime is owned by the model via kill_command_or_subagent.\n  - If the output exceeds 40000 characters, the middle is truncated (you keep the beginning and end) and the result includes the path to a log file with the full output, which you can read or search.\n  - You can use the background parameter to run the command in the background (e.g., dev servers, long builds): it returns a task id immediately and keeps running in the background. You are notified on completion, so do not poll or sleep-wait for it.\n  - The Unix utilities `grep`, `head`, `tail`, `sed`, `awk`, and `find` are NOT available in this shell. Use the dedicated tools instead.",
+        "parameters": {
+            "required": [
+                "command",
+                "description"
+            ],
+            "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "timeout": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "format": "uint64",
+                    "minimum": 0,
+                    "default": 120000,
+                    "maximum": 36000000
+                },
+                "background": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "description": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "read_file",
+        "description": "Read a file.\n\nUsage:\n- The target_file parameter can be a relative path in the workspace or an absolute path\n- By default, it reads up to 1000 lines starting from the beginning of the file\n- Line numbers (1-based) appear as anchors in the format LINE_NUMBER→LINE_CONTENT on the first returned line and on every 10th line of the file; the lines in between show content only. Count from the nearest anchor when referring to a specific line\n- This tool can read PDF files (.pdf), PowerPoint files (.pptx), Jupyter notebooks (.ipynb files), and image files (e.g. PNG, JPG, etc).\n- When reading an image file the contents are presented visually as this tool uses multimodal LLMs.",
+        "parameters": {
+            "required": [
+                "target_file"
+            ],
+            "properties": {
+                "target_file": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "integer",
+                    "default": 1
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "pages": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "format": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "search_replace",
+        "description": "Replace an exact string in a file.\n\n- `read_file` prefixes each line with \"LINE_NUMBER→\". That prefix is not part of the file: match only what comes after the →, with its exact indentation.\n- `old_string` must match exactly one place in the file. If it appears more than once, add surrounding lines to make it unique, or set `replace_all` to change every occurrence (handy for renaming an identifier).\n- To create a new file, set `old_string` to an empty string.",
+        "parameters": {
+            "required": [
+                "file_path",
+                "old_string",
+                "new_string"
+            ],
+            "properties": {
+                "file_path": {
+                    "type": "string"
+                },
+                "old_string": {
+                    "type": "string"
+                },
+                "new_string": {
+                    "type": "string"
+                },
+                "replace_all": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "list_dir",
+        "description": "Lists files and directories in a given path.\nThe 'target_directory' parameter can be relative to the workspace root or absolute.\n\nOther details:\n    - The result does not display dot-files and dot-directories.\n    - Respects .gitignore patterns (files/directories ignored by git are not shown).\n    - Large directories are summarized with file counts and extension breakdowns instead of listing all files.",
+        "parameters": {
+            "required": [
+                "target_directory"
+            ],
+            "properties": {
+                "target_directory": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "grep",
+        "description": "Search file contents with regular expressions (ripgrep).\n\n- Full regex syntax, so escape literal special characters: `functionCall\\(`, or `interface\\{\\}` to find interface{} in Go.\n- Pass pattern as a raw regex string — no surrounding quotes.\n- Respects .gitignore unless you pass a broad glob like '--glob *'.\n- Only filter by 'type' or 'glob' when you are sure of the file type; import paths may not match source file types (.js vs .ts).\n- Output is ripgrep-style: ':' marks match lines, '-' marks context lines, grouped by file. Large results are capped and report \"at least\" counts.",
+        "parameters": {
+            "required": [
+                "pattern"
+            ],
+            "properties": {
+                "pattern": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "glob": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "-B": {
+                    "type": "integer"
+                },
+                "-A": {
+                    "type": "integer"
+                },
+                "-C": {
+                    "type": "integer"
+                },
+                "-i": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "type": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "head_limit": {
+                    "type": "integer"
+                },
+                "multiline": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "kill_command_or_subagent",
+        "description": "Terminate a running background task, monitor, or subagent.\n\nUsage notes:\n- Pass its task_id (a monitor's task_id is returned by monitor).\n- Terminates the Job Object of a bash task or monitor; sends Cancel+Shutdown to a subagent.\n- Returns success if the task was killed or had already exited.",
+        "parameters": {
+            "required": [
+                "task_id"
+            ],
+            "properties": {
+                "task_id": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "todo_write",
+        "description": "Create and manage a structured task list. The user sees this list live — it is your primary way to show progress.\n\nUse for any task with 3+ steps. Skip for trivial single-step work.",
+        "parameters": {
+            "required": [
+                "todos"
+            ],
+            "properties": {
+                "merge": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "todos": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "content": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "status": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "enum": [
+                                    "pending",
+                                    "in_progress",
+                                    "completed",
+                                    "cancelled",
+                                    null
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id"
+                        ]
+                    }
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "get_command_or_subagent_output",
+        "description": "Get output and status from a background task, monitor, or subagent.\n\nUsage notes:\n- Pass task_ids with one or more ids from background=true commands or subagents (a monitor's task_id is returned by monitor); for a single task use a one-element array. Multiple ids with a positive timeout_ms wait until all complete\n- Omit timeout_ms or pass 0 for a non-blocking status snapshot; set a positive timeout_ms to wait up to that many milliseconds, capped at 600000 (~10 min)\n- Returns current output, status, and exit code if completed\n- If output is large, use read_file on the output_file path",
+        "parameters": {
+            "properties": {
+                "task_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": []
+                },
+                "timeout_ms": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "format": "uint64",
+                    "minimum": 0,
+                    "default": null,
+                    "maximum": 600000
+                }
+            },
+            "required": [],
+            "type": "object"
+        }
+    },
+    {
+        "name": "spawn_subagent",
+        "description": "Start a subagent that works on a task independently and reports back.\n\nAgent types:\n\n- **general-purpose**: General purpose agent for multi-step tasks. Has access to: run_terminal_command, read_file, search_replace, list_dir, grep, web_search, and todo_write.\n- **explore**: Fast, read-only agent specialized for codebase exploration. Read-only — has access to: read_file, list_dir, grep.\n- **plan**: Software architect for planning implementation strategies. Read-only — has access to: read_file, list_dir, grep, web_search, and todo_write. File editing and command execution are not available.\n\n## Usage notes\n- When the agent is done, it returns a single message with its agent ID. Use that ID to resume the agent later for follow-up work.\n- background: Returns immediately with a subagent_id. Use get_command_or_subagent_output to retrieve results. This is set to true by default.\n- Subagents receive a compacted version of project instructions (AGENTS.md). If the task requires detailed conventions (e.g., build rules, testing patterns), include the relevant rules directly in the prompt.\n- When using the spawn_subagent tool, you must specify a subagent_type parameter to select which agent type to use.\n\nResuming a previous agent (resume_from):\n- Use resume_from to continue a previously completed subagent's conversation. Pass the subagent_id returned by a prior spawn_subagent call. A resumed agent keeps its full transcript and tool state, so you only need to describe what changed since the last run — don't re-explain the original task.\n- The resumed agent must use the same subagent_type as the source.\n\nIsolation mode:\n- Use isolation to control the child's execution environment. With \"worktree\", the child runs in an isolated git worktree whose edits don't affect the parent workspace; the worktree is preserved after completion and its path is returned in the output.\n\nIf the user explicitly asks for the model of a subagent/task, you may ONLY use model slugs from this list:\n- big-pickle\n- cerebras/gemma-4-31b\n- cerebras/gpt-oss-120b\n- cerebras/zai-glm-4.7\n- cohere/c4ai-aya-expanse-32b\n- cohere/c4ai-aya-expanse-8b\n- cohere/c4ai-aya-vision-32b\n- cohere/c4ai-aya-vision-8b\n- cohere/command-a-03-2025\n- cohere/command-a-plus-05-2026\n- cohere/command-a-reasoning-08-2025\n- cohere/command-a-translate-08-2025\n- cohere/command-a-vision-07-2025\n- cohere/command-r-08-2024\n- cohere/command-r-plus-08-2024\n- cohere/command-r7b-12-2024\n- cohere/command-r7b-arabic-02-2025\n- cohere/north-mini-code-1-0\n- deepseek-v4-flash-free\n- deepseek/deepseek-chat\n- deepseek/deepseek-reasoner\n- deepseek/deepseek-v4-flash\n- deepseek/deepseek-v4-pro\n- github-models/ai21-labs/ai21-jamba-1.5-large\n- github-models/ai21-labs/ai21-jamba-1.5-mini\n- github-models/cohere/cohere-command-a\n- github-models/cohere/cohere-command-r\n- github-models/cohere/cohere-command-r-08-2024\n- github-models/cohere/cohere-command-r-plus\n- github-models/cohere/cohere-command-r-plus-08-2024\n- github-models/core42/jais-30b-chat\n- github-models/deepseek/deepseek-r1\n- github-models/deepseek/deepseek-r1-0528\n- github-models/deepseek/deepseek-v3-0324\n- github-models/meta/llama-3.2-11b-vision-instruct\n- github-models/meta/llama-3.2-90b-vision-instruct\n- github-models/meta/llama-3.3-70b-instruct\n- github-models/meta/llama-4-maverick-17b-128e-instruct-fp8\n- github-models/meta/llama-4-scout-17b-16e-instruct\n- github-models/meta/meta-llama-3-70b-instruct\n- github-models/meta/meta-llama-3-8b-instruct\n- github-models/meta/meta-llama-3.1-405b-instruct\n- github-models/meta/meta-llama-3.1-70b-instruct\n- github-models/meta/meta-llama-3.1-8b-instruct\n- github-models/microsoft/mai-ds-r1\n- github-models/microsoft/phi-3-medium-128k-instruct\n- github-models/microsoft/phi-3-medium-4k-instruct\n- github-models/microsoft/phi-3-mini-128k-instruct\n- github-models/microsoft/phi-3-mini-4k-instruct\n- github-models/microsoft/phi-3-small-128k-instruct\n- github-models/microsoft/phi-3-small-8k-instruct\n- github-models/microsoft/phi-3.5-mini-instruct\n- github-models/microsoft/phi-3.5-moe-instruct\n- github-models/microsoft/phi-3.5-vision-instruct\n- github-models/microsoft/phi-4\n- github-models/microsoft/phi-4-mini-instruct\n- github-models/microsoft/phi-4-mini-reasoning\n- github-models/microsoft/phi-4-multimodal-instruct\n- github-models/microsoft/phi-4-reasoning\n- github-models/mistral-ai/codestral-2501\n- github-models/mistral-ai/ministral-3b\n- github-models/mistral-ai/mistral-large-2411\n- github-models/mistral-ai/mistral-medium-2505\n- github-models/mistral-ai/mistral-nemo\n- github-models/mistral-ai/mistral-small-2503\n- github-models/openai/gpt-4.1\n- github-models/openai/gpt-4.1-mini\n- github-models/openai/gpt-4.1-nano\n- github-models/openai/gpt-4o\n- github-models/openai/gpt-4o-mini\n- github-models/openai/o1\n- github-models/openai/o1-mini\n- github-models/openai/o1-preview\n- github-models/openai/o3\n- github-models/openai/o3-mini\n- github-models/openai/o4-mini\n- github-models/xai/grok-3\n- github-models/xai/grok-3-mini\n- google/deep-research-max-preview-04-2026\n- google/deep-research-preview-04-2026\n- google/gemini-2.0-flash\n- google/gemini-2.0-flash-lite\n- google/gemini-2.5-computer-use-preview-10-2025\n- google/gemini-2.5-flash\n- google/gemini-2.5-flash-image\n- google/gemini-2.5-flash-lite\n- google/gemini-2.5-flash-preview-tts\n- google/gemini-2.5-pro\n- google/gemini-2.5-pro-preview-tts\n- google/gemini-3-flash-preview\n- google/gemini-3-pro-image\n- google/gemini-3-pro-image-preview\n- google/gemini-3-pro-preview\n- google/gemini-3.1-flash-image\n- google/gemini-3.1-flash-image-preview\n- google/gemini-3.1-flash-lite\n- google/gemini-3.1-flash-lite-image\n- google/gemini-3.1-flash-lite-preview\n- google/gemini-3.1-flash-live-preview\n- google/gemini-3.1-flash-tts-preview\n- google/gemini-3.1-pro-preview\n- google/gemini-3.1-pro-preview-customtools\n- google/gemini-3.5-flash\n- google/gemini-3.5-flash-lite\n- google/gemini-3.5-live-translate-preview\n- google/gemini-3.6-flash\n- google/gemini-embedding-001\n- google/gemini-embedding-2\n- google/gemini-flash-latest\n- google/gemini-flash-lite-latest\n- google/gemini-omni-flash-preview\n- google/gemini-robotics-er-1.6-preview\n- google/gemma-4-26b-a4b-it\n- google/gemma-4-31b-it\n- google/lyria-3-clip-preview\n- google/lyria-3-pro-preview\n- google/veo-3.1-fast-generate-preview\n- google/veo-3.1-generate-preview\n- google/veo-3.1-lite-generate-preview\n- grok-4.6\n- groq/canopylabs/orpheus-arabic-saudi\n- groq/canopylabs/orpheus-v1-english\n- groq/groq/compound\n- groq/groq/compound-mini\n- groq/llama-3.1-8b-instant\n- groq/llama-3.3-70b-versatile\n- groq/meta-llama/llama-4-scout-17b-16e-instruct\n- groq/meta-llama/llama-prompt-guard-2-22m\n- groq/meta-llama/llama-prompt-guard-2-86m\n- groq/openai/gpt-oss-120b\n- groq/openai/gpt-oss-20b\n- groq/openai/gpt-oss-safeguard-20b\n- groq/qwen/qwen3-32b\n- groq/whisper-large-v3\n- groq/whisper-large-v3-turbo\n- huggingface/MiniMaxAI/MiniMax-M2\n- huggingface/MiniMaxAI/MiniMax-M2.1\n- huggingface/MiniMaxAI/MiniMax-M2.5\n- huggingface/MiniMaxAI/MiniMax-M2.7\n- huggingface/MiniMaxAI/MiniMax-M3\n- huggingface/Qwen/Qwen3-235B-A22B\n- huggingface/Qwen/Qwen3-235B-A22B-Thinking-2507\n- huggingface/Qwen/Qwen3-32B\n- huggingface/Qwen/Qwen3-Coder-30B-A3B-Instruct\n- huggingface/Qwen/Qwen3-Coder-480B-A35B-Instruct\n- huggingface/Qwen/Qwen3-Coder-Next\n- huggingface/Qwen/Qwen3-Embedding-4B\n- huggingface/Qwen/Qwen3-Embedding-8B\n- huggingface/Qwen/Qwen3-Next-80B-A3B-Instruct\n- huggingface/Qwen/Qwen3-Next-80B-A3B-Thinking\n- huggingface/Qwen/Qwen3.5-122B-A10B\n- huggingface/Qwen/Qwen3.5-27B\n- huggingface/Qwen/Qwen3.5-35B-A3B\n- huggingface/Qwen/Qwen3.5-397B-A17B\n- huggingface/Qwen/Qwen3.5-9B\n- huggingface/Qwen/Qwen3.6-27B\n- huggingface/Qwen/Qwen3.6-35B-A3B\n- huggingface/XiaomiMiMo/MiMo-V2-Flash\n- huggingface/XiaomiMiMo/MiMo-V2.5\n- huggingface/XiaomiMiMo/MiMo-V2.5-Pro\n- huggingface/deepseek-ai/DeepSeek-R1\n- huggingface/deepseek-ai/DeepSeek-R1-0528\n- huggingface/deepseek-ai/DeepSeek-V3.2\n- huggingface/deepseek-ai/DeepSeek-V4-Flash\n- huggingface/deepseek-ai/DeepSeek-V4-Pro\n- huggingface/google/gemma-4-26B-A4B-it\n- huggingface/google/gemma-4-31B-it\n- huggingface/meta-llama/Llama-3.3-70B-Instruct\n- huggingface/moonshotai/Kimi-K2-Instruct\n- huggingface/moonshotai/Kimi-K2-Instruct-0905\n- huggingface/moonshotai/Kimi-K2-Thinking\n- huggingface/moonshotai/Kimi-K2.5\n- huggingface/moonshotai/Kimi-K2.6\n- huggingface/moonshotai/Kimi-K2.7-Code\n- huggingface/openai/gpt-oss-120b\n- huggingface/openai/gpt-oss-20b\n- huggingface/stepfun-ai/Step-3.5-Flash\n- huggingface/stepfun-ai/Step-3.7-Flash\n- huggingface/zai-org/GLM-4.5\n- huggingface/zai-org/GLM-4.5-Air\n- huggingface/zai-org/GLM-4.5V\n- huggingface/zai-org/GLM-4.6\n- huggingface/zai-org/GLM-4.7\n- huggingface/zai-org/GLM-4.7-Flash\n- huggingface/zai-org/GLM-5\n- huggingface/zai-org/GLM-5.1\n- huggingface/zai-org/GLM-5.2\n- hy3-free\n- laguna-s-2.1-free\n- mimo-v2.5-free\n- mistral/codestral-latest\n- mistral/devstral-2512\n- mistral/devstral-latest\n- mistral/devstral-medium-2507\n- mistral/devstral-medium-latest\n- mistral/devstral-small-2505\n- mistral/devstral-small-2507\n- mistral/labs-devstral-small-2512\n- mistral/magistral-medium-latest\n- mistral/magistral-small\n- mistral/ministral-3b-latest\n- mistral/ministral-8b-latest\n- mistral/mistral-embed\n- mistral/mistral-large-2411\n- mistral/mistral-large-2512\n- mistral/mistral-large-latest\n- mistral/mistral-medium-2505\n- mistral/mistral-medium-2508\n- mistral/mistral-medium-2604\n- mistral/mistral-medium-latest\n- mistral/mistral-nemo\n- mistral/mistral-small-2506\n- mistral/mistral-small-2603\n- mistral/mistral-small-latest\n- mistral/open-mistral-7b\n- mistral/open-mistral-nemo\n- mistral/open-mixtral-8x22b\n- mistral/open-mixtral-8x7b\n- mistral/pixtral-12b\n- mistral/pixtral-large-latest\n- muse-spark-1.2-contributor-free\n- nemotron-3-ultra-free\n- nemotron-3.5-lightning-free\n- openrouter/ai21/jamba-large-1.7\n- openrouter/aion-labs/aion-2.0\n- openrouter/aion-labs/aion-3.0\n- openrouter/aion-labs/aion-3.0-mini\n- openrouter/aion-labs/aion-rp-llama-3.1-8b\n- openrouter/allenai/olmo-3-32b-think\n- openrouter/amazon/nova-2-lite-v1\n- openrouter/amazon/nova-lite-v1\n- openrouter/amazon/nova-micro-v1\n- openrouter/amazon/nova-premier-v1\n- openrouter/amazon/nova-pro-v1\n- openrouter/anthracite-org/magnum-v4-72b\n- openrouter/anthropic/claude-3-haiku\n- openrouter/anthropic/claude-fable-5\n- openrouter/anthropic/claude-haiku-4.5\n- openrouter/anthropic/claude-opus-4\n- openrouter/anthropic/claude-opus-4.1\n- openrouter/anthropic/claude-opus-4.5\n- openrouter/anthropic/claude-opus-4.6\n- openrouter/anthropic/claude-opus-4.7\n- openrouter/anthropic/claude-opus-4.7-fast\n- openrouter/anthropic/claude-opus-4.8\n- openrouter/anthropic/claude-opus-4.8-fast\n- openrouter/anthropic/claude-opus-5\n- openrouter/anthropic/claude-opus-5-fast\n- openrouter/anthropic/claude-sonnet-4\n- openrouter/anthropic/claude-sonnet-4.5\n- openrouter/anthropic/claude-sonnet-4.6\n- openrouter/anthropic/claude-sonnet-5\n- openrouter/arcee-ai/trinity-large-thinking\n- openrouter/arcee-ai/virtuoso-large\n- openrouter/baidu/ernie-4.5-vl-424b-a47b\n- openrouter/bytedance-seed/seed-1.6\n- openrouter/bytedance-seed/seed-1.6-flash\n- openrouter/bytedance-seed/seed-2.0-lite\n- openrouter/bytedance-seed/seed-2.0-mini\n- openrouter/bytedance/ui-tars-1.5-7b\n- openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition\n- openrouter/cohere/command-a\n- openrouter/cohere/command-r-08-2024\n- openrouter/cohere/command-r-plus-08-2024\n- openrouter/cohere/command-r7b-12-2024\n- openrouter/cohere/north-mini-code:free\n- openrouter/deepcogito/cogito-v2.1-671b\n- openrouter/deepseek/deepseek-chat\n- openrouter/deepseek/deepseek-chat-v3-0324\n- openrouter/deepseek/deepseek-chat-v3.1\n- openrouter/deepseek/deepseek-r1\n- openrouter/deepseek/deepseek-r1-0528\n- openrouter/deepseek/deepseek-r1-distill-llama-70b\n- openrouter/deepseek/deepseek-v3.1-terminus\n- openrouter/deepseek/deepseek-v3.2\n- openrouter/deepseek/deepseek-v3.2-exp\n- openrouter/deepseek/deepseek-v4-flash\n- openrouter/deepseek/deepseek-v4-pro\n- openrouter/google/gemini-2.5-flash\n- openrouter/google/gemini-2.5-flash-image\n- openrouter/google/gemini-2.5-flash-lite\n- openrouter/google/gemini-2.5-pro\n- openrouter/google/gemini-2.5-pro-preview\n- openrouter/google/gemini-2.5-pro-preview-05-06\n- openrouter/google/gemini-3-flash-preview\n- openrouter/google/gemini-3-pro-image\n- openrouter/google/gemini-3-pro-image-preview\n- openrouter/google/gemini-3.1-flash-image\n- openrouter/google/gemini-3.1-flash-image-preview\n- openrouter/google/gemini-3.1-flash-lite\n- openrouter/google/gemini-3.1-flash-lite-image\n- openrouter/google/gemini-3.1-flash-lite-preview\n- openrouter/google/gemini-3.1-pro-preview\n- openrouter/google/gemini-3.1-pro-preview-customtools\n- openrouter/google/gemini-3.5-flash\n- openrouter/google/gemini-3.5-flash-lite\n- openrouter/google/gemini-3.6-flash\n- openrouter/google/gemma-2-27b-it\n- openrouter/google/gemma-3-12b-it\n- openrouter/google/gemma-3-27b-it\n- openrouter/google/gemma-3-4b-it\n- openrouter/google/gemma-3n-e4b-it\n- openrouter/google/gemma-4-26b-a4b-it\n- openrouter/google/gemma-4-26b-a4b-it:free\n- openrouter/google/gemma-4-31b-it\n- openrouter/google/gemma-4-31b-it:free\n- openrouter/google/lyria-3-clip-preview\n- openrouter/google/lyria-3-pro-preview\n- openrouter/gryphe/mythomax-l2-13b\n- openrouter/ibm-granite/granite-4.0-h-micro\n- openrouter/ibm-granite/granite-4.1-8b\n- openrouter/inception/mercury-2\n- openrouter/inclusionai/ling-2.6-1t\n- openrouter/inclusionai/ling-2.6-flash\n- openrouter/inclusionai/ling-3.0-flash:free\n- openrouter/inclusionai/ring-2.6-1t\n- openrouter/inflection/inflection-3-pi\n- openrouter/inflection/inflection-3-productivity\n- openrouter/kwaipilot/kat-coder-air-v2.5\n- openrouter/kwaipilot/kat-coder-pro-v2\n- openrouter/kwaipilot/kat-coder-pro-v2.5\n- openrouter/mancer/weaver\n- openrouter/meituan/longcat-2.0\n- openrouter/meta-llama/llama-3.1-70b-instruct\n- openrouter/meta-llama/llama-3.1-8b-instruct\n- openrouter/meta-llama/llama-3.2-1b-instruct\n- openrouter/meta-llama/llama-3.2-3b-instruct\n- openrouter/meta-llama/llama-3.3-70b-instruct\n- openrouter/meta-llama/llama-4-maverick\n- openrouter/meta-llama/llama-4-scout\n- openrouter/meta-llama/llama-guard-4-12b\n- openrouter/meta/muse-spark-1.1\n- openrouter/microsoft/phi-4\n- openrouter/microsoft/wizardlm-2-8x22b\n- openrouter/minimax/minimax-01\n- openrouter/minimax/minimax-m1\n- openrouter/minimax/minimax-m2\n- openrouter/minimax/minimax-m2-her\n- openrouter/minimax/minimax-m2.1\n- openrouter/minimax/minimax-m2.5\n- openrouter/minimax/minimax-m2.7\n- openrouter/minimax/minimax-m3\n- openrouter/mistralai/codestral-2508\n- openrouter/mistralai/devstral-2512\n- openrouter/mistralai/ministral-14b-2512\n- openrouter/mistralai/ministral-3b-2512\n- openrouter/mistralai/ministral-8b-2512\n- openrouter/mistralai/mistral-large\n- openrouter/mistralai/mistral-large-2407\n- openrouter/mistralai/mistral-large-2512\n- openrouter/mistralai/mistral-medium-3\n- openrouter/mistralai/mistral-medium-3-5\n- openrouter/mistralai/mistral-medium-3.1\n- openrouter/mistralai/mistral-nemo\n- openrouter/mistralai/mistral-saba\n- openrouter/mistralai/mistral-small-24b-instruct-2501\n- openrouter/mistralai/mistral-small-2603\n- openrouter/mistralai/mistral-small-3.1-24b-instruct\n- openrouter/mistralai/mistral-small-3.2-24b-instruct\n- openrouter/mistralai/mixtral-8x22b-instruct\n- openrouter/mistralai/voxtral-small-24b-2507\n- openrouter/moonshotai/kimi-k2\n- openrouter/moonshotai/kimi-k2-0905\n- openrouter/moonshotai/kimi-k2-thinking\n- openrouter/moonshotai/kimi-k2.5\n- openrouter/moonshotai/kimi-k2.6\n- openrouter/moonshotai/kimi-k2.7-code\n- openrouter/moonshotai/kimi-k3\n- openrouter/morph/morph-v3-fast\n- openrouter/morph/morph-v3-large\n- openrouter/nex-agi/nex-n2-mini\n- openrouter/nex-agi/nex-n2-pro\n- openrouter/nousresearch/hermes-3-llama-3.1-405b\n- openrouter/nousresearch/hermes-3-llama-3.1-70b\n- openrouter/nousresearch/hermes-4-405b\n- openrouter/nousresearch/hermes-4-70b\n- openrouter/nvidia/nemotron-3-nano-30b-a3b\n- openrouter/nvidia/nemotron-3-nano-30b-a3b:free\n- openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free\n- openrouter/nvidia/nemotron-3-super-120b-a12b\n- openrouter/nvidia/nemotron-3-super-120b-a12b:free\n- openrouter/nvidia/nemotron-3-ultra-550b-a55b\n- openrouter/nvidia/nemotron-3-ultra-550b-a55b:free\n- openrouter/nvidia/nemotron-3.5-content-safety:free\n- openrouter/nvidia/nemotron-nano-12b-v2-vl:free\n- openrouter/nvidia/nemotron-nano-9b-v2:free\n- openrouter/openai/gpt-3.5-turbo\n- openrouter/openai/gpt-3.5-turbo-0613\n- openrouter/openai/gpt-3.5-turbo-16k\n- openrouter/openai/gpt-3.5-turbo-instruct\n- openrouter/openai/gpt-4\n- openrouter/openai/gpt-4-turbo\n- openrouter/openai/gpt-4-turbo-preview\n- openrouter/openai/gpt-4.1\n- openrouter/openai/gpt-4.1-mini\n- openrouter/openai/gpt-4.1-nano\n- openrouter/openai/gpt-4o\n- openrouter/openai/gpt-4o-2024-05-13\n- openrouter/openai/gpt-4o-2024-08-06\n- openrouter/openai/gpt-4o-2024-11-20\n- openrouter/openai/gpt-4o-mini\n- openrouter/openai/gpt-4o-mini-2024-07-18\n- openrouter/openai/gpt-4o-mini-search-preview\n- openrouter/openai/gpt-4o-search-preview\n- openrouter/openai/gpt-5\n- openrouter/openai/gpt-5-chat\n- openrouter/openai/gpt-5-codex\n- openrouter/openai/gpt-5-image\n- openrouter/openai/gpt-5-image-mini\n- openrouter/openai/gpt-5-mini\n- openrouter/openai/gpt-5-nano\n- openrouter/openai/gpt-5-pro\n- openrouter/openai/gpt-5.1\n- openrouter/openai/gpt-5.1-chat\n- openrouter/openai/gpt-5.1-codex\n- openrouter/openai/gpt-5.1-codex-max\n- openrouter/openai/gpt-5.1-codex-mini\n- openrouter/openai/gpt-5.2\n- openrouter/openai/gpt-5.2-chat\n- openrouter/openai/gpt-5.2-codex\n- openrouter/openai/gpt-5.2-pro\n- openrouter/openai/gpt-5.3-chat\n- openrouter/openai/gpt-5.3-codex\n- openrouter/openai/gpt-5.4\n- openrouter/openai/gpt-5.4-image-2\n- openrouter/openai/gpt-5.4-mini\n- openrouter/openai/gpt-5.4-nano\n- openrouter/openai/gpt-5.4-pro\n- openrouter/openai/gpt-5.5\n- openrouter/openai/gpt-5.5-pro\n- openrouter/openai/gpt-5.6-luna\n- openrouter/openai/gpt-5.6-luna-pro\n- openrouter/openai/gpt-5.6-sol\n- openrouter/openai/gpt-5.6-sol-pro\n- openrouter/openai/gpt-5.6-terra\n- openrouter/openai/gpt-5.6-terra-pro\n- openrouter/openai/gpt-audio\n- openrouter/openai/gpt-audio-mini\n- openrouter/openai/gpt-chat-latest\n- openrouter/openai/gpt-oss-120b\n- openrouter/openai/gpt-oss-20b\n- openrouter/openai/gpt-oss-20b:free\n- openrouter/openai/gpt-oss-safeguard-20b\n- openrouter/openai/o1\n- openrouter/openai/o1-pro\n- openrouter/openai/o3\n- openrouter/openai/o3-deep-research\n- openrouter/openai/o3-mini\n- openrouter/openai/o3-mini-high\n- openrouter/openai/o3-pro\n- openrouter/openai/o4-mini\n- openrouter/openai/o4-mini-deep-research\n- openrouter/openai/o4-mini-high\n- openrouter/openrouter/auto\n- openrouter/openrouter/bodybuilder\n- openrouter/openrouter/free\n- openrouter/openrouter/fusion\n- openrouter/openrouter/pareto-code\n- openrouter/perceptron/perceptron-mk1\n- openrouter/perplexity/sonar\n- openrouter/perplexity/sonar-deep-research\n- openrouter/perplexity/sonar-pro\n- openrouter/perplexity/sonar-pro-search\n- openrouter/perplexity/sonar-reasoning-pro\n- openrouter/poolside/laguna-m.1\n- openrouter/poolside/laguna-m.1:free\n- openrouter/poolside/laguna-s-2.1\n- openrouter/poolside/laguna-s-2.1:free\n- openrouter/poolside/laguna-xs-2.1\n- openrouter/poolside/laguna-xs-2.1:free\n- openrouter/qwen/qwen-2.5-72b-instruct\n- openrouter/qwen/qwen-2.5-7b-instruct\n- openrouter/qwen/qwen-2.5-coder-32b-instruct\n- openrouter/qwen/qwen-plus\n- openrouter/qwen/qwen-plus-2025-07-28\n- openrouter/qwen/qwen-plus-2025-07-28:thinking\n- openrouter/qwen/qwen2.5-vl-72b-instruct\n- openrouter/qwen/qwen3-14b\n- openrouter/qwen/qwen3-235b-a22b\n- openrouter/qwen/qwen3-235b-a22b-2507\n- openrouter/qwen/qwen3-235b-a22b-thinking-2507\n- openrouter/qwen/qwen3-30b-a3b\n- openrouter/qwen/qwen3-30b-a3b-instruct-2507\n- openrouter/qwen/qwen3-30b-a3b-thinking-2507\n- openrouter/qwen/qwen3-32b\n- openrouter/qwen/qwen3-8b\n- openrouter/qwen/qwen3-coder\n- openrouter/qwen/qwen3-coder-30b-a3b-instruct\n- openrouter/qwen/qwen3-coder-flash\n- openrouter/qwen/qwen3-coder-next\n- openrouter/qwen/qwen3-coder-plus\n- openrouter/qwen/qwen3-max\n- openrouter/qwen/qwen3-max-thinking\n- openrouter/qwen/qwen3-next-80b-a3b-instruct\n- openrouter/qwen/qwen3-next-80b-a3b-thinking\n- openrouter/qwen/qwen3-vl-235b-a22b-instruct\n- openrouter/qwen/qwen3-vl-235b-a22b-thinking\n- openrouter/qwen/qwen3-vl-30b-a3b-instruct\n- openrouter/qwen/qwen3-vl-30b-a3b-thinking\n- openrouter/qwen/qwen3-vl-32b-instruct\n- openrouter/qwen/qwen3-vl-8b-instruct\n- openrouter/qwen/qwen3-vl-8b-thinking\n- openrouter/qwen/qwen3.5-122b-a10b\n- openrouter/qwen/qwen3.5-27b\n- openrouter/qwen/qwen3.5-35b-a3b\n- openrouter/qwen/qwen3.5-397b-a17b\n- openrouter/qwen/qwen3.5-9b\n- openrouter/qwen/qwen3.5-flash-02-23\n- openrouter/qwen/qwen3.5-plus-02-15\n- openrouter/qwen/qwen3.5-plus-20260420\n- openrouter/qwen/qwen3.6-27b\n- openrouter/qwen/qwen3.6-35b-a3b\n- openrouter/qwen/qwen3.6-flash\n- openrouter/qwen/qwen3.6-max-preview\n- openrouter/qwen/qwen3.6-plus\n- openrouter/qwen/qwen3.7-max\n- openrouter/qwen/qwen3.7-plus\n- openrouter/rekaai/reka-edge\n- openrouter/rekaai/reka-flash-3\n- openrouter/relace/relace-apply-3\n- openrouter/relace/relace-search\n- openrouter/sakana/fugu-ultra\n- openrouter/sao10k/l3-lunaris-8b\n- openrouter/sao10k/l3.1-euryale-70b\n- openrouter/sao10k/l3.3-euryale-70b\n- openrouter/stepfun/step-3.5-flash\n- openrouter/stepfun/step-3.7-flash\n- openrouter/tencent/hunyuan-a13b-instruct\n- openrouter/tencent/hy3\n- openrouter/tencent/hy3-preview\n- openrouter/thedrummer/cydonia-24b-v4.1\n- openrouter/thedrummer/rocinante-12b\n- openrouter/thedrummer/skyfall-36b-v2\n- openrouter/thedrummer/unslopnemo-12b\n- openrouter/thinkingmachines/inkling\n- openrouter/undi95/remm-slerp-l2-13b\n- openrouter/upstage/solar-pro-3\n- openrouter/writer/palmyra-x5\n- openrouter/x-ai/grok-4.20\n- openrouter/x-ai/grok-4.20-multi-agent\n- openrouter/x-ai/grok-4.3\n- openrouter/x-ai/grok-4.5\n- openrouter/x-ai/grok-build-0.1\n- openrouter/xiaomi/mimo-v2.5\n- openrouter/xiaomi/mimo-v2.5-pro\n- openrouter/z-ai/glm-4.5\n- openrouter/z-ai/glm-4.5-air\n- openrouter/z-ai/glm-4.5v\n- openrouter/z-ai/glm-4.6\n- openrouter/z-ai/glm-4.6v\n- openrouter/z-ai/glm-4.7\n- openrouter/z-ai/glm-4.7-flash\n- openrouter/z-ai/glm-5\n- openrouter/z-ai/glm-5-turbo\n- openrouter/z-ai/glm-5.1\n- openrouter/z-ai/glm-5.2\n- openrouter/z-ai/glm-5v-turbo\n- openrouter/~anthropic/claude-fable-latest\n- openrouter/~anthropic/claude-haiku-latest\n- openrouter/~anthropic/claude-opus-latest\n- openrouter/~anthropic/claude-sonnet-latest\n- openrouter/~google/gemini-flash-latest\n- openrouter/~google/gemini-pro-latest\n- openrouter/~moonshotai/kimi-latest\n- openrouter/~openai/gpt-latest\n- openrouter/~openai/gpt-mini-latest\n- openrouter/~x-ai/grok-latest\n- togetherai/LiquidAI/LFM2-24B-A2B\n- togetherai/MiniMaxAI/MiniMax-M2.5\n- togetherai/MiniMaxAI/MiniMax-M2.7\n- togetherai/MiniMaxAI/MiniMax-M3\n- togetherai/Qwen/Qwen2.5-7B-Instruct-Turbo\n- togetherai/Qwen/Qwen3-235B-A22B-Instruct-2507-tput\n- togetherai/Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8\n- togetherai/Qwen/Qwen3-Coder-Next-FP8\n- togetherai/Qwen/Qwen3.5-397B-A17B\n- togetherai/Qwen/Qwen3.5-9B\n- togetherai/Qwen/Qwen3.6-Plus\n- togetherai/Qwen/Qwen3.7-Max\n- togetherai/deepcogito/cogito-v2-1-671b\n- togetherai/deepseek-ai/DeepSeek-R1\n- togetherai/deepseek-ai/DeepSeek-V3\n- togetherai/deepseek-ai/DeepSeek-V3-1\n- togetherai/deepseek-ai/DeepSeek-V4-Pro\n- togetherai/essentialai/Rnj-1-Instruct\n- togetherai/google/gemma-3n-E4B-it\n- togetherai/google/gemma-4-31B-it\n- togetherai/meta-llama/Llama-3.3-70B-Instruct-Turbo\n- togetherai/meta-llama/Meta-Llama-3-8B-Instruct-Lite\n- togetherai/moonshotai/Kimi-K2.5\n- togetherai/moonshotai/Kimi-K2.6\n- togetherai/moonshotai/Kimi-K2.7-Code\n- togetherai/nvidia/nemotron-3-ultra-550b-a55b\n- togetherai/openai/gpt-oss-120b\n- togetherai/openai/gpt-oss-20b\n- togetherai/pearl-ai/gemma-4-31b-it\n- togetherai/thinkingmachines/Inkling\n- togetherai/zai-org/GLM-5\n- togetherai/zai-org/GLM-5.1\n- togetherai/zai-org/GLM-5.2\n- x-preview-f-free\n\nIf the user does not explicitly request a model, omit `model` to inherit the parent model.",
+        "parameters": {
+            "required": [
+                "prompt",
+                "description"
+            ],
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                },
+                "subagent_type": {
+                    "type": "string",
+                    "default": "general-purpose"
+                },
+                "background": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "capability_mode": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "enum": [
+                        "read-only",
+                        "read-write",
+                        "execute",
+                        "all",
+                        null
+                    ],
+                    "default": null
+                },
+                "isolation": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "enum": [
+                        "none",
+                        "worktree",
+                        null
+                    ]
+                },
+                "resume_from": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "cwd": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "model": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "description": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "scheduler_create",
+        "description": "Create a scheduled task that runs a prompt on a recurring interval, or update an existing one in place.\n\nSet fire_immediately: true to also fire once on creation; by default the first run waits for the interval.\n\nTo change an existing task, pass its task_id: provided fields replace old values, omitted ones are unchanged, and the schedule keeps its phase. An unknown id errors.\n\nUsage notes:\n- Interval format: \"5m\" (minutes), \"2h\" (hours), \"1d\" (days), \"60s\" (seconds, min 60)\n- Maximum 50 scheduled tasks at once\n- Tasks auto-expire after 7 days\n- For one-time delayed work, run a background terminal command (e.g. `sleep 1800 && <command>`) instead; its completion notifies you",
+        "parameters": {
+            "properties": {
+                "task_id": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "interval": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "prompt": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "durable": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "foreground": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "fire_immediately": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "required": [],
+            "type": "object"
+        }
+    },
+    {
+        "name": "scheduler_delete",
+        "description": "Cancel a scheduled task by ID.\n\nReturns success: true if the task was found and removed, false if no task with that ID exists.",
+        "parameters": {
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "scheduler_list",
+        "description": "List all active scheduled tasks with their IDs, prompts, intervals, and next fire times.",
+        "parameters": {
+            "properties": {},
+            "required": [],
+            "type": "object"
+        }
+    },
+    {
+        "name": "monitor",
+        "description": "Start a background monitor that streams events from a long-running script. Each stdout line is an event - you can keep working and notifications arrive in the chat. Exit ends the watch.\n\n**Output volume**: Every stdout line is a main-agent wake. Print only `DONE`/`FAILED`/`CANCELLED`. No progress or CHANGE lines. Use `grep --line-buffered` in pipes (plain `grep` buffers and delays events by minutes).\n\nSet `persistent: true` for session-length watches (PR monitoring, log tails) -- the monitor runs until you call kill_command_or_subagent or until the session ends. Otherwise it stops at `timeout_ms` (default 10h).",
+        "parameters": {
+            "required": [
+                "command",
+                "description"
+            ],
+            "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "timeout_ms": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "format": "uint64",
+                    "minimum": 0,
+                    "default": 36000000
+                },
+                "persistent": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "description": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "search_tool",
+        "description": "Search for MCP tools by keyword and retrieve their input schemas.\n\nIf status is \"partial\", some servers may still be connecting.",
+        "parameters": {
+            "required": [
+                "query"
+            ],
+            "properties": {
+                "query": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "format": "uint8",
+                    "minimum": 0,
+                    "maximum": 255,
+                    "default": 5
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "use_tool",
+        "description": "Call an MCP integration tool.\n\nThe `tool_name` must be the qualified `server__tool` name (e.g., `linear__save_issue`). The `tool_input` must conform exactly to the tool's input schema as returned by `search_tool`.",
+        "parameters": {
+            "required": [
+                "tool_name",
+                "tool_input"
+            ],
+            "properties": {
+                "tool_name": {
+                    "type": "string"
+                },
+                "tool_input": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "workflow",
+        "description": "Launch a workflow: a Rhai script that orchestrates subagents as one background run. Provide exactly one source: `name` (a registered workflow — built-in, or from the project `.grok/workflows/` or user `~/.grok/workflows/`), an inline `script`, or a `script_path`. Optionally pass `args` (bound to the script's `args`) and `agent_budget`, an absolute cap on cumulative child-agent calls: every agent() and parallel() item consumes one slot (schema retries do not); default 128. The host also caps live children per run (32 by default, host-configured) — larger parallel() panels are queued and still act as a barrier. The call returns immediately; progress appears in `/workflows` and completion is reported automatically — do not poll or sleep-wait.\n\nPrefer a registered workflow when one fits; author a script for bounded fan-out over a known work list, staged research and verification, or several independent perspectives. Before writing or editing a script, read the `create-workflow` skill's SKILL.md. `validate_only: true` runs a path-specific smoke check (metadata, compile, one canned-host path) — not proof that every branch or live tool works.\n\nA started run gets a session-unique display name (e.g. `review-changes`, `review-changes-2`) — the handle to show the user and use with `/workflow pause|resume|stop <name>`; keep run IDs internal. Each launch persists an editable `script_path`; edit it and launch as a new run to iterate. Use `resume_from_run_id` only for a same-process paused run (process restarts are terminal); a budget-limited run resumes only with a higher `agent_budget`. Save reusable scripts to `.grok/workflows/<name>.rhai`.",
+        "parameters": {
+            "properties": {
+                "agent_budget": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "format": "uint64",
+                    "minimum": 1,
+                    "maximum": 1024,
+                    "default": null
+                },
+                "name": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "script": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "script_path": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "args": {
+                    "default": null
+                },
+                "resume_from_run_id": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "validate_only": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "required": [],
+            "type": "object"
+        }
+    },
+    {
+        "name": "enter_plan_mode",
+        "description": "Use this tool when a task has ambiguity about the right approach or when the user asks you to write a plan. This tool enables a read-only plan mode where you explore the codebase and create an implementation plan for the user.",
+        "parameters": {
+            "properties": {},
+            "required": [],
+            "type": "object"
+        }
+    },
+    {
+        "name": "exit_plan_mode",
+        "description": "Exit plan mode and present your plan to the user.\n\nUse this after you have finished writing your plan to the plan file in plan mode.",
+        "parameters": {
+            "properties": {},
+            "required": [],
+            "type": "object"
+        }
+    },
+    {
+        "name": "ask_user_question",
+        "description": "Ask the user one or more multiple-choice questions.\n\n- Every question automatically gets an \"Other\" choice where the user can type their own answer.\n- Put your recommended option first and append \"(Recommended)\" to its label.",
+        "parameters": {
+            "required": [
+                "questions"
+            ],
+            "properties": {
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "question": {
+                                "type": "string"
+                            },
+                            "options": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "preview": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "description"
+                                    ]
+                                }
+                            },
+                            "multi_select": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "default": null
+                            }
+                        },
+                        "required": [
+                            "question",
+                            "options"
+                        ]
+                    }
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "web_search",
+        "description": "Search the web for up-to-date information, tailored for coding and software development tasks.",
+        "parameters": {
+            "required": [
+                "query"
+            ],
+            "properties": {
+                "query": {
+                    "type": "string"
+                },
+                "allowed_domains": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "web_fetch",
+        "description": "Fetch the content of a specific URL and return it as markdown.\n\nIMPORTANT: web_fetch WILL FAIL for authenticated or private URLs (e.g. Google Docs, Confluence, Jira, GitHub private repos). Use specialized MCP tools for those instead.\n\nUsage notes:\n  - HTTP URLs will be automatically upgraded to HTTPS\n  - Long pages will be truncated to fit your context window",
+        "parameters": {
+            "required": [
+                "url"
+            ],
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "image_gen",
+        "description": "Generate a new image from a text description using Imagine; returns the saved image's absolute path. When telling the user where it was saved, refer to it by its short session-relative path (e.g. `images/1.jpg`) rather than the absolute path, so it renders as a clickable link that opens the image. To produce multiple images, emit multiple tool calls with distinct prompts.",
+        "parameters": {
+            "required": [
+                "prompt"
+            ],
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                },
+                "aspect_ratio": {
+                    "type": "string",
+                    "default": "auto"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "image_edit",
+        "description": "Edit or transform existing image(s) via the xAI Imagine API; use instead of image_gen for image-to-image work (preserve likeness, transfer style, remix). Returns the saved image's absolute path. When telling the user where it was saved, refer to it by its short session-relative path (e.g. `images/1.jpg`) rather than the absolute path, so it renders as a clickable link that opens the image. Each required `image` is one reference — a user-attachment token (e.g. \"[Image #1]\"), an absolute filesystem path, or a `data:image/...;base64,...` URL (see the `image` parameter for the resolution order and details).",
+        "parameters": {
+            "required": [
+                "prompt",
+                "image"
+            ],
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "aspect_ratio": {
+                    "type": "string",
+                    "default": "auto"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "image_to_video",
+        "description": "Generate a video from a single source image; returns the saved video's absolute path. When telling the user where it was saved, refer to it by its short session-relative path (e.g. `videos/1.mp4`) rather than the absolute path, so it renders as a clickable link that opens the video. Provide `image` for the image to animate and optionally a `prompt` to guide the animation. Use this tool when the user provides an image and wants it animated, turned into a video, or used as the first frame. Example: image_to_video(image=\"/Users/me/photo.jpg\", prompt=\"gentle camera push-in with wind moving the hair\", duration=6, resolution_name=\"480p\")",
+        "parameters": {
+            "required": [
+                "image"
+            ],
+            "properties": {
+                "prompt": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "image": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "format": "uint32",
+                    "minimum": 0
+                },
+                "resolution_name": {
+                    "type": "string",
+                    "default": "480p"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "reference_to_video",
+        "description": "Generate a video from multiple reference images guided by a text prompt; returns the saved video's absolute path. When telling the user where it was saved, refer to it by its short session-relative path (e.g. `videos/1.mp4`) rather than the absolute path, so it renders as a clickable link that opens the video. Provide `images` with 2 to 7 image references and a required `prompt` describing the desired video. Use this tool when the user wants a video using multiple images as style/content references. Example: reference_to_video(prompt=\"blend these into a cinematic fashion shot with slow dolly movement\", images=[\"/Users/me/ref1.jpg\", \"/Users/me/ref2.jpg\"], aspect_ratio=\"16:9\", duration=6, resolution_name=\"480p\")",
+        "parameters": {
+            "required": [
+                "prompt",
+                "images",
+                "aspect_ratio"
+            ],
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "aspect_ratio": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "format": "uint32",
+                    "minimum": 0
+                },
+                "resolution_name": {
+                    "type": "string",
+                    "default": "480p"
+                }
+            },
+            "type": "object"
+        }
+    },
+    {
+        "name": "write",
+        "description": "Create or overwrite a file.\n\n- Writing to an existing path replaces the file — read it first with the read_file tool.\n- Parent directories are created for you.",
+        "parameters": {
+            "required": [
+                "file_path",
+                "content"
+            ],
+            "properties": {
+                "file_path": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    }
+]

@@ -1,3 +1,17 @@
+param(
+    # Build only selected project directories when supplied. Without this
+    # filter the script keeps its existing behavior and builds every project.
+    [string[]]$Project = @(),
+    # Keep release optimization for cross-target validation while avoiding
+    # the very expensive whole-program LTO link on every foreign target.
+    [switch]$FastCrossBuild,
+    # Optional cross-toolchain roots. Environment variables with the same
+    # DX_* names are also honored for CI/native builders.
+    [string]$MacosSdk = $env:DX_MACOS_SDK,
+    [string]$AndroidNdk = $env:DX_ANDROID_NDK,
+    [string]$LinuxSysroot = $env:DX_LINUX_SYSROOT
+)
+
 $ErrorActionPreference = "Continue"
 
 $ROOT = "G:\Dx"
@@ -8,31 +22,43 @@ New-Item -ItemType Directory -Force -Path $BIN  | Out-Null
 New-Item -ItemType Directory -Force -Path $LOGS | Out-Null
 
 $projects = @(
-    @{ dir = "check";      cargo_bin = "dx-check";               final_bin = "dx-check";               pkg = "";             jobs = 12 ; skip_arm64_msvc = $true }
-    @{ dir = "dcp";        cargo_bin = "dcp";                    final_bin = "dx-dcp";                 pkg = "";             jobs = 12 ; skip_arm64_msvc = $true }
-    @{ dir = "i18n";       cargo_bin = "dx-i18n";                final_bin = "dx-i18n";                pkg = "";             jobs = 12 ; bindgen_fix = $true ; whisper_fix = $true ; skip_arm64_msvc = $true }
+    @{ dir = "daemon";      cargo_bin = "dx-daemon";              final_bin = "dx-daemon";              pkg = "-p dx-daemon"; jobs = 12 }
+    @{ dir = "check";      cargo_bin = "dx-check";               final_bin = "dx-check";               pkg = "";             jobs = 12 }
+    @{ dir = "dcp";        cargo_bin = "dcp";                    final_bin = "dx-dcp";                 pkg = "";             jobs = 12 }
+    #@{ dir = "i18n";       cargo_bin = "dx-i18n";                final_bin = "dx-i18n";                pkg = "";             jobs = 12 ; bindgen_fix = $true ; whisper_fix = $true ; skip_arm64_msvc = $true }
     #@{ dir = "providers";  cargo_bin = "dx-providers";           final_bin = "dx-providers";           pkg = "";             jobs = 12 }
-    @{ dir = "driven";     cargo_bin = "driven";                 final_bin = "dx-driven";              pkg = "";             jobs = 12 ; skip_arm64_msvc = $true }
+    @{ dir = "driven";     cargo_bin = "driven";                 final_bin = "dx-driven";              pkg = "";             jobs = 12 }
     #@{ dir = "flow";       cargo_bin = "dx-flow";                final_bin = "dx-flow";                pkg = "";             jobs = 8  ; windows_only = $true }
-    @{ dir = "forge";      cargo_bin = "dx-forge";               final_bin = "dx-forge";               pkg = "";             jobs = 12 ; cflags_fix = $true ; skip_arm64_msvc = $true }
-    @{ dir = "icon";       cargo_bin = "icon";                   final_bin = "dx-icon";                pkg = "";             jobs = 12 ; skip_arm64_msvc = $true }
-    @{ dir = "media";      cargo_bin = "media";                  final_bin = "dx-media";               pkg = "";             jobs = 12 ; skip_arm64_msvc = $true }
-    @{ dir = "metasearch"; cargo_bin = "metasearch";             final_bin = "dx-metasearch";          pkg = "";             jobs = 12 ; cflags_fix = $true ; skip_arm64_msvc = $true }
-    @{ dir = "serializer"; cargo_bin = "dx-serializer";           final_bin = "dx-serializer";           pkg = "";             jobs = 12 ; skip_arm64_msvc = $true }
-    @{ dir = "style";      cargo_bin = "dx-style";               final_bin = "dx-style";               pkg = "";             jobs = 12 ; skip_arm64_msvc = $true }
-    @{ dir = "script";     cargo_bin = "dx-script";            final_bin = "dx-script";            pkg = "-p dx-script";  jobs = 12 ; skip_arm64_msvc = $true }
+    @{ dir = "forge";      cargo_bin = "dx-forge";               final_bin = "dx-forge";               pkg = "";             jobs = 12 ; cflags_fix = $true }
+    @{ dir = "icon";       cargo_bin = "icon";                   final_bin = "dx-icon";                pkg = "";             jobs = 12 }
+    @{ dir = "media";      cargo_bin = "media";                  final_bin = "dx-media";               pkg = "";             jobs = 12 }
+    @{ dir = "metasearch"; cargo_bin = "metasearch";             final_bin = "dx-metasearch";          pkg = "";             jobs = 12 ; cflags_fix = $true }
+    @{ dir = "serializer"; cargo_bin = "dx-serializer";           final_bin = "dx-serializer";           pkg = "";             jobs = 12 }
+    @{ dir = "style";      cargo_bin = "dx-style";               final_bin = "dx-style";               pkg = "";             jobs = 12 }
+    @{ dir = "script";     cargo_bin = "dx-script";            final_bin = "dx-script";            pkg = "-p dx-script";  jobs = 12 }
     #@{ dir = "build";      cargo_bin = "dx-build";               final_bin = "dx-build";               pkg = "-p rolldown";  jobs = 6  }
-    @{ dir = "cli";        cargo_bin = "dx-cli";                 final_bin = "dx-cli";                 pkg = "-p dx-cli";    jobs = 12 ; skip_arm64_msvc = $true }
+    @{ dir = "cli";        cargo_bin = "dx-cli";                 final_bin = "dx-cli";                 pkg = "-p dx-cli";    jobs = 12 }
     #@{ dir = "native";     cargo_bin = "native";                 final_bin = "dx-native";              pkg = "-p tauri-cli"; jobs = 12 }
     #@{ dir = "py";         cargo_bin = "dx-py-package-manager";  final_bin = "dx-py-package-manager";  pkg = "-p dx-py-package-manager";  jobs = 12 ; subdir = "package-manager"; unix_features = "uv-distribution/static" }
-    @{ dir = "www";        cargo_bin = "dx-www";                 final_bin = "dx-www";                 pkg = "-p dx-www";    jobs = 12 ; skip_gnullvm = $true ; skip_arm64_msvc = $true }
+    @{ dir = "www";        cargo_bin = "dx-www";                 final_bin = "dx-www";                 pkg = "-p dx-www";    jobs = 12 }
     #@{ dir = "agent";      cargo_bin = "dx-agent";               final_bin = "dx-agent";               pkg = "";             jobs = 12 ; bindgen_fix = $true ; windows_only = $true ; skip_gnullvm = $true }
     #@{ dir = "js";         cargo_bin = "dx-js";                  final_bin = "dx-js";                  pkg = "-p bun_bin";   jobs = 4  ; windows_only = $true }
     @{ dir = "token";      cargo_bin = "dx-token";              final_bin = "dx-token";              pkg = "-p dx-token";  jobs = 12 }
-    @{ dir = "tree";       cargo_bin = "dx-tree";               final_bin = "dx-tree";               pkg = "-p rust_tree"; jobs = 12 ; skip_arm64_msvc = $true }
+    @{ dir = "tree";       cargo_bin = "dx-tree";               final_bin = "dx-tree";               pkg = "-p rust_tree"; jobs = 12 }
     @{ dir = "os";         cargo_bin = "dx-os";                 final_bin = "dx-os";                 pkg = "";             jobs = 12 ; native = $true }
-    @{ dir = "hexxed\terminal\dx-video-player"; final_bin = "dx-video-player";   jobs = 2  ; meson = $true; meson_bin = "dx-video-player.exe" }
+    @{ dir = "video-player"; final_bin = "dx-video-player";   jobs = 2  ; meson = $true; meson_bin = "dx-video-player.exe" }
 )
+
+if ($Project.Count -gt 0) {
+    $requestedProjects = @($Project | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ })
+    $projects = @($projects | Where-Object {
+        $requestedProjects -contains $_.dir.ToLowerInvariant() -or
+        $requestedProjects -contains $_.final_bin.ToLowerInvariant()
+    })
+    if ($projects.Count -eq 0) {
+        throw "No matching projects. Requested: $($requestedProjects -join ', ')"
+    }
+}
 
 $targets = @(
     @{ triple = "x86_64-pc-windows-msvc";         ext = ".exe" }
@@ -48,8 +74,41 @@ $targets = @(
     @{ triple = "aarch64-apple-darwin";            ext = ""     }
 )
 
-# macOS SDK path for framework linking (osxcross)
-$MACOS_SDK = "G:\osxcross\target\SDK\MacOSX11.3.sdk"
+# Resolve cross SDK roots from explicit parameters/env vars, then local installs.
+function Find-FirstExistingPath([string[]]$Candidates) {
+    foreach ($candidate in $Candidates) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate)) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+    return $null
+}
+
+$MACOS_SDK = Find-FirstExistingPath @(
+    $MacosSdk,
+    "G:\osxcross\target\SDK\MacOSX14.5.sdk",
+    "G:\osxcross\target\SDK\MacOSX11.3.sdk",
+    "G:\macos-sdk\MacOSX11.3.sdk"
+)
+$ANDROID_NDK = Find-FirstExistingPath @(
+    $AndroidNdk,
+    "G:\android-ndk-r27",
+    "G:\Dev\Android\ndk",
+    "C:\Android\Sdk\ndk"
+)
+$LINUX_SYSROOT = Find-FirstExistingPath @(
+    $LinuxSysroot,
+    "G:\sysroots\linux",
+    "G:\cross\sysroots\linux",
+    "C:\sysroots\linux"
+)
+
+function Test-MacOsSdk([string]$Sdk) {
+    if (-not $Sdk) { return $false }
+    return (Test-Path -LiteralPath (Join-Path $Sdk "System\Library\Frameworks\Foundation.framework\Headers\Foundation.h"))
+}
+
+Write-Host "  Cross SDKs: macOS=$MACOS_SDK Android=$ANDROID_NDK LinuxSysroot=$LINUX_SYSROOT" -ForegroundColor DarkCyan
 
 # Prebuilt FFmpeg pkg-config dirs per target (BtbN shared builds; relocatable .pc files)
 $ffmpegPkgConfig = @{
@@ -83,7 +142,7 @@ $llvmBin  = "C:\Program Files\LLVM\bin"
 $cmakeBin = "C:\Program Files\CMake\bin"
 $gitBin   = "C:\Program Files\Git\cmd"
 $mingwBin = "G:\Dev\Tools\Scoop\apps\mingw\current\bin"
-$ndkBin   = "G:\android-ndk-r27\toolchains\llvm\prebuilt\windows-x86_64\bin"
+$ndkBin   = if ($ANDROID_NDK) { Join-Path $ANDROID_NDK "toolchains\llvm\prebuilt\windows-x86_64\bin" } else { $null }
 $mesonBin = "C:\Users\Computer\AppData\Roaming\Python\Python312\Scripts"
 $nasmBin  = "C:\Program Files\NASM"
 $env:PATH = "$cliTools;$msvcBin;$msvcArm;$cargoBin;$zigBin;$mingwBin;$llvmBin;$cmakeBin;$gitBin;$ndkBin;$mesonBin;$nasmBin;" + ($env:PATH -split ';' | Where-Object {
@@ -91,8 +150,8 @@ $env:PATH = "$cliTools;$msvcBin;$msvcArm;$cargoBin;$zigBin;$mingwBin;$llvmBin;$c
 }) -join ';'
 
 # Release profile optimizations for all Rust builds (applies to every cargo build --release)
-$env:CARGO_PROFILE_RELEASE_LTO = "true"           # Link-time optimization: smaller + faster binaries
-$env:CARGO_PROFILE_RELEASE_CODEGEN_UNITS = "1"    # Max inlining across all codegen units
+$env:CARGO_PROFILE_RELEASE_LTO = if ($FastCrossBuild) { "false" } else { "true" }
+$env:CARGO_PROFILE_RELEASE_CODEGEN_UNITS = if ($FastCrossBuild) { "16" } else { "1" }
 $env:CARGO_PROFILE_RELEASE_STRIP = "symbols"      # Strip debug symbols from release builds
 $env:CARGO_PROFILE_RELEASE_PANIC = "abort"        # Abort on panic (no unwinding tables, smaller binary)
 $env:CARGO_PROFILE_RELEASE_DEBUG = "0"            # No debug info in release builds
@@ -166,6 +225,11 @@ foreach ($proj in $projects) {
             continue
         }
 
+        if ($proj.ContainsKey("skip_android") -and $proj.skip_android -and $triple -like "*-android") {
+            Write-Host "    [SKIP] $dir / $triple (project does not support Android)" -ForegroundColor DarkYellow
+            continue
+        }
+
         $isNative = $proj.ContainsKey("native") -and $proj.native
         if ($isNative) {
             $dstName = "$fBin-$triple$ext"
@@ -231,7 +295,6 @@ constexpr std::string_view CONFIGURE_COMMAND = "build.ps1";
                     $posixDir = Join-Path $workDir "posix"
                 $zigDir = Join-Path $posixDir "build_zig"
                 New-Item -ItemType Directory -Force -Path $zigDir | Out-Null
-                $MACOS_SDK = "G:\osxcross\target\SDK\MacOSX11.3.sdk"
                 $cf = "$MACOS_SDK/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation_patched.tbd"
                 $io = "$MACOS_SDK/System/Library/Frameworks/IOKit.framework/IOKit.tbd"
                 $objc = "$MACOS_SDK/usr/lib/libobjc.A.tbd"
@@ -318,7 +381,7 @@ constexpr std::string_view CONFIGURE_COMMAND = "build.ps1";
                 )
                 # Android: use NDK's clang++ directly (zig 0.16.0 Android C++ support has mbstate_t issues)
                 if ($triple -like "*-android") {
-                    $ndkDir = "G:\android-ndk-r27\toolchains\llvm\prebuilt\windows-x86_64"
+                    $ndkDir = Join-Path $ANDROID_NDK "toolchains\llvm\prebuilt\windows-x86_64"
                     $ndkCxx = "$ndkDir\bin\aarch64-linux-android35-clang++.cmd"
                     $ndkCc = "$ndkDir\bin\aarch64-linux-android35-clang.cmd"
                     $ldflags = @("-lc++", "-lc++abi")
@@ -375,7 +438,7 @@ constexpr std::string_view CONFIGURE_COMMAND = "build.ps1";
             $logLabel = $dir.Replace('\', '_').Replace('/', '_')
             $logFile = Join-Path $LOGS "$logLabel-$( $triple.Replace('-','_') ).log"
             $buildDir = Join-Path $workDir "build-$triple"
-            $crossFile = Join-Path $workDir "cross" "$triple.ini"
+            $crossFile = Join-Path (Join-Path $workDir "cross") "$triple.ini"
             $nativeFile = Join-Path $workDir "native-$triple.ini"
             $buildMachineFile = Join-Path $workDir "native-build-machine.ini"
             $mesonBin = if ($triple -like "*-pc-windows-*") { $proj.meson_bin } else { $proj.meson_bin -replace '\.exe$', '' }
@@ -443,6 +506,13 @@ constexpr std::string_view CONFIGURE_COMMAND = "build.ps1";
                 Remove-Item Env:INCLUDE -ErrorAction SilentlyContinue
                 Remove-Item Env:LIB -ErrorAction SilentlyContinue
             }
+            # The Linux branch sets PKG_CONFIG_SYSROOT_DIR for the sysroot; it
+            # must not leak into Windows/macOS builds where the FFmpeg prebuilt
+            # .pc files already carry absolute host paths (prepending the Linux
+            # sysroot mangles the -I/-L flags into nonsense like G:sysrootslinux...).
+            if ($triple -notlike "*-unknown-linux-*") {
+                Remove-Item Env:PKG_CONFIG_SYSROOT_DIR -ErrorAction SilentlyContinue
+            }
             if ($ffmpegPkgConfig.ContainsKey($triple)) {
                 $sourcePkgConfigDir = $ffmpegPkgConfig[$triple]
                 $env:PKG_CONFIG_PATH = $sourcePkgConfigDir
@@ -506,11 +576,20 @@ constexpr std::string_view CONFIGURE_COMMAND = "build.ps1";
             $mesonExit = $LASTEXITCODE
             if ($mesonExit -ne 0 -and $reconfigure) {
                 # A moved checkout can leave absolute native-file paths in
-                # Meson's cached coredata. Retry once with a generated-build
-                # wipe; source subprojects and package caches remain intact.
-                Write-Host "    [$triple] reconfigure failed; retrying with --wipe..." -ForegroundColor Yellow
-                $wipeArgs = @("setup", "--wipe") + @($setupArgs | Select-Object -Skip 2)
-                & meson $wipeArgs *>> $logFile
+                # Meson's cached coredata. A --wipe retry still inherits those
+                # stale paths, so drop the build dir entirely and set up fresh.
+                Write-Host "    [$triple] reconfigure failed; wiping build dir and retrying..." -ForegroundColor Yellow
+                Remove-Item -Recurse -Force $buildDir -ErrorAction SilentlyContinue
+                $freshArgs = @("setup") + @($setupArgs | Select-Object -Skip 2)
+                & meson $freshArgs *>> $logFile
+                $mesonExit = $LASTEXITCODE
+            } elseif ($mesonExit -ne 0 -and (Test-Path $buildDir) -and -not $reconfigure) {
+                # A build dir that meson left behind without coredata (e.g. a
+                # crashed setup) makes the next `meson setup` fail immediately;
+                # wipe it and retry once with a clean slate.
+                Write-Host "    [$triple] broken build dir (no coredata); wiping and retrying..." -ForegroundColor Yellow
+                Remove-Item -Recurse -Force $buildDir -ErrorAction SilentlyContinue
+                & meson $setupArgs *>> $logFile
                 $mesonExit = $LASTEXITCODE
             }
             $exitCode = $mesonExit
@@ -562,9 +641,26 @@ constexpr std::string_view CONFIGURE_COMMAND = "build.ps1";
         }
 
         if ($isMacTgt) {
+            if (-not (Test-MacOsSdk $MACOS_SDK)) {
+                Write-Host "    [BLOCKED] $triple requires a macOS SDK with Foundation.framework headers. Use -MacosSdk <path>." -ForegroundColor Yellow
+                $projOk = $false
+                continue
+            }
             $env:SDKROOT = $MACOS_SDK
             $env:MACOSX_DEPLOYMENT_TARGET = "10.15"
             $env:WHISPER_NO_ACCELERATE = "ON"
+        }
+
+        if ($triple -like "*-android" -and -not $ANDROID_NDK) {
+            Write-Host "    [BLOCKED] $triple requires an Android NDK. Use -AndroidNdk <path>." -ForegroundColor Yellow
+            $projOk = $false
+            continue
+        }
+        $isWslProject = $proj.ContainsKey("wsl") -and $proj.wsl
+        if ($triple -like "*-unknown-linux-*" -and -not $LINUX_SYSROOT -and -not $isWslProject) {
+            Write-Host "    [BLOCKED] $triple requires a Linux sysroot. Use -LinuxSysroot <path>." -ForegroundColor Yellow
+            $projOk = $false
+            continue
         }
 
         # Bindgen fix for gnullvm targets (clang doesn't recognize the triple)
@@ -602,24 +698,38 @@ constexpr std::string_view CONFIGURE_COMMAND = "build.ps1";
         $env:VCToolsVersion = $msvcVer
         $env:WindowsSdkDir = "$sdkRoot\"
         $env:WindowsSDKVersion = "$sdkVer\"
-        # LLVM clang is needed by ring crate for aarch64-windows-msvc
-        $env:PATH = "C:\Program Files\LLVM\bin;$env:PATH"
+        # LLVM clang is needed by ring; native C dependencies also need the
+        # architecture-matched MSVC compiler.  Keep ARM64 cl.exe ahead of the
+        # x64 tool directory so cc-rs does not compile ARM sources with x64 cl.
+        $sdkBinX64   = "$sdkRoot\bin\$sdkVer\x64"
+        $sdkBinArm64 = "$sdkRoot\bin\$sdkVer\arm64"
+        $pathTail = ($env:PATH -split ';' | Where-Object {
+            $_ -and $_ -ne $msvcBin -and $_ -ne $msvcArm
+        }) -join ';'
         if ($triple -eq "aarch64-pc-windows-msvc") {
+            $env:PATH = "$msvcArm;$msvcBin;$sdkBinArm64;$sdkBinX64;C:\Program Files\LLVM\bin;$pathTail"
             $env:CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_LINKER = "G:\Dx\cli\tools\bin\link-arm64-wrapper.cmd"
-            # Don't set CC_aarch64_pc_windows_msvc — let the cc crate detect MSVC
-            # via VCINSTALLDIR + PATH. Explicit CC breaks flag detection (MSVC vs GCC).
-            $env:CC_aarch64_pc_windows_msvc = $null
-            $env:CXX_aarch64_pc_windows_msvc = $null
-            # cmake needs explicit generator for ARM64 cross-compilation
-            $env:CMAKE_GENERATOR = "Visual Studio 17 2022"
-            $env:CMAKE_GENERATOR_PLATFORM = "ARM64"
+            # Use clang-cl instead of the ARM64 cl.exe: MSVC's arm64 cl defines
+            # __STDC_NO_ATOMICS__ (no C11 atomics, breaks aws-lc-sys) and cannot
+            # assemble GNU .S sources (breaks rav1e). clang-cl handles both.
+            $env:CC_aarch64_pc_windows_msvc = "C:\Program Files\LLVM\bin\clang-cl.exe --target=aarch64-pc-windows-msvc"
+            $env:CXX_aarch64_pc_windows_msvc = "C:\Program Files\LLVM\bin\clang-cl.exe --target=aarch64-pc-windows-msvc"
+            $env:CFLAGS_aarch64_pc_windows_msvc = $null
+            $env:CXXFLAGS_aarch64_pc_windows_msvc = $null
         } else {
+            $env:PATH = "$msvcBin;$msvcArm;$sdkBinX64;C:\Program Files\LLVM\bin;$pathTail"
             $env:CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_LINKER = $null
             $env:CC_aarch64_pc_windows_msvc = $null
             $env:CXX_aarch64_pc_windows_msvc = $null
-            $env:CMAKE_GENERATOR = $null
-            $env:CMAKE_GENERATOR_PLATFORM = $null
+            $env:CFLAGS_aarch64_pc_windows_msvc = $null
+            $env:CXXFLAGS_aarch64_pc_windows_msvc = $null
         }
+        # cmake generator for MSVC targets. The VS instance registration is
+        # broken on this machine (vswhere finds nothing), so use Ninja with
+        # cl.exe directly; rc.exe/mt.exe come from the SDK bin dirs on PATH.
+        $env:CMAKE_GENERATOR = "Ninja"
+        $env:CMAKE_GENERATOR_PLATFORM = $null
+        $env:CMAKE_MAKE_PROGRAM = (Get-Command ninja -ErrorAction SilentlyContinue).Source
 
         # Skip gnullvm targets for projects that can't cross-compile
         if ($proj.ContainsKey("skip_gnullvm") -and $proj.skip_gnullvm -and $triple -like "*-gnullvm") {
@@ -654,8 +764,8 @@ constexpr std::string_view CONFIGURE_COMMAND = "build.ps1";
             & cargo $buildArgs *> $logFile
         } elseif ($triple -like "*-android") {
             # Android builds need NDK clang instead of zig
-            $ndkDir = "G:\android-ndk-r27\toolchains\llvm\prebuilt\windows-x86_64"
-            $ndkRoot = "G:\android-ndk-r27"
+            $ndkDir = Join-Path $ANDROID_NDK "toolchains\llvm\prebuilt\windows-x86_64"
+            $ndkRoot = $ANDROID_NDK
             $ndkClang = "$ndkDir\bin\aarch64-linux-android35-clang.cmd"
             $ndkClangCxx = "$ndkDir\bin\aarch64-linux-android35-clang++.cmd"
             # Cargo config for Android target linker + archiver
@@ -675,17 +785,93 @@ ar = "$tomlAr"
             $env:CMAKE_ANDROID_ARCH_ABI = "arm64-v8a"
             # Use NDK's target-specific clang (GCC-compatible, not clang-cl) so cc crate uses GCC-mode flags
             $env:CC_aarch64_linux_android = "$ndkClang"
+            $env:CXX_aarch64_linux_android = "$ndkClangCxx"
             $env:AR_aarch64_linux_android = "$ndkDir\bin\llvm-ar.exe"
             # cmake needs explicit generator for Android
             $env:CMAKE_GENERATOR = "Ninja"
             $env:CMAKE_MAKE_PROGRAM = (Get-Command ninja).Source
             $env:CMAKE_C_COMPILER = "$ndkDir\bin\aarch64-linux-android35-clang.cmd"
             $env:CMAKE_CXX_COMPILER = "$ndkDir\bin\aarch64-linux-android35-clang++.cmd"
+            # Skip compiler try-run: cmake crates (aws-lc-sys, blake3, etc.)
+            # fail the test compilation on Windows-hosted cross builds otherwise
+            $env:CMAKE_C_COMPILER_WORKS = "TRUE"
+            $env:CMAKE_CXX_COMPILER_WORKS = "TRUE"
             & cargo $buildArgs *> $logFile
         } else {
-            # zigbuild doesn't want the 'build' subcommand; strip it
-            $zbArgs = $buildArgs | Where-Object { $_ -ne "build" }
-            & cargo zigbuild $zbArgs *> $logFile
+            $wslDirectCopy = $false
+            if ($proj.ContainsKey("wsl") -and $proj.wsl -and $triple -eq "x86_64-unknown-linux-gnu") {
+                Write-Host "    [$triple] wsl build..."
+                & "$env:SystemRoot\System32\wsl.exe" -d Ubuntu24 -- /mnt/g/Temp/UserTemp/wsl-build.sh $triple $fBin $pkg *> $logFile
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Host "    [FAIL] $dir / $triple  (log: $logFile)" -ForegroundColor Red
+                    $projOk = $false; $allOk = $false
+                    continue
+                }
+                $wslDirectCopy = $true
+            } elseif ($proj.ContainsKey("wsl") -and $proj.wsl -and $triple -like "*-unknown-linux-*") {
+                Write-Host "    [SKIP] $triple (wsl project builds x86_64-unknown-linux-gnu only)" -ForegroundColor DarkYellow
+                continue
+            } elseif ($triple -like "*-unknown-linux-*") {
+                $env:DX_LINUX_SYSROOT = $LINUX_SYSROOT
+                # pkg-config crate cross-compile gate: without SYSROOT_DIR we
+                # must explicitly allow cross builds.
+                $env:PKG_CONFIG_ALLOW_CROSS = "1"
+                # NOTE: PKG_CONFIG_SYSROOT_DIR is intentionally NOT set. The
+                # Windows pkg-config (glib, define-prefix) already emits
+                # absolute sysroot paths from the .pc files, and prepending
+                # the sysroot a second time mangles them
+                # (G:\sysroots\linuxG:/sysroots\linux\...).
+                # Per-triple pkg-config dir (Debian-style sysroot layout), with
+                # a shared usr\lib\pkgconfig fallback for old-style sysroots.
+                $triplePkgMap = @{
+                    "x86_64-unknown-linux-gnu"       = "usr\lib\x86_64-linux-gnu\pkgconfig"
+                    "x86_64-unknown-linux-musl"      = "usr\lib\x86_64-linux-musl\pkgconfig"
+                    "aarch64-unknown-linux-gnu"      = "usr\aarch64-linux-gnu\lib\pkgconfig"
+                    "armv7-unknown-linux-gnueabihf"  = "usr\arm-linux-gnueabihf\lib\pkgconfig"
+                }
+                $sysrootPkgConfig = Join-Path $LINUX_SYSROOT $triplePkgMap[$triple]
+                if (-not (Test-Path -LiteralPath $sysrootPkgConfig)) {
+                    $sysrootPkgConfig = Join-Path $LINUX_SYSROOT "usr\lib\pkgconfig"
+                }
+                if (Test-Path -LiteralPath $sysrootPkgConfig) {
+                    # ';' separators: Windows pkg-config splits path lists on
+                    # ':' which breaks drive-letter paths (G:\... -> "G").
+                    $pkgList = $sysrootPkgConfig
+                    $sharedPkg = Join-Path $LINUX_SYSROOT "usr\lib\pkgconfig"
+                    if ((Test-Path -LiteralPath $sharedPkg) -and $sharedPkg -ne $sysrootPkgConfig) {
+                        $pkgList = "$sysrootPkgConfig;$sharedPkg"
+                    }
+                    $env:PKG_CONFIG_LIBDIR = $pkgList
+                    $env:PKG_CONFIG_PATH = $pkgList
+                }
+                # zigbuild doesn't want the 'build' subcommand; strip it
+                $zbArgs = $buildArgs | Where-Object { $_ -ne "build" }
+                # Noble's libpipewire/libgbm reference GLIBC_2.34 symbols; zig's
+                # default glibc for ARM is 2.17 (aarch64) / 2.28 (armv7), which
+                # cannot resolve them. Pin glibc 2.39 for the ARM gnu targets.
+                if ($triple -in @("x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "armv7-unknown-linux-gnueabihf")) {
+                    $zbArgs = $zbArgs | ForEach-Object { if ($_ -eq "--target") { $_ } elseif ($_ -eq $triple) { "$triple.2.39" } else { $_ } }
+                }
+                & cargo zigbuild $zbArgs *> $logFile
+            } else {
+                # zigbuild doesn't want the 'build' subcommand; strip it
+                $zbArgs = $buildArgs | Where-Object { $_ -ne "build" }
+                & cargo zigbuild $zbArgs *> $logFile
+                if ($LASTEXITCODE -ne 0 -and $isMacTgt -and (Test-Path $logFile) -and (Select-String -Path $logFile -Pattern "clang_rt\.osx" -Quiet)) {
+                    # zigbuild plants 0-byte libclang_rt.osx stubs that break the
+                    # darwin link; replace every stub with a valid empty archive
+                    # and retry the (mostly link-only) step.
+                    Write-Host "    [$triple] clang_rt.osx stub fix, retrying..." -ForegroundColor Yellow
+                    $archDir = Join-Path $env:TEMP "clangrt"
+                    New-Item -ItemType Directory -Force -Path $archDir | Out-Null
+                    $arch = Join-Path $archDir "libclang_rt.osx.a"
+                    if (-not (Test-Path $arch)) { & zig ar crs $arch *>> $logFile }
+                    foreach ($outDir in Get-ChildItem (Join-Path $workDir "target\$triple\release\build") -Directory -Filter "out" -Recurse -ErrorAction SilentlyContinue) {
+                        Copy-Item $arch (Join-Path $outDir.FullName "libclang_rt.osx.a") -Force
+                    }
+                    & cargo zigbuild $zbArgs *> $logFile
+                }
+            }
         }
         $exitCode = $LASTEXITCODE
         Pop-Location
@@ -697,7 +883,16 @@ ar = "$tomlAr"
             continue
         }
 
-        if (Test-Path $srcPath) {
+        if ($wslDirectCopy) {
+            if (Test-Path $dstPath) {
+                $sizeKB = [math]::Round((Get-Item $dstPath).Length/1KB)
+                Write-Host "    [ OK ] $dstName  (${sizeKB}KB)" -ForegroundColor Green
+            } else {
+                Write-Host "    [WARN] Binary not found at $dstPath" -ForegroundColor Yellow
+                $projOk = $false
+                $allOk  = $false
+            }
+        } elseif (Test-Path $srcPath) {
             Copy-Item -Path $srcPath -Destination $dstPath -Force
             $size = (Get-Item $dstPath).Length
             $sizeKB = [math]::Round($size/1KB)
