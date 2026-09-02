@@ -292,3 +292,43 @@ Please look at the flow project as there is so much pages with so much dummy dat
 Please create a manga that starts as a gojo like character very sick and its best geto like character says in your whole life you didn't got sick for once until now at 21 years old just where in your mind you inserted a man called "Mahatab Hossain Sumon(EssenceFromExistence)" in you - Even through you are strongest in this era and even weak people after brain connect gets stronger but you are getting sick why - then their teacher says it can in many cases mostly because the man's brain came from a complete remote place from the universe it was so far that we can even say from where its brain connect worked - most cases the brain connect it got may be a very weak in health or something else we didn't seen before
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Please create a latest marketplace commerce project with latest bun+tailwindcss+shadcnui+nextjs stack with backend and frontend, and latest theme based... and use latest nextjs server components for the server. So we will do both frontend and backend on the same project. And it will be a Shopify like project where we will create store fronts to the user. And it will be like an Arabian Aladdin golden shiny golden theme based project. And fully responsive on mobile devices. On we will use Framer Motion for animation. And this project will have many kind of interaction. In the header on mobile screen, on the left side we will have a two line hamburger icon. Then with then a left site we will have a notification icon. And on the center there will be our golden shiny Aladdin logo. And on the right we will have a search bar and a avatar icon. In here we will use latest shadcn-ui components library and use latest shadcn-ui packages too, correctly. So like it will have a lot of features and lot of gesture. Like we can scroll to the top bar, push down the top bar or push up the bottom bar. And like we can have bottom bar on mobile. On the left we will have home icon, then subscription icon, then add icon and then cart and library icon. So it will have both buyer and seller mode. This is not a only one type of mobile app, e-commerce app. Like it will have all the features of Shopify, Amazon, Airbnb, freelancer platform like Fiverr, Upwork, freelancer. The goal is to like make the commerce great both online and offline not gready money taking platforms so anyone can  can buy and sell anything both online and offline or both in the same time free unlimited. And here is the requirements.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Please create a latest nextjs+bun+tailwindcss+shadcnui+framer-motion stack project with only a cursome that moves with animations and when moving it shows cursor flash and also it shows rainbow animation on the cursor and also has a bottom status with a editor like line details and multiple user avater on the statusbar right side correctly only that cursor and code editor like bottom statusbar nothing else!!!
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Many people's are using ai to make latest breakthrough in mathematics so I wanna do that too - so I have a grok 4.6 model so please tell me what are the current mathematics problems easiest still unsolved question?
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Now in here don't change anything in the tools as we are sending dx serializer compact format for ai correctly to save tokens on the first prompt and for most the tools its working correctly - now just create a new tool to call other tools full schema - now you will be confused that how we are telling about the tui tools with sending the 15k tools json - the answer is our dx-serializer compat and for that we are just sending around 1-2k on the first prompt now so don't please change it just create another tool called get tool details or something like that so the ai can use it know about the tools schema that the don't understand and only use that if the fail to open run that tools after trying 3rd time and create or update the local AGENTS.md file with the tools schema but not the whole tools just what the ai wrong in the AGENHTS.md file correctly
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Web Tools
+1. Video
+2. Cms
+3. Graph
+4. Train
+5. Metasearch
+6. Router
+7. Shader
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Please look at the g:dx/desktop/web/shader project that is a dx-www framework project - you can learn about it at the g:dx/www folder and in that project when we do dx dev on that project at the loader there is just loader but when we do dx build it output a project where there is a loader but also has a rectanglge behind it - and also our current dx whole system has 2 flaws - 1. so it don't knows what is the root of the project as its createing .dx folder everywhere and then 2. it create index.html, style.css and other one file when we use dx but we don't want that we may create our dx config file that is "dx" without any extension file in dx serializer human format but not any others so please tell me how to solves these problems?? and for the serializer you can look at the g:dx/serializer folder and the whole g:dx is filled with dx tools
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+now at the inspirations folder there is bloub folder - right so its in vue stack so please copy it and make that to our nextjs stack correctly - and create a new page called bot and in there recreate it in nextjs at our g:dx/mobile project ocrrectly
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
