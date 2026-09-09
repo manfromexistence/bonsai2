@@ -309,10 +309,6 @@ Now in here don't change anything in the tools as we are sending dx serializer c
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 Web Tools
 1. Video
 2. Cms
@@ -329,6 +325,13 @@ Please look at the g:dx/desktop/web/shader project that is a dx-www framework pr
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 now at the inspirations folder there is bloub folder - right so its in vue stack so please copy it and make that to our nextjs stack correctly - and create a new page called bot and in there recreate it in nextjs at our g:dx/mobile project ocrrectly
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1. Shadcn Chopper
+2. Hermes On Screen Chat
+3. Themes page - now just answer isn't there a theme page in here as we copied all pages of mobile from teh g:dx/mobile folder and it suppose to have themes page and thus must this g:dx/bot project so please check things correclty and tell me what about the tweakcn like themes pages and if not present then please check the g:dx/website/apps/v4 folder for themses page and copy its files and folder to our g:dx/bot project not the ai or susscriptoins but all the themes page related files correctly directly copy them instead of doing ai slop
+4. Mobile Responsive - Look at our chat page and settings page and try to make them responsive on mobile devices and also check the 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
