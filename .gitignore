@@ -11,9 +11,13 @@
 !/.dx/
 !/AGENTS.md
 !/CHANGELOG.md
+!/DEPRECATED_README.md
+!/COLAB.md
 !/CURRENT_STATUS.md
 !/DX.md
+!/DX_TOOLS_AI_GAP.md
 !/DX_LANE_PASS_SYSTEM.md
+!/MINICPM5-200MB-PLAN.md
 !/DX_MANAGER_MEMORY.md
 !/PLAN.md
 !/README.md
@@ -31,6 +35,10 @@
 !/templates/dx-starter/.dx/*
 !/build.ps1
 !/tokens
+!/tpu/
+!/tpu/*
+# env.ps1 inside tpu/ is a live Kaggle API token copied for convenience. Never commit it.
+/tpu/env.ps1
 !/backup.json
 !/keys.dx
 !/descriptions.dx
@@ -51,3 +59,6 @@ trash/
 **/*.pdb
 **/*.exe
 **/*.dll
+
+# typesafe is its own repo (essence-dx/dx-typesafe) - do not track it here.
+/typesafe/
