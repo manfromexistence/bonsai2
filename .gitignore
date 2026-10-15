@@ -52,7 +52,9 @@
 !/descriptions.dx
 !/tools.dx
 !/tools.json
-!/PROMPTS.md
+# PROMPTS.md is a working notes file that has accumulated live credentials.
+# Ignored deliberately: it must never be pushed again.
+/PROMPTS.md
 !/README.md
 
 /.dx/*
