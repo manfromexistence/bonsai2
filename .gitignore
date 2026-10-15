@@ -37,6 +37,14 @@
 !/tokens
 !/tpu/
 !/tpu/*
+!/tpu/*/
+# kernels and their generated notebooks -- no weights, no tokens
+!/tpu/*/kernel.py
+!/tpu/*/make_notebook.py
+!/tpu/*/kernel-metadata.json
+!/tpu/*/notebook.ipynb
+!/tpu/*/receipt-*.json
+!/tpu/*/*.md
 # env.ps1 inside tpu/ is a live Kaggle API token copied for convenience. Never commit it.
 /tpu/env.ps1
 !/backup.json
@@ -62,3 +70,5 @@ trash/
 
 # typesafe is its own repo (essence-dx/dx-typesafe) - do not track it here.
 /typesafe/
+
+!/JULES_BUILD_PROMPT.md
