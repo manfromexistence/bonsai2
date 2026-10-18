@@ -69,6 +69,8 @@ trash/
 **/*.pdb
 **/*.exe
 **/*.dll
+# local syntax checks leave these next to tpu kernels; they are bytecode, never sources
+**/__pycache__/
 
 # typesafe is its own repo (essence-dx/dx-typesafe) - do not track it here.
 /typesafe/
