@@ -10,7 +10,7 @@ the upstream Python implementation of `harness2`.
 | Folder | `G:\Dx\hackin` |
 | Product / binary name | `dx-hackin` |
 | Declared in the hub manifest | `paths.hackin = hackin` (`dx:22`) |
-| Product repo | `essence-dx/dx-hackin` — **private**, default branch `main` |
+| Product repo | `essence-dx/hackin` — **private**, default branch `main` |
 | Reference tree | `hackin/reference/strix-python/` — vendored `usestrix/strix` @ `a0f8ea2`, a local gitignored checkout, **not** in the repository |
 | Rust workspace | `hackin/crates/` — 13 crates |
 | Upstream project | `https://github.com/usestrix/strix` (Apache-2.0) |
@@ -101,7 +101,7 @@ release-qualified. The **MCP stdio transport** and the upstream's supervised
 MCP session are not ported. The **subscription sign-in**, the **dedupe judge**
 and the **pricing** are not ported. The **TUI**, the **viewer**, the **cloud
 CLI** and the **telemetry** are not ported. The **repository exists and is
-private** — `essence-dx/dx-hackin` — but no `dx-hackin` binary has been
+private** — `essence-dx/hackin` — but no `dx-hackin` binary has been
 released, and the upstream's published benchmark (96% on XBEN, measured on
 upstream **v0.4.0**) is a property of the Python implementation, not of this
 port. The scan was verified against a **mock** of the OpenAI API, not against

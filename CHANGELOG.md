@@ -97,16 +97,22 @@ fixed it.**
   knowledge packs are still byte-identical to the reference tree — and
   corrected the documents that had drifted, including a `SECURITY.md` that
   still claimed the binary "cannot run a scan yet".
-- **The product repo now exists.** `essence-dx/dx-hackin`, **private**, default
+- **The product repo now exists.** `essence-dx/hackin`, **private**, default
   branch `main`, created with the description *"A Rust port of the Strix
-  autonomous AI penetration-testing engine"*. The name follows the sibling
-  products' convention — the `forkness` product lives in
-  `essence-dx/dx-forkness` — and matches the `repository` field every crate
-  already inherits. All sixteen commits are pushed; `git status -sb` shows no
-  ahead marker, so the work is **durable** in the way the hub's rule requires
-  (§2 rule 5). The vendored `reference/` tree did **not** go with it: it is a
-  local, gitignored checkout of the upstream's Apache-2.0 code, and the remote
-  holds **zero** entries under `reference/`.
+  autonomous AI penetration-testing engine"*. It was first created as
+  `essence-dx/dx-hackin`, off the sibling products' convention — the
+  `forkness` product lives in `essence-dx/dx-forkness` — and then **renamed in
+  place** to `hackin`, so the pushed history and the repository settings
+  carried over rather than being recreated; the `repository` and `homepage`
+  fields in the product's `[workspace.package]` were corrected to match. All
+  seventeen commits are pushed; `git status -sb` shows no ahead marker, so the
+  work is **durable** in the way the hub's rule requires (§2 rule 5). The
+  vendored `reference/` tree did **not** go with it: it is a local, gitignored
+  checkout of the upstream's Apache-2.0 code, and the remote holds **zero**
+  entries under `reference/`. The **binary** keeps its `dx-` prefix whatever
+  the repository is called: the release assets stay `dx-hackin-<target>` for
+  the hub's installer and `dx-hackin-<version>-<target>` for a tagged
+  release.
 - **Verified in the product repo:** `cargo test --workspace` → 741 passed, 0
   failed, 36 suites; `cargo clippy --workspace --all-targets -- -D warnings` →
   clean; `cargo fmt --all -- --check` → clean; `cargo doc --workspace

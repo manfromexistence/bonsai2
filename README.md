@@ -35,7 +35,7 @@ companion tools.
 | forkness | `forkness` | `essence-dx/dx-forkness` | `dx-forkness` | `dx forkness` |
 | forge | `forge` | `essence-dx/forge` | `dx-forge` | `dx forge`, `dx add` |
 | grimoire | `grimoire` | `essence-dx/grimoire` | `dx-grimoire` | `dx grimoire` |
-| hackin | `hackin` | `essence-dx/dx-hackin` | `dx-hackin` | none yet |
+| hackin | `hackin` | `essence-dx/hackin` | `dx-hackin` | none yet |
 | i18n | `i18n` | `essence-dx/i18n` | `dx-i18n` | `dx i18n` |
 | icon | `icon` | `essence-dx/icon` | `dx-icon` | `dx icon` |
 | media | `media` | `essence-dx/media` | `dx-media` | `dx media` |
@@ -61,7 +61,7 @@ provider, the budget, the session store, the turn guard, the request log, the
 **75 knowledge packs**, the toolbox, a real Docker sandbox, a live multi-agent
 graph, the MCP client, the web research client and the upstream's operating
 doctrine are ported and wired together, verified end to end against a local
-mock of the OpenAI API. The repository is **`essence-dx/dx-hackin`, private**.
+mock of the OpenAI API. The repository is **`essence-dx/hackin`, private**.
 But **the MCP stdio transport, the subscription sign-in, the dedupe judge, the
 TUI, the viewer and the cloud CLI are not ported**, and no release binary has
 been published — see `docs/hackin.md` and `hackin/TODO.md`.
