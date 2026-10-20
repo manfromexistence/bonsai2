@@ -38,10 +38,18 @@ fixed it.**
   own conventions, and the crate layout and dependency table in `AGENTS.md` and
   `CONTRIBUTING.md` **regenerated from the real `Cargo.toml` files** — they had
   fallen behind by four crates, and the dependency table was wrong.
+- **A second polish pass** removed the last twelve `unwrap()` / `expect()` /
+  `panic!` calls from library code, added **two drift checks** — one that
+  reconciles `deny.toml`'s `bans.skip` list with the lockfile in both
+  directions and now **runs in CI**, and one that checks all 75 vendored
+  knowledge packs are still byte-identical to the reference tree — and
+  corrected the documents that had drifted, including a `SECURITY.md` that
+  still claimed the binary "cannot run a scan yet".
 - **Verified in the product repo:** `cargo test --workspace` → 741 passed, 0
-  failed; `cargo clippy --workspace --all-targets -- -D warnings` → clean;
-  `cargo fmt --all -- --check` → clean; and a clean build shows **zero
-  warnings**.
+  failed, 36 suites; `cargo clippy --workspace --all-targets -- -D warnings` →
+  clean; `cargo fmt --all -- --check` → clean; `cargo doc --workspace
+  --no-deps` with `-D warnings` → clean; a clean build shows **zero
+  warnings**; both drift checks pass.
 
 ### 2026-10-20 — `feat:` `hackin` — the Rust port of Strix joins the hub as a product folder
 
