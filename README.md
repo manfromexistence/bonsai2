@@ -52,7 +52,7 @@ companion tools.
 | video-player | `video-player` | `essence-dx/video-player` | `dx-video-player` | none yet |
 
 `daemon` and `video-player` are DX tools with published release binaries in
-`bin/` (verified by directory listing on 2026-10-09) that have no `dx` route
+`tools/bin/` (verified by directory listing on 2026-10-09) that have no `dx` route
 wired yet. `forkness` and `grimoire` are DX tools with a `dx` route wired and
 no release artifact yet — see the honest command-surface status below.
 `hackin` is the Rust port of the upstream Strix AI pentesting engine: the
@@ -77,7 +77,7 @@ with `--dry-run` on mutating commands and `dx.tool.*.v1` JSON contracts.
 
 Release assets follow one naming convention:
 `dx-<tool>-<rust-target-triple>[.exe]`. On Windows one `dx-<tool>` file per
-tool lands in `%LOCALAPPDATA%\dx\bin`. The `bin/` folder at the hub root holds
+tool lands in `%LOCALAPPDATA%\dx\bin`. The `tools/bin/` folder at the hub root holds
 the locally staged per-triple builds (Windows x64/arm64, Linux x64/aarch64
 plus musl, macOS x64/arm64, Android, and armv7 entries as of 2026-10-09).
 
@@ -226,7 +226,7 @@ their CI, their releases, or their roadmaps.
 | Path | Job |
 | --- | --- |
 | `dx` | The TOML-shaped routing manifest: `workspace`, `paths`, `tools`, `dx_www`, `media`, `tui` blocks. Several declared paths are dangling; confirm with `Test-Path` before acting on any of them. |
-| `bin/` | Staged local binaries and the per-triple release builds. `dx.exe` and `dx.cmd` are the normal Windows entrypoints. |
+| `tools/bin/` | Staged local binaries and the per-triple release builds. `dx.exe` and `dx.cmd` are the normal Windows entrypoints. |
 | `docs/` | The achievement register: one page per folder plus `docs/README.md` rules. |
 | `.dx/` | Hub runtime state and receipts. |
 | `DEPRICATED_10-20-2026/` | Parking lot for retired folders, repos, and root junk (49 entries on 2026-10-20: 34 git repos and 15 plain folders). Nothing in it is deleted; it is history kept out of the way. |

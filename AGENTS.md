@@ -26,7 +26,7 @@ manifest, and the public story for a family of ~20 separate products.
 | Last hub commit | `fb2f08f`, 2026-09-09 | `git log -1` |
 
 **Folders that are *not* repos and must not be treated as source:**
-`bin/`, `docs/`, `native/`, `test/`, `zzz/`, `.workbuddy-ai/`,
+`tools/bin/`, `docs/`, `native/`, `test/`, `zzz/`, `.workbuddy-ai/`,
 `DEPRICATED_10-20-2026/` (49 entries on 2026-10-20: 34 git repos and 15 plain
 folders, including `llama.cpp`, `superpowers`, `magnitude`, `treg`, `ikra`,
 `tunnel`, `ZZZ-bot-trash`, and a `root-junk/` folder of 20 loose root files
@@ -199,7 +199,7 @@ still spelled differently (`dx-video-player-depricated-20260820-1856`,
 13 plain folders is a proposal, not an edit (§2.2).
 
 On-disk folders the manifest does **not** declare: `daemon`, `bot`, `token`, `tree`,
-`typesafe`, `native`, `os`, `mobile`, `video-player`, `extensions`, `test`, `zzz`, `bin`.
+`typesafe`, `native`, `os`, `mobile`, `video-player`, `extensions`, `test`, `zzz`, `tools/bin`.
 `daemon` is the flagship (`README.md:95`) and appears nowhere in `paths` — treat manifest
 silence as *undeclared*, never as *nonexistent*. `grimoire` and `forkness` **are**
 declared in `paths` as of 2026-10-20.

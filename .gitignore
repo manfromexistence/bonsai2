@@ -41,6 +41,12 @@
 !/tpu/*/
 # kernels and their generated notebooks -- no weights, no tokens
 !/tpu/*/kernel.py
+!/tpu/*/*/
+!/tpu/*/*/kernel.py
+!/tpu/*/*/make_notebook.py
+!/tpu/*/*/kernel-metadata.json
+!/tpu/*/*/notebook.ipynb
+!/tpu/*/*/receipt-*.json
 !/tpu/*/make_notebook.py
 !/tpu/*/kernel-metadata.json
 !/tpu/*/notebook.ipynb
@@ -48,6 +54,7 @@
 !/tpu/pq2-decode/
 !/tpu/pq2-decode/tq2_decode.py
 !/tpu/*/*.md
+!/tpu/*/*/*.md
 # env.ps1 inside tpu/ is a live Kaggle API token copied for convenience. Never commit it.
 /tpu/env.ps1
 !/backup.json
@@ -80,3 +87,4 @@ trash/
 
 !/JULES_BUILD_PROMPT.md
 !/CAP.md
+!/DX_HARNESS.md

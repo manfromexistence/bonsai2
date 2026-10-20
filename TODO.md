@@ -344,7 +344,7 @@ its entries do not resolve.
 
 - **Evidence:** present in `Get-ChildItem -Directory` but absent from the `paths` block of
   `dx`: `daemon`, `bot`, `token`, `tree`, `decisions`, `native`, `os`, `mobile`,
-  `video-player`, `extensions`, `test`, `zzz`, `bin`.
+  `video-player`, `extensions`, `test`, `zzz`, `tools/bin`.
 - **Why it matters:** `daemon` is the flagship (`README.md:95`) and is unrouted, so any tool
   that resolves products through the manifest cannot see the most important one.
 - **Done when:** every product folder is either declared or listed as intentionally
@@ -413,7 +413,7 @@ for it.
 ### ENV-02 · Dead duplicate Rust toolchains inside the hub
 
 - **Evidence:** `G:\Dx\.rustup` (1.2 GB, one toolchain, nothing references it) and
-  `G:\Dx\.cargo` (103 MB, registry only, no `bin/`, no `config.toml`) while the live homes
+  `G:\Dx\.cargo` (103 MB, registry only, no `tools/bin/`, no `config.toml`) while the live homes
   are the junctions `~/.rustup` → `G:\DevCaches\rustup` and `~/.cargo`, and `RUSTUP_HOME` /
   `CARGO_HOME` are unset (`docs/space-review-2026-09-23.md:23`).
 - **Leave alone:** `check/.cargo`, `cli/.cargo`, `daemon/.cargo`, `dcp/.cargo` hold only a

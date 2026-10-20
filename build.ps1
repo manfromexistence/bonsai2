@@ -195,7 +195,7 @@ foreach ($proj in $projects) {
     $hasUnixFeatures = $proj.ContainsKey("unix_features") -and -not [string]::IsNullOrEmpty($proj.unix_features)
     $windowsOnly = $proj.ContainsKey("windows_only") -and $proj.windows_only
 
-    # Skip if all target binaries already exist in bin/
+    # Skip if all target binaries already exist in tools/bin/
     $allExist = $true
     foreach ($tgt in $targets) {
         $checkName = "$($proj.final_bin)-$($tgt.triple)$($tgt.ext)"
