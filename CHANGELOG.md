@@ -139,6 +139,31 @@ on this machine is a GPU run, not a TPU one.**
   PTQ1_0 GGUF carry an MTP head — is answered from the file itself, in a way no
   further session can improve on.
 
+### 2026-10-20 — `docs:` a graft tool for the MTP head, and the TPU ceiling priced honestly
+
+- **A graft tool is written and self-tested** (`tpu/mtp-graft/kernel.py`, with the
+  tool inlined so the Kaggle kernel carries it): it copies the base model's
+  `blk.64.*` nextn block into Bonsai 2's PTQ1_0 file and adds
+  `qwen35.nextn_predict_layers`, so llama.cpp's `--spec-type draft-mtp` finds the
+  head inside the target. The head is published as its own GGUF
+  (`unsloth/Qwen3.8-27B-GGUF` -> `MTP/mtp-Qwen3.8-27B-Q4_0.gguf`, 1.28 GB, 18
+  tensors, of which 15 are the nextn block and three are shared weights the target
+  already has). The tool is verified by a round-trip test on synthetic GGUFs, and
+  **that test caught two real bugs**: tensor offsets in a GGUF are relative to the
+  data section, so they must not be shifted when the header grows, and F32 is four
+  bytes per element, not one.
+- **`PREFETCH=1` does not compile** with this kernel's grid: Pallas reports a pytree
+  arity mismatch, because `num_scalar_prefetch` wants the prefetched dimension to be
+  a scalar dim and the grid is `(TOUT, 1, BPC)` with the parallel dim first. The
+  `PREFETCH=0` control is `tpu/14-bonsai-transposed/receipt-14-pf0-b1-f16-tc1024.json`
+  (5.52 tok/s, 181.3 ms/step). The lever's ceiling was 7.6 % anyway.
+- **The TPU ceiling is now priced honestly.** A multi-token verification pass costs
+  ~200 ms, so 50 tok/s needs 9-10 accepted tokens per pass -- an MTP head gives 2-3
+  and n-gram matching under 1. The mechanism's honest ceiling on this hardware is
+  ~10-15 tok/s; 50 tok/s on a TPU needs the **ternary unpack** to be ~9x faster
+  (the step is ~20x off the slice's 9.0 ms traffic floor, and the unpack is 82 % of
+  a projection). Filed as `TODO.md` `TPU-07` rather than promised.
+
 ### 2026-09-26 — `docs:` the hub's change history is no longer a phantom file
 
 **`CHANGELOG.md` now exists.** Until today it was referenced everywhere and present
@@ -269,4 +294,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 13:08 UTC
+updated: 2026-10-20 20:10 UTC

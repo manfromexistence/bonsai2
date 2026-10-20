@@ -32,8 +32,8 @@ it deliberately does not claim.
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
 | **P2** | 9 | hygiene and long-tail distribution |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
-| **TPU track** | 8 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **37** | total open |
+| **TPU track** | 9 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
+| | **38** | total open |
 
 **Pass of 2026-10-20 (second): the total moves 38 → 37 and no score moves.** Two items
 left the ledger, both because the work was done, not because the ledger was tidied:
@@ -411,18 +411,6 @@ plus one repo visibility change.
 
 ---
 
-## The execution track — this repo owns `tpu/`
-
-This repository's origin is `manfromexistence/bonsai2.git` and it tracks `tpu/**` — 22
-notebook folders, `git ls-files` for the ground truth — so the Bonsai execution track's
-open work belongs in this ledger rather than in a file no agent would read.
-`tpu/TPU-STATUS.md` records what the track achieved; `tpu/DO-NOT-RETEST.md` records the
-facts that must not be re-measured. Neither is a ledger of open work, and neither is a
-substitute for this section.
-
-The target this section is written against: **50 tok/s for a single stream on an 8k
-context window**, for this model, with a receipt.
-
 ### GPU-01 · 50 tok/s per stream is a GPU route first, and it is already half-proven
 
 - **Evidence:** `tpu/mtp-test/kernel.py:3-4` records the reference measurement —
@@ -472,10 +460,16 @@ context window**, for this model, with a receipt.
   the MTP head intact (`HauhauCS/...-MTP-GGUF`, `JonathanColetti/...-GGUF` tagged
   `mtp`). llama.cpp's MTP path reads the head from the model file's own
   `n_layer_nextn` block, so the head has to be *inside* the target file.
-- **What the graft costs:** the nextn tensors must be fetched from the base checkpoint,
-  converted to GGUF, and merged into the 5.9 GB PTQ1_0 file — and the merge has to
-  preserve PrismML's custom quant type, which the standard `gguf-py` writer may not
-  know. The head is small (about half a gigabyte in bf16).
+- **What the graft costs, and what is already done (2026-10-20):** the head is
+  published as a standalone GGUF, `unsloth/Qwen3.8-27B-GGUF` ->
+  `MTP/mtp-Qwen3.8-27B-Q4_0.gguf` (1.28 GB, 18 tensors, `qwen35.nextn_predict_layers: 1`),
+  of which **15** are the `blk.64.*` nextn block and three are the shared embedding
+  and output weights the target already has. A graft tool is written and
+  **self-tested** (synthetic GGUFs in, byte-exact payloads out; the test caught two
+  real bugs -- tensor offsets are relative to the data section, so they must not be
+  shifted when the header grows, and F32 is four bytes per element). It is inlined
+  in `tpu/mtp-graft/kernel.py`, which runs the grafted file on a Kaggle T4. What is
+  left is the run itself.
 - **Why it is worth it:** the reference MTP configuration is 50.44 tok/s at 48.3 %
   acceptance, and MTP acceptance on a chat-formatted prompt is ~83 % at one draft token
   (morphllm.com) — far above what an 0.8B draft model or n-gram matching will reach on
@@ -498,10 +492,15 @@ context window**, for this model, with a receipt.
   **7.6 %** of the step, and the A/B behind the last `CHANGELOG.md` entry says the step
   is VPU-bound rather than DMA-exposed. This is a small, well-priced lever — worth one
   session, not worth hoping on.
-- **The knob exists:** `PREFETCH` in `tpu/14-bonsai-transposed/kernel.py` sets
-  `num_scalar_prefetch` on the `PrefetchScalarGridSpec`, which prefetches along the
-  grid's last dimension — the in-block dim, i.e. the next weight tile. It is 0 by
-  default, so nothing has been spent on it yet.
+- **The knob exists and has been tried:** `PREFETCH` in
+  `tpu/14-bonsai-transposed/kernel.py` sets `num_scalar_prefetch` on the
+  `PrefetchScalarGridSpec`. **`PREFETCH=1` does not compile with this grid** --
+  Pallas reports *"Pytree for `in_specs` and `inputs` do not match"*, because the
+  prefetch mechanism wants the prefetched dimension to be a *scalar* dim and this
+  kernel's grid is `(TOUT, 1, BPC)` with the parallel dim first. The `PREFETCH=0`
+  control is `receipt-14-pf0-b1-f16-tc1024.json` (5.52 tok/s, 181.3 ms/step). The
+  item stays open only for a grid that satisfies the mechanism, and its 7.6 % ceiling
+  says it is not worth one.
 - **Done when:** a receipt records a lower ms/step than TPU-01's run with the output
   text unchanged, and the prefetch and memory-space settings are in the receipt.
 
@@ -514,12 +513,13 @@ context window**, for this model, with a receipt.
   (180.6 ms/step at batch 1, 284.7 ms/step at batch 80). A verification pass computes
   k tokens against the *same* unpacked weights, so it amortises that cost k ways; no
   other lever on this kernel does.
-- **The arithmetic that has to come out right:** 50 tok/s is 9-10 accepted tokens per
-  200 ms pass, i.e. **k ≈ 16 candidates at ~0.6 acceptance**, or k ≈ 24 at 0.4. MTP
-  acceptance falls with depth unless the head is fine-tuned (FastMTP, arXiv 2509.18362:
-  80 % / 56 % / 36 % at k=1/2/3 for a vanilla head), and EAGLE-3's aggregate gain
-  collapses at batch 64 (1.38×) while staying large at batch 1 — which is our case
-  (iotdigitaltwinplm, 2026).
+- **The arithmetic that has to come out right, corrected 2026-10-20:** a pass costs
+  ~200 ms, so 50 tok/s needs **9-10 accepted tokens per pass** -- and no real draft
+  delivers that. An MTP head accepts ~2-3 tokens per pass, n-gram matching under 1,
+  and MTP acceptance falls with depth unless the head is fine-tuned (FastMTP, arXiv
+  2509.18362: 80 % / 56 % / 36 % at k=1/2/3 for a vanilla head). **So the honest
+  ceiling of this mechanism on the TPU is ~10-15 tok/s, and 50 tok/s there needs the
+  unpack itself ~9x faster** (`TODO.md` `TPU-07`), not more speculation.
 - **The hard part is named:** 48 of this model's 64 layers are gated-delta-net, so a
   k-token chain needs the GDN state updated k times in sequence against one state, not
   k independent states; the 16 attention layers can take k queries in one pass behind a
@@ -567,6 +567,43 @@ context window**, for this model, with a receipt.
   context cost, and the 8k-window target is only meaningful once that cost is known.
 - **Done when:** one run at batch 1 with `max_t` ∈ {64, 1024, 8192, 45056} prints the
   ms/step curve at fixed batch, and the receipt states the per-1k-token cost.
+
+---
+
+### TPU-07 · The real TPU blocker is the ternary unpack, ~9x off the HBM roofline
+
+- **Evidence:** the step reads 6.37 GiB of packed weights per token, and the slice's
+  measured read bandwidth is 709 GB/s (`tpu/13-cost-sweep/README.md:28`), so the
+  traffic floor is **9.0 ms/token -- 104 tok/s**. The measured step is **181 ms
+  (5.5 tok/s)**, i.e. **~20x off that floor**, and the projection breakdown puts the
+  unpack at **82 % of a projection** (3.13 ms of 3.83 ms) -- the rest is the weight
+  DMA (0.29 ms) and the matmul.
+- **What has been ruled out, by measurement:** HBM bandwidth (86 % of spec on this
+  slice), program count (`TO` 128 -> 1024 is 1.18x, saturating at 512), kernel
+  launches (36 % fewer launches moved the step 0.5 %, 2026-10-20), DMA count, the
+  k-loop, and the unpack's instruction count (a 1.4x cheaper shift chain changed
+  nothing -- the cost is data movement *inside the VPU*).
+- **What is still open:** the decode is bound by VPU data movement, and the known
+  spellings measure 1.393 ms per projection (int16 lanes, `concatenate`) against a
+  0.29 ms DMA floor. A formulation that never materialises the unpacked weights --
+  folding the per-dimension power pattern into the activation, so the kernel only
+  has to widen 2-bit values -- is the unexplored direction, and the only one that can
+  put the TPU in the same range as the GPU route.
+- **Done when:** a receipt records a step time below 40 ms at batch 1 / `max_t` 8192
+  with the first token still `271` and the text byte-identical to
+  `receipt-14-fuse1-b1-f16-tc1024.json`.
+
+## The execution track — this repo owns `tpu/`
+
+This repository's origin is `manfromexistence/bonsai2.git` and it tracks `tpu/**` — 22
+notebook folders, `git ls-files` for the ground truth — so the Bonsai execution track's
+open work belongs in this ledger rather than in a file no agent would read.
+`tpu/TPU-STATUS.md` records what the track achieved; `tpu/DO-NOT-RETEST.md` records the
+facts that must not be re-measured. Neither is a ledger of open work, and neither is a
+substitute for this section.
+
+The target this section is written against: **50 tok/s for a single stream on an 8k
+context window**, for this model, with a receipt.
 
 ---
 
@@ -637,4 +674,4 @@ number survives being added up. It does **not** mean any product is release-qual
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-20 13:08 UTC
+updated: 2026-10-20 20:10 UTC
