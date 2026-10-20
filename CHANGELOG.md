@@ -49,7 +49,7 @@ page and a row.**
   structural differences; the markdown and CSV artifacts are **byte-identical**,
   `\r\n` terminators included. The LLM crate additionally records the Python module
   outputs as fixtures and asserts the Rust reproduces them.
-- **Verified in the product repo:** `cargo test --workspace` → 441 passed, 0 failed;
+- **Verified in the product repo:** `cargo test --workspace` → 446 passed, 0 failed;
   `cargo clippy --workspace --all-targets -- -D warnings` → clean; `cargo fmt
   --all -- --check` → clean. The binary was run end to end: it creates the run
   directory, writes `run.json`, and exits `1` with an honest message that the
