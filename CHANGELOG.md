@@ -291,10 +291,26 @@ on this machine is a GPU run, not a TPU one.**
   `AGENTS.md` section 2, rule 2 requires a written proposal and an explicit approval
   before deleting anything, and "stop using Kaggle" is a direction about the route, not
   an approval to delete. The two older kernels were **restored immediately** (Kaggle
-  version 1 re-pushed, sources unchanged), and the two created on 2026-10-20 are
-  restored automatically as soon as the 2-session GPU cap allows.
+  version 1 re-pushed, sources unchanged), and the two created on 2026-10-20 were
+  restored as soon as the 2-session GPU cap allowed: **all four Kaggle kernels exist
+  again.** Kaggle queues a run for each restored kernel, so the GPU time is the
+  account owner's to cancel in the UI -- the track's rule is that no GPU run is part
+  of this project's work.
 - **The stop itself is now enforced by rules, not by deletion:** `AGENTS.md` section 2
   rule 7 and `tpu/README.md` section 6.
+
+### 2026-10-20 — `feat:` tpu nb14 — a GQA attention path that skips the kv-head expansion
+
+- **`GQA=1`:** the attention contracts the 24 query heads against the 4 kv heads
+  directly (`einsum("bkgd,bthd->bkgt")`) instead of first materialising
+  `K[:, :, _KIDX, :]` and `V[:, :, _KIDX, :]` — a (B, T, 24, 256) expansion that at an
+  8k window is **201 MB per layer per step, 3.2 GB per step**, and is the bulk of the
+  **29 ms** the 8k window costs at batch 1. The KV tiles are read once instead of six
+  times. Off by default; the shipped path is unchanged.
+- **Both new paths are priced together** as a 2x2 matrix against the shipped path
+  (NOCONCAT x GQA) on one TPU session, receipts as
+  `tpu/14-bonsai-transposed/receipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`. No speed
+  claim is made until those receipts exist.
 
 ### 2026-09-26 — `docs:` the hub's change history is no longer a phantom file
 
