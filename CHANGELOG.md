@@ -49,19 +49,26 @@ page and a row.**
   structural differences; the markdown and CSV artifacts are **byte-identical**,
   `\r\n` terminators included. The LLM crate additionally records the Python module
   outputs as fixtures and asserts the Rust reproduces them.
-- **Verified in the product repo:** `cargo test --workspace` → 446 passed, 0 failed;
+- **Verified in the product repo:** `cargo test --workspace` → 564 passed, 0 failed;
   `cargo clippy --workspace --all-targets -- -D warnings` → clean; `cargo fmt
-  --all -- --check` → clean. The binary was run end to end: it creates the run
-  directory, writes `run.json`, and exits `1` with an honest message that the
-  agent loop is not ported — a `0` would claim a clean scan that never ran.
-- **What this entry does not claim.** `dx-hackin` **cannot run a scan**. The agent
-  loop, the budget hooks, the agent factory and its 43 tools, the provider layer, the
-  scan runner, the prompts, the session store, the MCP layer, the skills, the TUI, the
-  viewer, the cloud CLI and the telemetry are **not ported** — `hackin/TODO.md` carries
-  the itemised backlog with `file:line` evidence and a done-when check for each. The
-  upstream's published benchmark (96% on XBEN) is a property of the **Python v0.4.0**
-  implementation and is **not** claimed for this port. No binary has been built and
-  no repository has been published.
+  --all -- --check` → clean.
+- **It runs.** The agent loop, the provider, the budget, the session store, the
+  turn guard and a 42-tool toolbox are ported and wired together, so
+  `dx-hackin` drives a real model through the engine: the request goes out, the
+  tool calls come back, the tools execute, and the lifecycle tool ends the run.
+  This was verified end to end here against a local mock of the OpenAI API —
+  two turns, a real `think` call, a real `finish_scan` call, the report
+  artifacts written, exit `0`.
+- **What this entry does not claim.** The **sandbox is never created** — the
+  Docker runtime is ported but nothing calls it, so `exec_command` has no
+  container. The proxy tools, the multi-agent spawner, the request log, the
+  subscription sign-in, the dedupe judge, the pricing, the MCP layer, the
+  skills, the TUI, the viewer, the cloud CLI and the telemetry are **not
+  ported** — `hackin/TODO.md` carries the itemised backlog with `file:line`
+  evidence and a done-when check for each. The upstream's published benchmark
+  (96% on XBEN) is a property of the **Python v0.4.0** implementation and is
+  **not** claimed for this port. No binary has been built and no repository has
+  been published.
 - **The product keeps its own ledger**, as the hub requires of every product folder:
   `hackin/TODO.md` (32 open items, plus a 17-row deviation ledger) and
   `hackin/CHANGELOG.md` (what changed, dated, one record per event). The hub's

@@ -43,11 +43,16 @@ The upstream tree is ~59,600 production lines across three languages:
 | `crates/dx-hackin-report/` | CVSS 3.1 calculator, SARIF 2.1.0 writer, coverage ledger, report state, artifact writer |
 | `crates/dx-hackin-runtime/` | Docker sandbox lifecycle, bind mounts, manifest, deferred session |
 | `crates/dx-hackin-proxy/` | the Caido GraphQL interception-proxy client |
+| `crates/dx-hackin-provider/` | the model provider — an OpenAI-compatible client with the upstream's turn guard, retries and stream deadlines |
+| `crates/dx-hackin-agent/` | the agent loop — the turn rule, the recovery nudge, the budget, the session store |
+| `crates/dx-hackin-tools/` | the 42 tools the agents call (33 working, 9 honest stubs) |
 | `crates/dx-hackin-cli/` | the `dx-hackin` binary |
 | `reference/strix-python/` | the vendored Python original, read-only, git-ignored |
 | `TODO.md` / `CHANGELOG.md` | the product ledger and history |
 | `AGENTS.md` | how to work safely in this folder |
 | `TECH.md` | the architecture reference — describes the Python original in detail |
+| `.github/workflows/` | CI (fmt, clippy, test on stable and MSRV, docs, cargo-deny) and the six-target release matrix |
+| `SECURITY.md`, `CONTRIBUTING.md`, `deny.toml` | the security policy, the contribution guide, the dependency policy |
 
 ## Porting approach
 
@@ -68,19 +73,24 @@ trait in this port so the code can be built and tested without them:
 
 ## Honest status
 
-**repo-managed.** The Rust workspace compiles, `cargo test --workspace` is
-green (**446 passed, 0 failed**), and `cargo clippy --workspace --all-targets
--- -D warnings` is clean. The port covers the upstream's pure-logic core, its
-two I/O boundaries (Docker sandbox, Caido proxy), and the CLI. The binary was
-run end to end: it creates the run directory, writes `run.json`, and exits `1`
-with an honest message that the agent loop is not ported.
+**repo-managed, and it runs.** The Rust workspace compiles, `cargo test
+--workspace` is green (**564 passed, 0 failed**), and `cargo clippy
+--workspace --all-targets -- -D warnings` is clean. `dx-hackin` drives a real
+model through the ported engine: the request goes out, the tool calls come
+back, the tools execute, and the lifecycle tool ends the run. It was verified
+end to end here against a local mock of the OpenAI API — two turns, a real
+`think` call, a real `finish_scan` call, the report artifacts written, and
+exit `0`.
 
 **Not claimed.** The port is **not** feature-complete, and it is **not**
-release-qualified. The agent loop, the LLM provider layer, the tool surface,
-the TUI, the local web viewer, the cloud CLI, MCP support, and the skills
-system are **not ported**. No `dx-hackin` binary has been released, and the
-upstream's published benchmark (96% on XBEN, measured on upstream **v0.4.0**)
-is a property of the Python implementation, not of this port.
+release-qualified. The **sandbox is never created** — the Docker runtime is
+ported but nothing calls it, so `exec_command` has no container to run in.
+The proxy tools, the multi-agent spawner, the request log, the subscription
+sign-in, the dedupe judge, the pricing, the MCP layer, the skills, the TUI,
+the viewer, the cloud CLI and the telemetry are **not ported**. No
+`dx-hackin` binary has been released, and the upstream's published benchmark
+(96% on XBEN, measured on upstream **v0.4.0**) is a property of the Python
+implementation, not of this port.
 
 The authoritative, itemised state lives in `hackin/TODO.md` (what is open,
 with evidence and a done-when check) and `hackin/CHANGELOG.md` (what changed,

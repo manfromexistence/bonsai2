@@ -56,10 +56,13 @@ companion tools.
 wired yet. `forkness` and `grimoire` are DX tools with a `dx` route wired and
 no release artifact yet — see the honest command-surface status below.
 `hackin` is the Rust port of the upstream Strix AI pentesting engine: the
-workspace is repo-managed and green, but **it cannot run a scan yet** (the
-agent loop, the tool surface and the provider layer are not ported), there is
-no release binary, no `dx` route, and no published repository — see
-`docs/hackin.md` and `hackin/TODO.md`.
+workspace is repo-managed and green, and **it runs** — the agent loop, the
+provider, the budget, the session store, the turn guard and a 42-tool toolbox
+are ported and wired together, verified end to end against a local mock of the
+OpenAI API. But **the sandbox is never created** (the Docker runtime is ported
+and nothing calls it), the proxy tools and the multi-agent spawner are not
+ported, there is no release binary, no `dx` route, and no published repository
+— see `docs/hackin.md` and `hackin/TODO.md`.
 Everything else in the table has a live `dx <tool>` command.
 
 ### Install, update, and discovery
