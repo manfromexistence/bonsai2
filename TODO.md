@@ -30,10 +30,22 @@ it deliberately does not claim.
 | --- | --- | --- |
 | **P0** | 4 | durability — work that exists only on this machine, and routing that is dead |
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
-| **P2** | 8 | hygiene and the long tail |
+| **P2** | 9 | hygiene and the long tail |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
 | **TPU track** | 5 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **34** | total open |
+| | **35** | total open |
+
+**Filing of 2026-10-20 (new product `hackin`): the total moves 34 → 35 and no score
+moves.** The `strix` folder was renamed to `hackin` and became the DX product folder for
+`dx-hackin`, a Rust port of the upstream Strix AI pentesting engine. The hub artifacts
+changed with it: `dx` declares `hackin = hackin` (`dx:22`), `docs/hackin.md` is the
+achievement page, and `docs/README.md` carries the register row. The **new** item is
+`MF-05` — the declaration is *inert*, because the CLI's typed `PathsConfig`
+(`cli/src/config.rs:235`) has no `hackin` field, so `dx hackin` cannot route yet. That
+fix belongs to the `cli` repo, not to this one (`AGENTS.md` §2 rule 4). Adding the
+declaration is still the right move: `MF-02` is the mirror-image defect (a folder the
+manifest never declares), and the two together are why the manifest's accuracy was
+unmeasurable in either direction. No score moves: a ledger entry is not progress.
 
 **Pass of 2026-10-20 (fourth): the total moves 35 → 34 and P2 moves 9 → 8.** Two P2
 items left the ledger because the work was done, and one took their place.
@@ -330,8 +342,29 @@ its entries do not resolve.
 - **Done when:** every product folder is either declared or listed as intentionally
   undeclared, and `MF-01`'s checker enforces both directions.
 
-### MF-04 · Two parked siblings still spell "deprecated" as "depricated"
+### MF-05 · A declared path the CLI cannot route to
 
+`MF-02` is the mirror image of this one: a folder the manifest never declares. The
+other direction is now live, because `dx` declares `hackin` and the CLI has no field
+for it.
+
+- **Evidence:** `dx:22` declares `hackin = hackin` and the folder resolves
+  (`Test-Path G:\Dx\hackin` is True), but `cli/src/config.rs:235-285` — the typed
+  `PathsConfig` that the manifest is deserialised into — has no `hackin` field, so the
+  key is silently dropped. `dx hackin` therefore does not route. The manifest's own
+  tool block has the same gap: `dx_www` (`dx:36-41`) has no `dx_hackin` counterpart.
+- **Why it is not fixed here:** the manifest's schema lives in the `cli` repo, and
+  `AGENTS.md` §2 rule 4 puts a defect in the repo that owns the file. The `cli` repo
+  also owns its own `TODO.md`, `CHANGELOG.md` and `DX.md` for this change
+  (`cli/AGENTS.md`).
+- **Why the declaration was added anyway:** an accurate-but-inert declaration is
+  strictly better than a silent omission — it makes the gap nameable, and it is what
+  makes `MF-02`'s "every product folder is either declared or listed as intentionally
+  undeclared" checkable in the first place.
+- **Done when:** `PathsConfig` has a `hackin` field, `dx hackin --version` resolves the
+  product, and the `cli` repo's own ledger carries the entry.
+
+### MF-04 · Two parked siblings still spell "deprecated" as "depricated"
 - **Evidence:** inside `DEPRICATED_10-20-2026/` sit
   `dx-video-player-depricated-20260820-1856` and
   `os-depricated-20260820-1856`. The parent folder was renamed to

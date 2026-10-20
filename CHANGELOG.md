@@ -13,6 +13,57 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-20 — `feat:` `hackin` — the Rust port of Strix joins the hub as a product folder
+
+**The `strix` folder is renamed `hackin` and becomes the DX product folder for
+`dx-hackin`, a Rust port of the upstream Strix autonomous AI pentesting engine. The
+Python original is kept in the folder, read-only, as the port's specification. The hub
+artifacts change with it: the manifest declares the folder, and the register gains a
+page and a row.**
+
+- **The rename, and what it did not touch.** `G:\Dx\strix` → `G:\Dx\hackin`. The
+  upstream tree moved whole, **with its own `.git` intact**, to
+  `hackin/reference/strix-python/` — `git log` there still resolves `a0f8ea2` and
+  `origin` still points at `usestrix/strix`. Nothing was deleted, and the hub's
+  `/*` ignore rule keeps the whole folder out of the hub's index
+  (`git check-ignore -v hackin` → `.gitignore:3:/*`).
+- **The hub manifest declares the product:** `dx:22` gains `hackin = hackin`.
+  `PathsConfig` in `cli/src/config.rs:235` has no matching field, so the key is
+  **inert** — `dx hackin` does not route yet, and that is filed as `MF-05` in
+  `TODO.md` rather than papered over. The fix belongs to the `cli` repo
+  (`AGENTS.md` §2 rule 4), not to this one.
+- **The register gains the product:** `docs/hackin.md` is the achievement page, and
+  `docs/README.md` carries both the page-index line and the register row. The row
+  states the two things that are true and the one that is not — repo-managed and
+  green, **but the agent loop is not ported, so no scan capability is claimed**.
+- **What the port actually is.** A seven-crate Rust workspace at `hackin/crates/`:
+  `dx-hackin-core` (the agent graph and coordinator), `dx-hackin-config` (the settings
+  surface and env precedence), `dx-hackin-llm` (the turn guard — call ids, argument
+  repair, per-turn call volume — plus the context budget and the compactor),
+  `dx-hackin-report` (CVSS 3.1, SARIF 2.1.0, the coverage ledger, the report state,
+  the artifact writer), `dx-hackin-runtime` (the Docker sandbox), `dx-hackin-proxy`
+  (the Caido GraphQL client), and `dx-hackin-cli`.
+- **Two parity checks against the actual Python, not against a reading of it.** All
+  **2,592** CVSS 3.1 base vectors and **10,368** temporal vectors match the `cvss`
+  package exactly; the SARIF, coverage and vulnerabilities JSON artifacts show **zero**
+  structural differences; the markdown and CSV artifacts are **byte-identical**,
+  `\r\n` terminators included. The LLM crate additionally records the Python module
+  outputs as fixtures and asserts the Rust reproduces them.
+- **Verified in the product repo:** `cargo test --workspace` → 367 passed, 0 failed;
+  `cargo clippy --workspace -- -D warnings` → clean; `cargo fmt --check` → clean.
+- **What this entry does not claim.** `dx-hackin` **cannot run a scan**. The agent
+  loop, the budget hooks, the agent factory and its 43 tools, the provider layer, the
+  scan runner, the prompts, the session store, the MCP layer, the skills, the TUI, the
+  viewer, the cloud CLI and the telemetry are **not ported** — `hackin/TODO.md` carries
+  the itemised backlog with `file:line` evidence and a done-when check for each. The
+  upstream's published benchmark (96% on XBEN) is a property of the **Python v0.4.0**
+  implementation and is **not** claimed for this port. No binary has been built and
+  no repository has been published.
+- **The product keeps its own ledger**, as the hub requires of every product folder:
+  `hackin/TODO.md` (32 open items, plus a 17-row deviation ledger) and
+  `hackin/CHANGELOG.md` (what changed, dated, one record per event). The hub's
+  `TODO.md` and this file carry the hub-side record only.
+
 ### 2026-10-20 — `docs:` two new DX tools, one README rewrite, one parking-lot rename
 
 **`grimoire` and `forkness` are DX tools now. `llama.cpp` and the root junk are parked

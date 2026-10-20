@@ -35,6 +35,7 @@ companion tools.
 | forkness | `forkness` | `essence-dx/dx-forkness` | `dx-forkness` | `dx forkness` |
 | forge | `forge` | `essence-dx/forge` | `dx-forge` | `dx forge`, `dx add` |
 | grimoire | `grimoire` | `essence-dx/grimoire` | `dx-grimoire` | `dx grimoire` |
+| hackin | `hackin` | `essence-dx/dx-hackin` | `dx-hackin` | none yet |
 | i18n | `i18n` | `essence-dx/i18n` | `dx-i18n` | `dx i18n` |
 | icon | `icon` | `essence-dx/icon` | `dx-icon` | `dx icon` |
 | media | `media` | `essence-dx/media` | `dx-media` | `dx media` |
@@ -54,6 +55,11 @@ companion tools.
 `bin/` (verified by directory listing on 2026-10-09) that have no `dx` route
 wired yet. `forkness` and `grimoire` are DX tools with a `dx` route wired and
 no release artifact yet — see the honest command-surface status below.
+`hackin` is the Rust port of the upstream Strix AI pentesting engine: the
+workspace is repo-managed and green, but **it cannot run a scan yet** (the
+agent loop, the tool surface and the provider layer are not ported), there is
+no release binary, no `dx` route, and no published repository — see
+`docs/hackin.md` and `hackin/TODO.md`.
 Everything else in the table has a live `dx <tool>` command.
 
 ### Install, update, and discovery
@@ -117,16 +123,24 @@ and carry no `dx <tool>` route. Keep them out of the tool table above.
 | Folder | Upstream remote | What it is | DX relationship |
 | --- | --- | --- | --- |
 | `magnitude` | `magnitudedev/magnitude` | Open-source inference engine for agents; compiles and tunes kernels on the host machine, claims up to 2x llama.cpp decode on Metal | Vendored reference. Its `native/llama-cpp-rs` is its own copy, unrelated to the parked `llama.cpp` below. |
-| `superpowers` | `obra/superpowers` | Agent methodology: composable skills plus a spec-first, TDD, subagent-driven workflow; ships plugin manifests for Claude, Codex, Cursor, Gemini, OpenCode and more | **Already vendored inside DX.** `driven/vendor/superpowers/` holds a copy of this tree, so this root clone is a duplicate of the DX-side copy. |
 | `treg` | `superdesigndev/treg` | "OpenRouter for tools": a catalog of thousands of priced API endpoints, vendor CLIs, and skills, with server-side credential injection | Vendored reference. Not DX-authored, not registered. |
 | `grimoire` | `essence-dx/grimoire` (upstream `morluto/rea`) | Reverse-engineering CLI and MCP server | **This one is a DX tool.** `package.json` declares `"name": "dx-grimoire"`, and git carries `upstream = morluto/rea`. See the tool table above. |
 
-`llama.cpp` (the `PrismML-Eng` Prism fork) was parked into
-`DEPRICATED_10-20-2026/llama.cpp` on 2026-10-20. Its working tree was already
-gutted at that point: 129 files on disk against 3445 tracked files showing as
-deleted, and no `Cargo.toml` in the hub path-depends on it. The `tpu/` kernels
-clone their own `llama.cpp` inside their Kaggle/Colab run directory
-(`tpu/bonsai2-cached/kernel.py:220-230`), so parking it breaks nothing.
+Two root clones were parked on 2026-10-20 because DX already carries the same
+content:
+
+- **`llama.cpp`** (the `PrismML-Eng` Prism fork) is now at
+  `DEPRICATED_10-20-2026/llama.cpp`. Its working tree was already gutted at
+  that point: 129 files on disk against 3445 tracked files showing as deleted,
+  and no `Cargo.toml` in the hub path-depends on it. The `tpu/` kernels clone
+  their own `llama.cpp` inside their Kaggle/Colab run directory
+  (`tpu/bonsai2-cached/kernel.py:220-230`), so parking it breaks nothing.
+- **`superpowers`** is now at `DEPRICATED_10-20-2026/superpowers`. It was the
+  upstream `obra/superpowers` clone at `bb92a77` (v7.0.0), which is the
+  **exact commit** already vendored into DX at
+  `driven/vendor/superpowers/` — 97 files tracked in the `driven` repo, at
+  version 7.0.0 commit `bb92a77` per `driven/vendor/superpowers/NOTICE.md`.
+  The root clone was a duplicate, and `driven` is the live copy.
 
 ## Bonsai 2 27B on a TPU (measured)
 

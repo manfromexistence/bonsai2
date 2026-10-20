@@ -20,6 +20,7 @@ paths(
   serializer         = serializer
   metasearch         = metasearch
   grimoire           = grimoire
+  hackin             = hackin
   dx_agents          = agent
   inspirations       = inspirations
   cache              = .dx/cache

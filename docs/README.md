@@ -66,6 +66,7 @@ Current pages:
 - [`native.md`](native.md): DX Tauri fork, serializer-cache, guard-suite, and release-boundary achievements.
 - [`grimoire.md`](grimoire.md): DX Grimoire reverse-engineering CLI and MCP server achievements.
 - [`forkness.md`](forkness.md): DX Forkness recursive agent-harnessing port achievements.
+- [`hackin.md`](hackin.md): DX Rust port of the Strix autonomous AI pentesting engine.
 
 ## Documentation Rules
 
@@ -128,6 +129,7 @@ turning scattered wins into a coherent DX story.
 | `metasearch` | Search engine registry/server/CLI | Organizes reusable query/result types, engine adapters, Axum server endpoints, OpenSearch, cache, coalescing, health tracking, provider access models, status probes, and CLI release into one Rust workspace. | `docs/achievements/metasearch.md`, `metasearch/README.md`, `metasearch/docs/PROVIDER_ACCESS_MODELS.md`, `metasearch/crates/metasearch-server/src/routes/health.rs`; live-provider wording needs fresh probes. |
 | `grimoire` | Reverse-engineering CLI and MCP server | Carries the DX fork of the upstream `morluto/rea` project under the DX package identity `dx-grimoire`, with a CLI and MCP surface, per-view limitation bounding, and provenance preservation. | `docs/achievements/grimoire.md`, `grimoire/package.json`, `grimoire/docs/mcp-contracts.md`, `grimoire/PLAN.md`; **no release artifact exists yet**, so install wording is blocked. |
 | `forkness` | Recursive agent-harnessing port | Carries the Rust port of Google's `harness2` as one `dx-forkness` binary, with the method's two hard invariants enforced by the type system and the upstream Python implementation retained as the specification. | `docs/achievements/forkness.md`, `forkness/README.md`, `forkness/Cargo.toml`, `forkness/crates/dx-forkness-cli/`; **the DX repository is not published yet**, so install wording is blocked. |
+| `hackin` | Rust port of the Strix AI pentesting engine | Carries the Rust port of the upstream `usestrix/strix` autonomous pentesting agent as the `dx-hackin` workspace, with each ported module citing the Python `file:line` it came from and the upstream Python tree retained read-only as the specification. | `docs/hackin.md`, `hackin/README.md`, `hackin/TODO.md`, `hackin/crates/Cargo.toml`; **the agent loop, provider layer, TUI and viewer are not ported yet**, so no scan capability is claimed. |
 
 ## Language And Upstream-Derived Workspaces
 
