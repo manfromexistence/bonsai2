@@ -40,11 +40,11 @@ Ordered by how much it was worth. "Receipt" names the file that owns the number.
 
 | # | Method | Effect | Receipt |
 | --- | --- | --- | --- |
-| 1 | **Lane-aligned tiles**: store the packed block as `(32, rows)` and compute `x @ w` so the out-columns sit on the 128 lanes (Pallas maps only the last two dims to the register file; Mosaic puts a matmul's N axis on the lanes) | **29.66 → 281.01 tok/s** (9.5×) at batch 80 | `14-lane-aligned-ternary-kernel/receipt-14-b80-f16-tc1024.json` |
-| 2 | **Batch ladder** 32 → 80 with f16 state storage | 2.09× aggregate; stops at the **memory wall** (15.67 of 15.75 GiB) | same + `receipt-14-b32…`, `-b64…`, `-b48…` |
+| 1 | **Lane-aligned tiles**: store the packed block as `(32, rows)` and compute `x @ w` so the out-columns sit on the 128 lanes (Pallas maps only the last two dims to the register file; Mosaic puts a matmul's N axis on the lanes) | **29.66 → 281.01 tok/s** (9.5×) at batch 80 | `14-lane-aligned-ternary-kernel/receipt-b80-f16-tc1024.json` |
+| 2 | **Batch ladder** 32 → 80 with f16 state storage | 2.09× aggregate; stops at the **memory wall** (15.67 of 15.75 GiB) | same + `receipt-b32…`, `-b64…`, `-b48…` |
 | 3 | **Decode spelling**: `concatenate` instead of `stack(axis=1).reshape` (a layout conversion), then int16 lanes | 1.33× then 1.20× on the decode | `13-projection-cost-breakdown/README.md` Q5 |
-| 4 | **Out-tile TC 512 → 1024** | +5.5 % at batch 80 | `receipt-14-b80-f16-tc1024.json` |
-| 5 | **Fused 64-layer step**: all 64 layers in one `jax.jit`, the 61-chunk vocab loop in a second | **4.62 → 5.54 tok/s** single-stream at 8k; compile 142 s → 57 s | `receipt-14-fuse1-b1-f16-tc1024.json` |
+| 4 | **Out-tile TC 512 → 1024** | +5.5 % at batch 80 | `receipt-b80-f16-tc1024.json` |
+| 5 | **Fused 64-layer step**: all 64 layers in one `jax.jit`, the 61-chunk vocab loop in a second | **4.62 → 5.54 tok/s** single-stream at 8k; compile 142 s → 57 s | `receipt-fuse1-b1-f16-tc1024.json` |
 | 6 | **Persistent compile cache** (`/content/jaxcache`) + a compile watchdog | the rerun's prefill is 4.6 s instead of a fresh 140 s compile | same run's prefill line |
 | 7 | **GGUF header read by byte-range** (40 MB instead of a 5.9 GB download) | the whole MTP question answered from the artifact in minutes | `tpu/DO-NOT-RETEST.md` §14 |
 
@@ -65,12 +65,12 @@ Ordered by how much it was worth. "Receipt" names the file that owns the number.
 
 | window | outcome | receipt |
 | --- | --- | --- |
-| `max_t` 83 | 152.3 ms/step, **6.57 tok/s** | `receipt-14-ctx64-b1-f16-tc1024.json` |
-| `max_t` 1024 | 153.6 ms, 6.51 tok/s | `receipt-14-ctx1024-…` |
-| `max_t` 8192 | 180.9 ms, 5.53 tok/s | `receipt-14-ctx8192-…` |
-| `max_t` 8192, grouped attention (`GQA=1`) | **134.3 ms, 7.45 tok/s** | `receipt-14-gqa-b1-f16-tc1024.json` |
-| `max_t` 45056 | runs at 2.86 tok/s with `FUSE=0` | `receipt-14-b1-f16-tc1024-45056.json` |
-| `max_t` 49152 | **OOM** — `jit_attn_step` wants 2.44 GB, 2.30 GB free (140 MB short) | `receipt-14-mem-ceiling.json` |
+| `max_t` 83 | 152.3 ms/step, **6.57 tok/s** | `receipt-ctx64-b1-f16-tc1024.json` |
+| `max_t` 1024 | 153.6 ms, 6.51 tok/s | `receipt-ctx1024-…` |
+| `max_t` 8192 | 180.9 ms, 5.53 tok/s | `receipt-ctx8192-…` |
+| `max_t` 8192, grouped attention (`GQA=1`) | **134.3 ms, 7.45 tok/s** | `receipt-gqa-b1-f16-tc1024.json` |
+| `max_t` 45056 | runs at 2.86 tok/s with `FUSE=0` | `receipt-b1-f16-tc1024-45056.json` |
+| `max_t` 49152 | **OOM** — `jit_attn_step` wants 2.44 GB, 2.30 GB free (140 MB short) | `receipt-mem-ceiling.json` |
 | `max_t` 65536 | **OOM** — wants 3.26 GB, 184.53 MB free | same |
 
 **The whole 8k window costs 19 %** at batch 1 (152.3 → 180.9 ms) — but 25 ms of that
@@ -93,7 +93,7 @@ was never measured until 2026-10-20, and it is small.
 | `PREFETCH=0..4` | `num_scalar_prefetch` on the grid spec | does not compile at 1+ on this grid |
 
 All four arms of the 2×2 (shipped / `NOCONCAT` / `GQA` / both) run in one session;
-receipts are `tpu/14-lane-aligned-ternary-kernel/receipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`.
+receipts are `tpu/lane-aligned-ternary-kernel/receipt-{base,nc,gqa,both}-b1-f16-tc1024.json`.
 
 ### 2.5 Tooling built along the way
 

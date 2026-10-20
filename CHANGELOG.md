@@ -78,6 +78,38 @@ allow list, and measured a CI blocker that had been taken on trust.**
   32 bits per element and wins nothing -- which is why the first step is 16-bit, not
   4-bit.
 
+### 2026-10-21 - `chore:` the sequence numbers are gone -- every folder is named for what it is
+
+The folders carried a work-order number (`01-`, `04-`, `14-`) and a shorthand
+(`bonsai2-4way`, `mtp-test`). The numbers were noise once the tree was split, and
+the shorthands meant nothing outside this repository. Every folder and every
+receipt is now named for what it is.
+
+| before | now |
+| --- | --- |
+| `04-bonsai-tpu-forward` | `reference-forward-pass` |
+| `07-pallas-fusion` | `pallas-matmul-findings` |
+| `13-cost-sweep` | `projection-cost-breakdown` |
+| `14-bonsai-transposed` | **`lane-aligned-ternary-kernel`** (the live kernel) |
+| `pq2-decode` | `ternary-2bit-weight-format` |
+| `env` | `colab-auth-timeout-patch` |
+| `archive/01-environment-and-pallas-probe` | `archive/environment-pallas-probe` |
+| `archive/02-gguf-format-and-sign-metadata` | `archive/gguf-format-and-sign-metadata` |
+| `archive/03-hadamard-transform-tests` | `archive/hadamard-transform-tests` |
+| `archive/05-run-harness` | `archive/run-harness` |
+| `archive/06-batched-kv-decode` | `archive/batched-kv-decode` |
+| `archive/08-lax-scan-over-layers` | `archive/lax-scan-over-layers` |
+| `archive/09-int8-weights` | `archive/int8-weights` |
+| `archive/10-fused-ternary-matmul` | `archive/fused-ternary-matmul` |
+| `archive/11-fully-fused-64-layer-model` | `archive/fully-fused-64-layer-model` |
+| `archive/12-windowed-dma-in-blocks` | `archive/windowed-dma-in-blocks` |
+| `receipt-14-*.json` | `receipt-*.json` |
+
+`git mv` throughout, so every folder and every receipt keeps its history, and the
+kernel now writes the un-numbered receipt name itself. The work order is not lost:
+it is the ladder the `CHANGELOG.md` records, from the first forward pass to
+281.01 tok/s.
+
 ### 2026-10-21 - `chore:` every folder in `tpu/` is renamed to say what it is
 
 The folder names were a mix of what-they-are and when-they-happened

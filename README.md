@@ -178,9 +178,9 @@ decode throughput across the batch, each with a receipt in `tpu/`:
 
 | Run, 2026-10-18 (`[exec]` on v5e-1) | Result | Receipt |
 | --- | --- | --- |
-| Batch 80, 32 tokens generated | **281.01 tok/s** | `tpu/14-lane-aligned-ternary-kernel/receipt-14-b80-f16-tc1024.json` |
-| Batch 80, 19-token prompt, 64 generated | 268.3 tok/s | `tpu/14-lane-aligned-ternary-kernel/receipt-14-prompt-b80-f16-tc1024.json` |
-| Batch 64, 128 generated | 207.1 tok/s | `tpu/14-lane-aligned-ternary-kernel/receipt-14-prompt-b64-f16-tc1024.json` |
+| Batch 80, 32 tokens generated | **281.01 tok/s** | `tpu/lane-aligned-ternary-kernel/receipt-b80-f16-tc1024.json` |
+| Batch 80, 19-token prompt, 64 generated | 268.3 tok/s | `tpu/lane-aligned-ternary-kernel/receipt-prompt-b80-f16-tc1024.json` |
+| Batch 64, 128 generated | 207.1 tok/s | `tpu/lane-aligned-ternary-kernel/receipt-prompt-b64-f16-tc1024.json` |
 | Baseline before the layout fix | 29.66 tok/s | `tpu/11-fully-fused-64-layer-model/receipt-dec-cat-int16-tc512.json` |
 
 The 9.5x came from storing the packed tiles so the out-columns sit on the
@@ -196,10 +196,10 @@ conversation, and it was measured on 2026-10-19 (`[exec]` on v5e-1):
 
 | Single stream (batch 1), 2026-10-19 | Result | Receipt |
 | --- | --- | --- |
-| 8k window, 64 generated, 64-layer step fused into one jit | **5.54 tok/s** (180.6 ms/step) | `tpu/14-lane-aligned-ternary-kernel/receipt-14-b1-f16-tc1024-fused.json` |
-| the same run before the fusion | 4.62 tok/s (216.3 ms/step) | `tpu/14-lane-aligned-ternary-kernel/receipt-14-b1-f16-tc1024-franch.json` |
-| 45k window -- the largest fp32 window that runs at all | 2.86 tok/s | `tpu/14-lane-aligned-ternary-kernel/receipt-14-b1-f16-tc1024-45056.json` |
-| 49152 and 65536 windows | out of memory (140 MB and 3.1 GB short) | `tpu/14-lane-aligned-ternary-kernel/receipt-14-mem-ceiling.json` |
+| 8k window, 64 generated, 64-layer step fused into one jit | **5.54 tok/s** (180.6 ms/step) | `tpu/lane-aligned-ternary-kernel/receipt-b1-f16-tc1024-fused.json` |
+| the same run before the fusion | 4.62 tok/s (216.3 ms/step) | `tpu/lane-aligned-ternary-kernel/receipt-b1-f16-tc1024-franch.json` |
+| 45k window -- the largest fp32 window that runs at all | 2.86 tok/s | `tpu/lane-aligned-ternary-kernel/receipt-b1-f16-tc1024-45056.json` |
+| 49152 and 65536 windows | out of memory (140 MB and 3.1 GB short) | `tpu/lane-aligned-ternary-kernel/receipt-mem-ceiling.json` |
 
 Why single-stream is slow: 80 sequences cost only 1.58x one sequence
 (180.6 ms/step against 284.7 ms/step), so the step is ~85 % per-projection
