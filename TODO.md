@@ -538,6 +538,17 @@ claimed, and a red X on a workflow is **not** evidence that the code is broken.
 - **The fix and its price:** q4 KV is 16 KiB/token/sequence, so 64k becomes 1 GiB and
   the window fits at ~11.3 GiB — but the kernel has no q4 KV path and no blocked or
   paged attention, and both are new kernel work rather than a configuration change.
+- **What is measured (2026-10-21):** the KV dtype is now selectable
+  (`KVDTYPE=fp32|fp16|bf16`) and the attention reads the cache in its own precision,
+  so no f32 upcast of the cache is materialised. But **the window ceiling is set by
+  the whole-model jit's compile-time temporaries, not by the KV dtype**: fp16 at
+  `max_t` 65536 fails with *"CompileTimeHbmOom: ... HLO temporaries (22.68G) exceeds
+  available HBM (15.75G)"*, and at 131072 with *"RuntimeBufferAllocationFailure:
+  ... 512.00M ... 184.60M free"*. **So the per-layer jit has to come back first**
+  (`TPU-10`), and only then does a denser cache buy anything. A true 4-bit cache also
+  needs the dequant fused into the attention (a flash-style Pallas kernel): read through
+  an f32 einsum, a 4-bit cache is upcast straight back to 32 bits per element and wins
+  nothing.
 - **Done when:** a receipt records a 65536-token window running end to end with the
   model, and the q4 KV round-trip error is bounded in the receipt.
 

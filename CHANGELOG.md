@@ -13,6 +13,25 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `docs:` the KV cache dtype is selectable, and the window ceiling is the whole-model jit, not the cache
+
+- **`KVDTYPE=fp32|fp16|bf16`** in `tpu/14-bonsai-transposed/kernel.py`. The write
+  casts into the cache dtype and the attention casts the query to match, so the matmul
+  runs in the cache's precision and **no full-size f32 upcast of the cache is
+  materialised** -- that temporary would eat the whole saving.
+- **Measured, and it changes the plan:** the window ceiling is set by the whole-model
+  jit's *compile-time* temporaries, not by the KV dtype. fp16 at `max_t` 65536 fails
+  with *"CompileTimeHbmOom: ... HLO temporaries (22.68G) exceeds available HBM
+  (15.75G)"*, and at 131072 with *"RuntimeBufferAllocationFailure: ... 512.00M ...
+  184.60M free"*. fp32 at 65536 lost its connection during the (very slow) compile, so
+  that point is **inconclusive** and is recorded as such, not as a measurement.
+  **Consequence: the per-layer jit has to come back first** (`TODO.md` `TPU-10`); only
+  then does a denser cache buy anything.
+- **A true 4-bit cache needs the dequant fused into the attention** (a flash-style
+  Pallas kernel). Read through an f32 einsum, a 4-bit cache is upcast straight back to
+  32 bits per element and wins nothing -- which is why the first step is 16-bit, not
+  4-bit.
+
 ### 2026-10-21 - `chore:` the `tpu/` folder is split: the live track at the root, everything else named
 
 The folder had sixteen notebook generations, seven later kernels and five GPU
