@@ -45,6 +45,8 @@
 !/tpu/*/kernel-metadata.json
 !/tpu/*/notebook.ipynb
 !/tpu/*/receipt-*.json
+!/tpu/pq2-decode/
+!/tpu/pq2-decode/tq2_decode.py
 !/tpu/*/*.md
 # env.ps1 inside tpu/ is a live Kaggle API token copied for convenience. Never commit it.
 /tpu/env.ps1
