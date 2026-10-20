@@ -393,13 +393,20 @@ for it.
 
 ### ENV-01 · The volume is full; the sweep is a proposal, not a task
 
-- **Evidence:** `G:` at **99% — 477 GB total, 472 GB used, 5.2 GB free**; `G:\Dx` is ~166 GB
+- **Evidence:** `G:` at **99% - 477 GB total, 472 GB used, 5.2 GB free**; `G:\Dx` is ~166 GB
   of which **~88 GB is regenerable build/dependency output**
-  (`docs/space-review-2026-09-23.md:5`).
+  (`docs/space-review-2026-09-23.md:5`). **Re-measured 2026-10-20:** `G:` is at
+  **~24.1 GB free** of 476.9 GB (455.4 GB used, 5.1% free) after the approved
+  deletion of two duplicate 5.54 GB model-weight copies — see the `chore:`
+  entry in `CHANGELOG.md` for the target list, the exclusions and the receipts.
+  A drive-wide sweep on the same date measured **~85 GB** of regenerable build
+  output still on disk and **~102 GB** of stale park lots that are *not*
+  regenerable, so the sweep list now has measured numbers behind it.
 - **Do not act on this item by deleting.** The review that produced the number deleted
   nothing on purpose (`docs/space-review-2026-09-23.md:3`). The deliverable here is an
-  approved, itemised, size-backed sweep list — and `HUB-04`'s scripts make that list
-  reproducible.
+  approved, itemised, size-backed sweep list - and `HUB-04`'s scripts make that list
+  reproducible. The one exception so far is the two model-weight copies named above,
+  which were approved explicitly after the proposal was written down.
 - **Done when:** an approved sweep manifest exists, sizes are re-measured after any agreed
   action, and free space is above 50 GB.
 

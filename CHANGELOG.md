@@ -74,7 +74,49 @@ page and a row.**
   `hackin/CHANGELOG.md` (what changed, dated, one record per event). The hub's
   `TODO.md` and this file carry the hub-side record only.
 
-### 2026-10-20 — `docs:` two new DX tools, one README rewrite, one parking-lot rename
+### 2026-10-20 - `chore:` 11.07 GB reclaimed by deleting two duplicate model-weight copies
+
+**This is the one deletion this hub has authorised, and it was approved explicitly after a
+written proposal.** `AGENTS.md` §2.2 permits deletion only on that basis, so the approved
+list and the exclusions are recorded here with the receipts.
+
+**Approved target list** (deleted, nothing else):
+
+| Path | Size | What |
+| --- | --- | --- |
+| `G:\Temp\UserTemp\opencode\bonsai-ptq1.gguf` | 5.54 GB | The Bonsai 2 27B ternary weights, a single file |
+| `G:\Temp\UserTemp\opencode\kaggle-dataset\` | 5.54 GB | A second copy of the same weights (`Ternary-Bonsai-2-27B-PTQ1_0.gguf`) plus a 151-byte `dataset-metadata.json` |
+
+**Exclusions** (verified present after the deletion): every other item under
+`G:\Temp\UserTemp\opencode` (`battle` 2.0 GB, `vjepa` 1.15 GB, `smolvlm2-256m` 0.96 GB,
+`fk-ci` 0.94 GB, `macsdktest` 0.89 GB, `dmlvenv` 0.37 GB, `llama-eg2` 0.20 GB, `lfm/`,
+`smolq4/`); every other `.gguf` on `G:` (the llama.cpp vocab files, `LFM2.5-230M-QAD-Q4_0`,
+`SmolVLM2-256M-Video-Instruct`, `MiniCPM5-1B-Q4_0`, the `gguf_graft_test_*` and `dbg*`
+fixtures, `Qwen3.5-0.8B`); and the whole of `G:\Dx`.
+
+**Why it was safe.** A drive-wide `.gguf` sweep found these to be the **only two**
+5.54 GB copies of the Bonsai 2 27B PTQ1_0 weights; every other model file on the drive is
+under 200 MB. `fsutil hardlink list` reports a single link for each, so deleting them
+releases the full 11.08 GB rather than dropping a shared block. No running process held
+either open, and no file under `G:\Dx\tpu\` references either path.
+
+**Why the 151-byte metadata was not a loss.** It named the same dataset
+(`essencefromexistence/bonsai2-27b-ptq1`, CC0-1.0, "Ternary Bonsai 2 27B PTQ1_0") that is
+already parked at `DEPRICATED_10-20-2026/root-junk/dataset-metadata.json`, and the parked
+copy is a strict superset — it adds `datasetId`, `datasetSlug`, `ownerUser`,
+`usabilityRating`, `totalDownloads`, `isPrivate` and `expectedUpdateFrequency`.
+
+**Receipt.** Free space on `G:` went from **13.12 GB to 24.19 GB**, a reclaim of
+**11.07 GB** (`Get-PSDrive G`, measured immediately before and after the `Remove-Item`
+calls). The weights are re-fetchable from the Kaggle dataset, so the TPU track is not
+blocked by their absence; a run that needs them pays one ~5.5 GB download.
+
+**What was not deleted.** `G:\Dx\tui\target` (17.5 GB) was removed by a concurrent session
+during the survey that produced this proposal, not by this entry. The remaining ~85 GB of
+build output and ~102 GB of stale park lots identified in that survey are untouched and
+still await a decision.
+
+### 2026-10-20 - `docs:` two new DX tools, one README rewrite, one parking-lot rename
 
 **`grimoire` and `forkness` are DX tools now. Five root folders are parked in a
 renamed lot. Nothing was deleted.**
