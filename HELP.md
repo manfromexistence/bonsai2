@@ -68,11 +68,17 @@ Ordered by how much it was worth. "Receipt" names the file that owns the number.
 | `max_t` 83 | 152.3 ms/step, **6.57 tok/s** | `receipt-14-ctx64-b1-f16-tc1024.json` |
 | `max_t` 1024 | 153.6 ms, 6.51 tok/s | `receipt-14-ctx1024-…` |
 | `max_t` 8192 | 180.9 ms, 5.53 tok/s | `receipt-14-ctx8192-…` |
+| `max_t` 8192, grouped attention (`GQA=1`) | **134.3 ms, 7.45 tok/s** | `receipt-14-gqa-b1-f16-tc1024.json` |
 | `max_t` 45056 | runs at 2.86 tok/s with `FUSE=0` | `receipt-14-b1-f16-tc1024-45056.json` |
 | `max_t` 49152 | **OOM** — `jit_attn_step` wants 2.44 GB, 2.30 GB free (140 MB short) | `receipt-14-mem-ceiling.json` |
 | `max_t` 65536 | **OOM** — wants 3.26 GB, 184.53 MB free | same |
 
-**The whole 8k window costs 19 %** at batch 1 (152.3 → 180.9 ms). The earlier 638/662 ms
+**The whole 8k window costs 19 %** at batch 1 (152.3 → 180.9 ms) — but 25 ms of that
+is the kv-head expansion, which the grouped attention (`GQA=1`) removes: the shipped
+path materialises `K[:, :, _KIDX, :]`, a (B, T, 24, 256) expansion of 4 kv heads to 24
+query heads, 201 MB per layer per step at 8k. Contracting the query groups against the
+kv heads directly reads the KV once instead of six times: **159.7 → 134.3 ms, 6.26 →
+7.45 tok/s**, numerically exact (first token 271, identical text). The earlier 638/662 ms
 step times were a **batch × context** interaction, not context: they were measured at
 batches 48 and 32, while the 284.7 ms run was at batch 80. Context cost at fixed batch
 was never measured until 2026-10-20, and it is small.
