@@ -45,7 +45,10 @@ The upstream tree is ~59,600 production lines across three languages:
 | `crates/dx-hackin-proxy/` | the Caido GraphQL interception-proxy client |
 | `crates/dx-hackin-provider/` | the model provider — an OpenAI-compatible client with the upstream's turn guard, retries and stream deadlines |
 | `crates/dx-hackin-agent/` | the agent loop — the turn rule, the recovery nudge, the budget, the session store |
-| `crates/dx-hackin-tools/` | the 42 tools the agents call (33 working, 9 honest stubs) |
+| `crates/dx-hackin-tools/` | the 43 tools the agents call (42 working, one honest stub) and the two argument wrappers |
+| `crates/dx-hackin-skills/` | the 75 vendored knowledge packs and their loader |
+| `crates/dx-hackin-mcp/` | the Model Context Protocol client, the per-run registry, the five dispatch tools |
+| `crates/dx-hackin-web/` | the Exa and Perplexity clients and the two research tools |
 | `crates/dx-hackin-cli/` | the `dx-hackin` binary |
 | `reference/strix-python/` | the vendored Python original, read-only, git-ignored |
 | `TODO.md` / `CHANGELOG.md` | the product ledger and history |
@@ -74,7 +77,7 @@ trait in this port so the code can be built and tested without them:
 ## Honest status
 
 **repo-managed, and it runs.** The Rust workspace compiles, `cargo test
---workspace` is green (**732 passed, 0 failed**), and `cargo clippy
+--workspace` is green (**741 passed, 0 failed**), and `cargo clippy
 --workspace --all-targets -- -D warnings` is clean. `dx-hackin` drives a real
 model through the ported engine: the request goes out, the tool calls come
 back, the tools execute in a real Kali container, and the lifecycle tool ends

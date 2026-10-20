@@ -13,6 +13,36 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `fix:` dx-hackin's toolbox built at all — a stub and a real tool with the same name
+
+**A polish pass over the product found a defect that had been shipped, and
+fixed it.**
+
+- **What was wrong.** The web research tools and the five MCP dispatch tools
+  were **stubs**, left over from before the real clients existed. When the real
+  ones were added, both the stub and the real tool were registered — and the
+  registry refuses a duplicate name, because a tool name is a namespace. So
+  `ToolSet::build()` returned *"a tool named `web_search` is already
+  registered"*, and **every scan with `EXA_API_KEY`, `PERPLEXITY_API_KEY` or a
+  configured MCP server failed before its first model call.** The `load_skill`
+  stub had the same fate.
+- **The fix.** The superseded stubs are removed rather than left in place. The
+  skill loader is now a real tool in `dx-hackin-skills`; the web research and
+  MCP dispatch tools are registered only when their service is wired. The only
+  stub left is `view_image`.
+- **The guard.** A new integration test asserts that the toolbox holds **no
+  duplicate name** in three shapes — bare, with a web client, with an MCP
+  registry. The defect is caught by a test now, not by a scan.
+- **The rest of the polish:** a **`Makefile`** at the product's root (the same
+  set CI runs), **`rustfmt.toml`** and **`clippy.toml`** carrying the upstream's
+  own conventions, and the crate layout and dependency table in `AGENTS.md` and
+  `CONTRIBUTING.md` **regenerated from the real `Cargo.toml` files** — they had
+  fallen behind by four crates, and the dependency table was wrong.
+- **Verified in the product repo:** `cargo test --workspace` → 741 passed, 0
+  failed; `cargo clippy --workspace --all-targets -- -D warnings` → clean;
+  `cargo fmt --all -- --check` → clean; and a clean build shows **zero
+  warnings**.
+
 ### 2026-10-20 — `feat:` `hackin` — the Rust port of Strix joins the hub as a product folder
 
 **The `strix` folder is renamed `hackin` and becomes the DX product folder for
@@ -49,11 +79,11 @@ page and a row.**
   structural differences; the markdown and CSV artifacts are **byte-identical**,
   `\r\n` terminators included. The LLM crate additionally records the Python module
   outputs as fixtures and asserts the Rust reproduces them.
-- **Verified in the product repo:** `cargo test --workspace` → 732 passed, 0 failed;
+- **Verified in the product repo:** `cargo test --workspace` → 741 passed, 0 failed;
   `cargo clippy --workspace --all-targets -- -D warnings` → clean; `cargo fmt
   --all -- --check` → clean.
 - **It runs.** The agent loop, the provider, the budget, the session store, the
-  turn guard, the request log and a 42-tool toolbox are ported and wired
+  turn guard, the request log and a 43-tool toolbox are ported and wired
   together, so `dx-hackin` drives a real model through the engine: the request
   goes out, the tool calls come back, the tools execute in a real Kali
   container, and the lifecycle tool ends the run. This was verified end to end
