@@ -435,10 +435,16 @@ on this machine is a GPU run, not a TPU one.**
   rules out the cheapest-sounding fix: the trit value is
   `floor(3 * ((byte * p) & 0xFF) / 256) - 1`, so the power enters through a modular
   multiply and a threshold and **cannot** be folded into the activation.
-- **A trade-off the fusion introduces:** with the fused step the 45k window no longer
-  compiles -- *"CompileTimeHbmOom: ... HLO temporaries (18.92G) exceeds available HBM
-  (15.75G)"* -- so the 45k receipt is a `FUSE=0` number and the two configurations
-  have different context ceilings. Recorded in `TODO.md` `TPU-04`.
+- **A trade-off the fusion introduces, now measured at both ends:** the fused
+  whole-model program holds far more HLO temporaries alive, so it fits only in the
+  single-stream regime. At a 45k window it fails to compile (*"CompileTimeHbmOom: ...
+  HLO temporaries (18.92G) exceeds available HBM (15.75G)"*), and **at batch 80 it
+  fails the same way (20.08G against 15.75 GiB) in `jit_full_step`**. The aggregate
+  path -- the 281.01 tok/s configuration -- therefore still needs the per-layer jit
+  (`FUSE=0`), and the two configurations have different ceilings: `FUSE=1` is a
+  single-stream optimisation (and a 57 s compile instead of 142 s), `FUSE=0` is the
+  one that scales to batch 80 and to a 45k window. Recorded in `TODO.md` `TPU-04` and
+  `tpu/DO-NOT-RETEST.md`.
 
 ### 2026-10-20 — `docs:` the Kaggle kernels were deleted to stop GPU spend, and two of them were restored at once
 
@@ -676,4 +682,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 23:30 UTC
+updated: 2026-10-20 23:40 UTC
