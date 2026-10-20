@@ -122,12 +122,10 @@ and carry no `dx <tool>` route. Keep them out of the tool table above.
 
 | Folder | Upstream remote | What it is | DX relationship |
 | --- | --- | --- | --- |
-| `magnitude` | `magnitudedev/magnitude` | Open-source inference engine for agents; compiles and tunes kernels on the host machine, claims up to 2x llama.cpp decode on Metal | Vendored reference. Its `native/llama-cpp-rs` is its own copy, unrelated to the parked `llama.cpp` below. |
-| `treg` | `superdesigndev/treg` | "OpenRouter for tools": a catalog of thousands of priced API endpoints, vendor CLIs, and skills, with server-side credential injection | Vendored reference. Not DX-authored, not registered. |
-| `grimoire` | `essence-dx/grimoire` (upstream `morluto/rea`) | Reverse-engineering CLI and MCP server | **This one is a DX tool.** `package.json` declares `"name": "dx-grimoire"`, and git carries `upstream = morluto/rea`. See the tool table above. |
+| `codebase/codegraph` | `colbymchenry/codegraph` | Code-graph tool, nested one level down | Vendored reference. Not DX-authored, not registered. |
 
-Two root clones were parked on 2026-10-20 because DX already carries the same
-content:
+Three root clones were parked on 2026-10-20 because DX already carries the
+same content, or because nothing referenced them:
 
 - **`llama.cpp`** (the `PrismML-Eng` Prism fork) is now at
   `DEPRICATED_10-20-2026/llama.cpp`. Its working tree was already gutted at
@@ -141,6 +139,26 @@ content:
   `driven/vendor/superpowers/` — 97 files tracked in the `driven` repo, at
   version 7.0.0 commit `bb92a77` per `driven/vendor/superpowers/NOTICE.md`.
   The root clone was a duplicate, and `driven` is the live copy.
+- **`magnitude`** and **`treg`** are now at
+  `DEPRICATED_10-20-2026/magnitude` and
+  `DEPRICATED_10-20-2026/treg`. Both stayed intact as clean git clones with
+  their own `origin` (`magnitudedev/magnitude` at `b2f79f0`,
+  `superdesigndev/treg` at `e67d0d46`), so either can be re-cloned. Nothing in
+  the hub referenced them: no `Cargo.toml` or `package.json` path-depends on
+  either, and neither had a `dx` route.
+  - `magnitude` is a Bun/TypeScript monorepo with nested Rust crates (1627
+    `.rs` files) that compiles and tunes inference kernels on the host device.
+    Its own published benchmarks claim up to 2x llama.cpp (92% faster decode
+    on Metal, 19% on CUDA) — **their** numbers, not measured here. It is a
+    GPU/CPU engine, so it cannot advance the TPU-only Bonsai track
+    (`AGENTS.md` section 2, rule 7).
+  - `treg` is the `tools-registry` Python package (v0.26.0) plus a React
+    frontend: a registry and credential-injecting proxy that lets an agent
+    call thousands of priced third-party API endpoints and vendor CLIs from
+    one base URL and one token. Its licence is **Apache-2.0 with an added
+    hosted-service restriction** — free to self-host for your own team, not
+    free to run as a competing hosted service. It is Superdesign's product,
+    the same house behind the already-vendored `superpowers`.
 
 ## Bonsai 2 27B on a TPU (measured)
 
@@ -207,7 +225,7 @@ their CI, their releases, or their roadmaps.
 | `bin/` | Staged local binaries and the per-triple release builds. `dx.exe` and `dx.cmd` are the normal Windows entrypoints. |
 | `docs/` | The achievement register: one page per folder plus `docs/README.md` rules. |
 | `.dx/` | Hub runtime state and receipts. |
-| `DEPRICATED_10-20-2026/` | Parking lot for retired folders, repos, and root junk (44 entries on 2026-10-20: 31 git repos and 13 plain folders). Nothing in it is deleted; it is history kept out of the way. |
+| `DEPRICATED_10-20-2026/` | Parking lot for retired folders, repos, and root junk (48 entries on 2026-10-20: 34 git repos and 14 plain folders). Nothing in it is deleted; it is history kept out of the way. |
 | `AGENTS.md` | The operating manual for this hub. Read it first. |
 | `TODO.md`, `CHANGELOG.md`, `DX.md`, `PROMPTS.md` | Open work, dated change log, worker notes, prompts. |
 | `build.ps1` | Hub build entrypoint. |
@@ -225,6 +243,8 @@ These folders used to sit at the hub root and were moved into the parking lot
 | `mobile` | `DEPRICATED_10-20-2026\mobile-DEPRECATED-20261009-1616` | 2026-10-09 |
 | `llama.cpp` | `DEPRICATED_10-20-2026\llama.cpp` | 2026-10-20 |
 | `superpowers` | `DEPRICATED_10-20-2026\superpowers` | 2026-10-20 |
+| `magnitude` | `DEPRICATED_10-20-2026\magnitude` | 2026-10-20 |
+| `treg` | `DEPRICATED_10-20-2026\treg` | 2026-10-20 |
 | `ZZZ-bot-trash` | `DEPRICATED_10-20-2026\ZZZ-bot-trash` | 2026-10-20 |
 | `Frieren Beyon Journey's End.mp4`, `One Piece.mp4`, `Spiderman Into The SpiderVerse.mp4`, `big146.bin`, `Social.md`, `small.gz`, `$o`, `db`, `db-wal`, `TODO-ESSENCE.md` | `DEPRICATED_10-20-2026\root-junk\<same name>` | 2026-10-20 |
 

@@ -69,8 +69,8 @@ page and a row.**
 
 ### 2026-10-20 — `docs:` two new DX tools, one README rewrite, one parking-lot rename
 
-**`grimoire` and `forkness` are DX tools now. `llama.cpp` and the root junk are parked
-in a renamed lot. Nothing was deleted.**
+**`grimoire` and `forkness` are DX tools now. Five root folders are parked in a
+renamed lot. Nothing was deleted.**
 
 - **Promoted `grimoire` to a DX tool.** `grimoire/package.json` declares
   `"name": "dx-grimoire"` and `"mcpName": "io.github.essence-dx/grimoire"`, and
@@ -114,9 +114,13 @@ in a renamed lot. Nothing was deleted.**
   `driven/vendor/superpowers/`, 97 files tracked in the `driven` repo, at
   version 7.0.0 commit `bb92a77` per `driven/vendor/superpowers/NOTICE.md`,
   which is the exact commit the root clone was sitting on, so the root clone
-  was a pure duplicate and `driven` is the live copy);
-  `ZZZ-bot-trash`; and ten loose root files into `root-junk/`: the three videos
-  (`Frieren Beyon Journey's End.mp4`, `One Piece.mp4`,
+  was a pure duplicate and `driven` is the live copy); `magnitude` and `treg`
+  (both third-party clones nothing in the hub referenced — no `Cargo.toml` or
+  `package.json` path-depends on either and neither had a `dx` route — both
+  stayed intact as clean git clones with their own `origin`,
+  `magnitudedev/magnitude` at `b2f79f0` and `superdesigndev/treg` at
+  `e67d0d46`); `ZZZ-bot-trash`; and ten loose root files into `root-junk/`:
+  the three videos (`Frieren Beyon Journey's End.mp4`, `One Piece.mp4`,
   `Spiderman Into The SpiderVerse.mp4` — ~975 MB together), `big146.bin`
   (153 MB), `Social.md` (3.9 MB), `small.gz`, `$o`, `db`, `db-wal`,
   `TODO-ESSENCE.md`. All of them are denied by the `/*` rule and were never
@@ -128,8 +132,12 @@ in a renamed lot. Nothing was deleted.**
 - **Reclassified the non-DX root folders** as client work rather than junk:
   `dhakaraiment`, `esportsfire`, `ikra`, `lms`, and `bhcrd` now have a
   "Client and adjacent projects (not DX)" table in `README.md`.
-- **Hub root went from 47 folders to 45** (`llama.cpp` and `ZZZ-bot-trash` left the
-  root; the parking lot was renamed in place). Free space on `G:` was 19.15 GB
+- **Hub root folder count.** This session parked five root folders —
+  `llama.cpp`, `ZZZ-bot-trash`, `superpowers`, `magnitude`, `treg` — and the
+  root stood at **41 folders** when this entry was written. The count moved
+  from 47 because a concurrent session parked `bhcrd` and removed the broken
+  `codebase-memory-mcp` clone during the same window; those are not this
+  session's moves. Free space on `G:` was 19.15 GB
   before the move and 20.04 GB after (`Get-PSDrive G`) — the moves are
   same-volume metadata operations, so they cost no space.
 
