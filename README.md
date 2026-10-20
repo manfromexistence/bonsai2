@@ -32,7 +32,7 @@ companion tools.
 | check | `check` | `essence-dx/check` | `dx-check` | `dx check` |
 | dcp | `dcp` | `essence-dx/dcp` | `dx-dcp` | `dx dcp` |
 | driven | `driven` | `essence-dx/driven` | `dx-driven` | `dx driven` |
-| forkness | `forkness` | `essence-dx/dx-forkness` | `dx-forkness` | `dx forkness` |
+| forkness | `forkness` | `essence-dx/forkness` | `dx-forkness` | `dx forkness` |
 | forge | `forge` | `essence-dx/forge` | `dx-forge` | `dx forge`, `dx add` |
 | grimoire | `grimoire` | `essence-dx/grimoire` | `dx-grimoire` | `dx grimoire` |
 | hackin | `hackin` | `essence-dx/hackin` | `dx-hackin` | none yet |
@@ -96,10 +96,10 @@ plus musl, macOS x64/arm64, Android, and armv7 entries as of 2026-10-09).
   fail closed. `essence-dx/grimoire` has no GitHub release
   (`gh release view` reports `release not found`) and `dx-grimoire` is not on
   the npm registry, so `dx tool install grimoire` fails with `API 404`.
-  `essence-dx/dx-forkness` is not published on GitHub at all and the local
-  `forkness/` workspace has no `origin`, so `dx tool install forkness` fails
-  the same way. Both routes still find a locally built binary when one
-  exists.
+  `essence-dx/forkness` **is** published — private, `main` tracking
+  `origin/main` — but it has no release yet, so `dx tool install forkness`
+  fails the same way until the house `dx-forkness-<triple>` assets exist.
+  Both routes still find a locally built binary when one exists.
 - Removed: `dx build`, `dx js`, `dx py`, and `dx agents` (plus the hidden
   `dx bundle` alias). They routed at the `build/`, `js/`, `py/`, and `agent/`
   trees, all of which are absent from this workspace, so every one of those
@@ -283,4 +283,4 @@ PowerShell as the shell.
 | How do I work here without breaking it? | `AGENTS.md` |
 
 MIT OR Apache-2.0
-updated: 2026-10-20 00:00 UTC
+updated: 2026-10-21 00:00 UTC

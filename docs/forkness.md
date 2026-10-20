@@ -12,11 +12,11 @@ DX Forkness is a **DX tool** in the house sense: a binary driven through
 | Fact | Evidence |
 | --- | --- |
 | DX binary identity | `forkness/README.md`: "The port ships one `dx-forkness` binary with subcommands." |
-| DX repo identity | `forkness/Cargo.toml` → `repository = "https://github.com/essence-dx/dx-forkness"`, `homepage` the same |
+| DX repo identity | `forkness/Cargo.toml` → `repository = "https://github.com/essence-dx/forkness"`, `homepage` the same |
 | Upstream it ports | `forkness/README.md` → `google-research/harness2` @ `1cfe254`, paper *Harness²: Recursive Agent Harnessing for an Open World*, arXiv `2610.14224` |
 | Licence | Apache-2.0 both sides (`forkness/Cargo.toml` → `license = "Apache-2.0"`) |
 | Workspace layout | `forkness/Cargo.toml` → members `dx-forkness-core`, `dx-forkness-client`, `dx-forkness-substrate`, `dx-forkness-bench`, `dx-forkness-cli` |
-| Registry entry | `cli/src/update_registry.rs` → `("forkness", "essence-dx/dx-forkness", "dx-forkness", "bin/dx-forkness")` |
+| Registry entry | `cli/src/update_registry.rs` → `("forkness", "essence-dx/forkness", "dx-forkness", "bin/dx-forkness")` |
 | Live command | `cli/src/cli.rs` → `Forkness(DxToolchainForwardArgs)`; `cli/src/command_dispatch.rs` → `Command::Forkness(args) => run_forkness(...)` |
 | Manifest path | `dx` manifest `paths` block → `forkness = forkness` |
 | Local build output | `forkness/target/debug/dx-forkness.exe` exists on this machine |
@@ -61,12 +61,12 @@ DX Forkness is **repository-managed and command-routed, not release-qualified**.
 | Claim | Tier | Evidence |
 | --- | --- | --- |
 | The Rust port exists, builds, and produces `dx-forkness.exe` | repo-managed | `forkness/target/debug/dx-forkness.exe` on this machine |
-| The DX repository is published | **repo-managed** | `gh repo view essence-dx/dx-forkness` → `{"name":"dx-forkness","visibility":"PRIVATE"}`; `git ls-remote origin` lists `refs/heads/main`; `main` tracks `origin/main` with no ahead marker. Created 2026-10-21, matching every sibling repo's **private** visibility. |
-| A release artifact exists | **not true** | `gh release list --repo essence-dx/dx-forkness` → empty. The repository exists; no release has been cut. |
+| The DX repository is published | **repo-managed** | `gh repo view essence-dx/forkness` → `{"name":"forkness","visibility":"PRIVATE"}`; `git ls-remote origin` lists `refs/heads/main`; `main` tracks `origin/main` with no ahead marker. Created 2026-10-21 as `essence-dx/dx-forkness` and **renamed in place** to `essence-dx/forkness` the same day, so the pushed history and the repository settings carried over; the name now matches every sibling repo, and GitHub keeps a redirect from the old one. |
+| A release artifact exists | **not true** | `gh release list --repo essence-dx/forkness` → empty. The repository exists; no release has been cut. |
 | `dx tool install forkness` works | **not true** | the registry entry resolves (`cli/src/update_registry.rs:52-55`), but there is no release to fetch an asset from, so the house `dx-<tool>-<rust-target-triple>[.exe]` naming still has nothing behind it. |
 | The upstream's published gains are reproduced here | **not true** | `python/README.md:41-45` states 11.5 points on WorkBuddy-Bench, 4.5 on JobBench and 11.8 percentage points on LAB's partial pass rate. This tree contains **no run artifacts**, so those figures carry no receipt in it. |
 
-The `forkness/` workspace **has an `origin` remote** — `https://github.com/essence-dx/dx-forkness.git`
+The `forkness/` workspace **has an `origin` remote** — `https://github.com/essence-dx/forkness.git`
 — and `main` tracks it. The gate that remains is a **release**: a tagged version whose
 assets follow the house `dx-<tool>-<rust-target-triple>[.exe]` naming, so
 `dx tool install forkness` resolves an asset.

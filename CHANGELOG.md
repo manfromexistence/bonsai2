@@ -13,12 +13,39 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` the `forkness` repository is `essence-dx/forkness`, not `essence-dx/dx-forkness`
+
+**The last repository in the org carrying the `dx-` prefix lost it.**
+
+- **The rename.** `essence-dx/dx-forkness` is now **`essence-dx/forkness`**. Every
+  other product repository in the org is unprefixed — `essence-dx/cli`,
+  `essence-dx/media`, `essence-dx/grimoire`, `essence-dx/hackin`,
+  `essence-dx/metasearch` — so the `forkness` repository was the one exception, and
+  the hub's own tool table showed it. GitHub renamed it **in place**, so the pushed
+  history and the repository settings carried over rather than being recreated, and
+  GitHub keeps a redirect from the old name.
+- **What did not change.** The **binary** keeps the prefix: the house
+  release-asset naming is `dx-<tool>-<rust-target-triple>[.exe]`, which
+  `essence-dx/media` v1.0.0 proves, and so do the crate names. The tool name is
+  still `forkness`, the binary is still `dx-forkness`, and the install path is
+  still `bin/dx-forkness`. Only the repository moved.
+- **The receipts followed.** The product's `Cargo.toml` `repository` and `homepage`
+  fields, its `origin` remote, the security-advisories URL, the clone command in
+  the runbook and the ledger's evidence all point at the new name; the CLI's
+  `TOOL_REGISTRY` entry now resolves `forkness` from `essence-dx/forkness`; and
+  the hub's tool table, its achievement page and the `BLK-05` receipt name the
+  repository that actually exists.
+- **The gate is unchanged.** The repository exists and is published; the
+  **release** does not, so `dx tool install forkness` still fails closed. That
+  item stays open in `cli/TODO.md` with its evidence, and the six house assets
+  still need hosts this machine is not.
+
 ### 2026-10-21 - `feat:` dx-forkness is published, and the hub has an achievement page for it
 
 **The `harness2` port left the local disk and became a real repository, and the hub
 now has a page that says what it actually is.**
 
-- **The repository exists.** `essence-dx/dx-forkness` was created as a **private**
+- **The repository exists.** `essence-dx/forkness` was created as a **private**
   repository — the same visibility as every sibling repo in the org — and `main`
   tracks `origin/main`. The 34 commits and 202 tracked files were pushed in one
   step. The port's own contract says a commit is not durable until it is pushed;
@@ -100,8 +127,9 @@ fixed it.**
 - **The product repo now exists.** `essence-dx/hackin`, **private**, default
   branch `main`, created with the description *"A Rust port of the Strix
   autonomous AI penetration-testing engine"*. It was first created as
-  `essence-dx/dx-hackin`, off the sibling products' convention — the
-  `forkness` product lives in `essence-dx/dx-forkness` — and then **renamed in
+  `essence-dx/dx-hackin`, off the sibling products' convention - the
+  `forkness` product was then still `essence-dx/dx-forkness`, renamed to
+  `essence-dx/forkness` later the same day - and then **renamed in
   place** to `hackin`, so the pushed history and the repository settings
   carried over rather than being recreated; the `repository` and `homepage`
   fields in the product's `[workspace.package]` were corrected to match. All
@@ -248,7 +276,7 @@ renamed lot. Nothing was deleted.**
   registered DX tool, not a vendored third-party tree.
 - **Promoted `forkness` to a DX tool.** `forkness/README.md` states the port
   "ships one `dx-forkness` binary with subcommands"; `forkness/Cargo.toml`
-  declares `repository = "https://github.com/essence-dx/dx-forkness"`.
+  declares `repository = "https://github.com/essence-dx/forkness"`.
 - **Registered both in the CLI** (`cli/src/update_registry.rs`, `cli/src/cli.rs`,
   `cli/src/front_door_command_flow.rs`, `cli/src/command_dispatch.rs`,
   `cli/src/workspace_tool_router.rs`, `cli/src/config.rs`). The registry is now
@@ -257,7 +285,7 @@ renamed lot. Nothing was deleted.**
 - **Honest release status, stated as such:** `essence-dx/grimoire` has **no
   GitHub release** (`gh release view -R essence-dx/grimoire` → `release not
   found`) and `dx-grimoire` is **not on npm** (`npm view dx-grimoire` → 404);
-  `essence-dx/dx-forkness` **does not exist on GitHub** (`gh repo view` →
+  `essence-dx/forkness` **does not exist on GitHub** (`gh repo view` →
   `Could not resolve to a Repository`) and the local `forkness/` workspace has
   no `origin`. So `dx tool install grimoire` and `dx tool install forkness` both
   fail closed with `API 404`, and both `dx <tool>` routes fail closed with an
@@ -795,4 +823,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 23:50 UTC
+updated: 2026-10-21 00:00 UTC
