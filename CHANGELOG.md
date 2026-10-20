@@ -426,6 +426,36 @@ on this machine is a GPU run, not a TPU one.**
   `tpu/14-bonsai-transposed/receipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`. No speed
   claim is made until those receipts exist.
 
+### 2026-10-20 — `docs:` the two formats that decide the next build: `PQ2_0` and a community MTP head
+
+- **`prism-ml/Ternary-Bonsai-2-27B-gguf` also publishes `Ternary-Bonsai-2-27B-PQ2_0.gguf`**
+  (7.25 GB) -- the **same model** (same `qwen35` architecture, same `prism.hadamard.*`
+  metadata, same 401 folded weight names, same 28,672 sign values) with the weights in a
+  2-bit encoding instead of the 1.75-bit base-3 one. The layout, read from the PrismML
+  fork's own source: `uint8_t scales[QK_K/16]; uint8_t qs[QK_K/4]; ggml_half d;` per 256
+  elements, with `q = (qs[j+m] >> (l*2)) & 3; y = (q-1) * d;`. A shift, a mask, a
+  subtract and a scale per element, **with no row-dependent power** -- which is what
+  makes the group concatenation structurally unnecessary rather than merely avoidable.
+  Filed as `TODO.md` `TPU-08`, with the prices stated: 1.4 GB more on device (the fp32
+  context ceiling drops from ~45k to ~38k) and, for the int8 MXU path, int8 activations
+  (a precision change that must be re-validated against the model's gate).
+- **The MTP head exists after all** -- in community GGUFs that keep the same metadata:
+  `sudoingx/Ternary-Bonsai-2-27B-PTQ1_0-MTP-GGUF` (866 tensors = 851 + the 15
+  `blk.64.*` tensors, `qwen35.nextn_predict_layers: 1`),
+  `BoldingBuilds/...-PQ2_0-MTP-GGUF` (the 2-bit base *with* the head), plus
+  `ProCreations/...`, `ManniX-ITA/...`, `vinpix/...-Stock-MTP-GGUF`. So the graft is a
+  download. The head's weights are plain llama.cpp types (Q8_0 / Q6_K), not folded, so
+  they need a decode path in the kernel or a host-side dequant to bf16. Filed as
+  `TODO.md` `TPU-09`, with the reason it is the only route to 50 tok/s: the 48
+  gated-delta-net layers are sequential in the chain, so without the chunked
+  gated-delta-rule form a verification pass re-reads the weights k times and amortises
+  nothing. The same build also unlocks chunked prefill, which a 1M-token context needs.
+- **The number the 45 tok/s estimate rests on is now named as unmeasured:** the step
+  moves ~159 GB of VMEM traffic in 152 ms, which implies ~1 TB/s of effective VMEM
+  bandwidth, while the 45 tok/s figure needs ~2.3 TB/s. The queued 2x2 matrix measures
+  it (`NOCONCAT=1` removes ~40 % of the traffic, so the ms/step it saves *is* the
+  bandwidth). Recorded in `HELP.md` section 4a.3.
+
 ### 2026-09-26 — `docs:` the hub's change history is no longer a phantom file
 
 **`CHANGELOG.md` now exists.** Until today it was referenced everywhere and present
@@ -556,4 +586,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 21:20 UTC
+updated: 2026-10-20 22:35 UTC

@@ -204,6 +204,91 @@ Steps 4–6 are the difference between "1M tokens of KV" and "a 1M-token convers
 
 ---
 
+---
+
+## 4a. The two concrete builds the format research unlocked (2026-10-20)
+
+Both were found by reading the artifact, not by inference.
+
+### 4a.1 `PQ2_0`: the same model, a 2-bit weight format whose unpack is trivial
+
+`prism-ml/Ternary-Bonsai-2-27B-gguf` also publishes `Ternary-Bonsai-2-27B-PQ2_0.gguf`
+(7.25 GB). Its header is the **same model**: `qwen35`, 851 tensors, the identical
+`prism.hadamard.*` metadata (block 1024, the same 401 folded weight names, the same
+28,672 sign values) — only the *encoding* of the weights differs. The 402 weight
+tensors are type 142 (`TQ2_0`) instead of type 143 (`PTQ1_0`).
+
+The layout, from the PrismML fork's own `ggml-common.h` / `ggml-quants.c`:
+
+```c
+// 2-bit quantization, 16 blocks of 16 elements, 2.625 bits per weight
+typedef struct {
+    uint8_t scales[QK_K/16];   // 16 bytes
+    uint8_t qs[QK_K/4];        // 64 bytes: 4 two-bit fields each
+    ggml_half d;               // the scale
+} block_tq2_0;                 // QK_K = 256 elements per super-block
+
+// dequantize_row_tq2_0:
+int8_t q = (x[i].qs[j + m] >> (l*2)) & 3;
+*y++ = (float)(q - 1) * d;
+```
+
+**Why it matters on a TPU:** the PTQ1_0 value is
+`floor(3 * ((byte * p) & 0xFF) / 256) - 1` — a modular multiply, a mask, a multiply and
+a shift per element, and the power `p` is a property of the *row*, which is what forces
+the group concatenation. The 2-bit form is a shift, a mask, a subtract and a scale, with
+**no row-dependent power at all** — so the concatenation disappears structurally rather
+than by the `NOCONCAT` trick, and the four 2-bit planes can be contracted as four clean
+matmuls.
+
+**Price:** the file is 1.4 GB bigger (6.37 → ~7.8 GB of tiles on device), which lowers
+the fp32-KV context ceiling from ~45k to ~38k tokens.
+
+**Verification plan (no TPU needed for the format part):** reimplement
+`dequantize_row_tq2_0` in numpy, check it against the C reference on random blocks,
+then port it into the Pallas kernel and check the model's own gate (first token `11` for
+`Hello`, `271` for a 17-token prompt) and its text.
+
+### 4a.2 The MTP head exists — in community GGUFs, for the exact base
+
+Our own file has no MTP head (851 tensors, zero `nextn`/`mtp`, no
+`qwen35.nextn_block_count` — all three PrismML conversions). The head is nevertheless
+available, in files that keep the same `prism.hadamard.*` metadata:
+
+| file | tensors | head | notes |
+| --- | --- | --- | --- |
+| `sudoingx/Ternary-Bonsai-2-27B-PTQ1_0-MTP-GGUF` (`-mtp.gguf`, `-mtp-lean.gguf`) | 866 (851 + 15) | `qwen35.nextn_predict_layers: 1`, the 15 `blk.64.*` tensors | PTQ1_0 base, head weights in Q6_K / Q8_0 |
+| `BoldingBuilds/Ternary-Bonsai-2-27B-Abliterated-PQ2_0-MTP-GGUF` | 866 | same | **2-bit base + head** — the ideal target |
+| `ProCreations/Ternary-Bonsai-2-27B-MTP`, `ManniX-ITA/…-MTP-GGUF`, `vinpix/…-Stock-MTP-GGUF` | 866 | same | community releases |
+
+So the "graft" is really a **download**: copy the 15 `blk.64.*` tensors out of a
+community file. Two facts to plan around:
+
+- The head's weights are **plain llama.cpp quant types** (Q8_0 / Q6_K), *not* in the
+  prism-hadamard set (the folded list is 401 names = the 64 layers). So they are not
+  folded, and the TPU kernel would need either a Q8_0/Q6_K decode path or a host-side
+  dequant to bf16 (the head is ~430 M parameters → 0.86 GB in bf16, which fits).
+- The head is a nextn *block* (`blk.64.*`) plus `nextn.eh_proj` / `enorm` / `hnorm` /
+  `shared_head_norm` — i.e. a full transformer block that proposes the next token from
+  the previous one. Verifying a chain of k candidates therefore needs the **chunked
+  gated-delta-rule** form for the 48 GDN layers, so the k positions are verified in one
+  weight read instead of k sequential ones. That single build unlocks both
+  multi-token speculation *and* chunked prefill (the 1M-context path).
+
+### 4a.3 The one number the 45 tok/s estimate rests on: the VMEM bandwidth
+
+The 45 tok/s figure (22–25 ms/step) assumes the unpack's internal traffic can be
+moved in ~12 ms. Our own measurement implies about **1 TB/s** of effective VMEM
+bandwidth: the step is 152 ms while moving ~159 GB of VMEM traffic (the unpack expands
+6.37 GiB of packed weights to 54 GB of bf16, with two concatenation passes over it).
+TPU v5e's VMEM is 128 MiB per TensorCore and "much higher bandwidth" than HBM, but the
+exact figure is not published, and at 1 TB/s the int8 path lands nearer **20–30 tok/s**
+than 45.
+
+**This is measurable, and it is exactly what the queued 2×2 matrix measures:**
+`NOCONCAT=1` removes ~40 % of the traffic, so the ms/step it saves *is* the effective
+VMEM bandwidth. One session answers the question that decides whether 45 tok/s is real.
+
 ## 5. Open work
 
 `TODO.md`, items `TPU-01`…`TPU-07` (the track's ledger; `GPU-*` items were withdrawn when
@@ -235,4 +320,4 @@ cannot compile a Pallas kernel.
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-20 21:40 UTC
+updated: 2026-10-20 22:35 UTC
