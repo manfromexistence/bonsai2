@@ -49,8 +49,13 @@ execution, and all fixed.**
   therefore works against a gateway that reports a cost and cannot against
   an endpoint that reports only tokens. The `--max-budget` help now says
   exactly that.
+- **A tool output that was cut mid-character.** The bounding of a tool's
+  output cut the text at a **byte** offset and decoded the remainder
+  lossily, so a cut inside a multi-byte character became `U+FFFD` — the agent
+  read a replacement character in its own output. The cut is now on a
+  character boundary.
 - **The checks are proved.** The four panics were reproduced in a standalone
-  program before they were fixed. The workspace is at **759 tests**, up from
+  program before they were fixed. The workspace is at **761 tests**, up from
   741; fmt, clippy and rustdoc are clean.
 
 ### 2026-10-21 - `chore:` dx-hackin's citations are verified, its CI is measured, and the private/public line is drawn
