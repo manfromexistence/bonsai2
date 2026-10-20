@@ -33,7 +33,7 @@ it deliberately does not claim.
 | **P2** | 7 | hygiene and the long tail |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
 | **TPU track** | 7 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **33** | total open |
+| | **35** | total open |
 
 **Pass of 2026-10-20 (fifth): the total moves 35 → 33 and P2 moves 9 → 7.** Two P2 items
 left the ledger because the work was done. `HUB-08` is **closed** — the 20-byte root
@@ -71,7 +71,7 @@ the unreachable-name junk file is no longer at the root: a byte-level listing of
 root file, name escaped to codepoints, shows no U+F02A name and no 663-byte file.
 `HUB-10` was closed in the fifth pass, below, once `image.png` was parked too.
 
-**Pass of 2026-10-20 (fifth): the total moves 34 → 36 and no score moves.** Two items
+**Pass of 2026-10-20 (fifth): the total moves 33 → 35 and no score moves.** Two items
 are filed on what the format research found, not on a guess: `TPU-08` (the 2-bit `PQ2_0`
 file PrismML already publishes, whose unpack is a shift and a mask, plus the int8 MXU
 path) and `TPU-09` (multi-token verification with a community MTP head and the chunked
@@ -538,49 +538,6 @@ plus one repo visibility change.
 - **Done when:** `tpu/DO-NOT-RETEST.md` carries the unlock procedure and the symptom, so
   the next agent does not spend 40 minutes rediscovering it.
 
-### TPU-08 · Port the weights to the 2-bit `PQ2_0` format and the int8 MXU path
-
-- **Evidence:** `prism-ml/Ternary-Bonsai-2-27B-gguf` also publishes
-  `Ternary-Bonsai-2-27B-PQ2_0.gguf` (7.25 GB) with the **same model** -- the same
-  `prism.hadamard.*` metadata, the same 401 folded weight names, the same 28,672 sign
-  values -- and the 402 weight tensors are type 142 instead of 143. The format is
-  specified in the PrismML fork's own `ggml-common.h` / `ggml-quants.c`:
-  `uint8_t scales[QK_K/16]; uint8_t qs[QK_K/4]; ggml_half d;` with
-  `q = (qs[j+m] >> (l*2)) & 3; y = (q - 1) * d;`. The PTQ1_0 value is
-  `floor(3*((byte*p) & 0xFF)/256) - 1` -- a modular multiply per element, with a
-  row-dependent power that is what forces the group concatenation.
-- **Why:** a shift, a mask, a subtract and a scale per element, with **no row-dependent
-  power** -- the concatenation disappears structurally, and the four 2-bit planes can be
-  contracted as four clean matmuls. With int8 weights the unpacked traffic halves
-  (54 GB -> 27 GB), which is the only way the step approaches the HBM floor.
-- **The prices, stated:** the file is 1.4 GB bigger (6.37 -> ~7.8 GB of tiles on
-  device), which lowers the fp32-KV context ceiling from ~45k to ~38k tokens; and the
-  int8 path needs the activations quantised too (per 1024-element Hadamard block,
-  after the fold), which is a precision change and must be re-validated against the
-  model's gate.
-- **Done when:** a receipt records the model running from the `PQ2_0` file with the
-  same first token and the same generated text as the PTQ1_0 run, at a step time
-  measured against the PTQ1_0 baseline.
-
-### TPU-09 · Multi-token verification with a community MTP head and a chunked GDN
-
-- **Evidence:** the MTP head is available in community GGUFs that keep the same
-  `prism.hadamard.*` metadata: `sudoingx/Ternary-Bonsai-2-27B-PTQ1_0-MTP-GGUF` (866
-  tensors = 851 + the 15 `blk.64.*` tensors, `qwen35.nextn_predict_layers: 1`),
-  `BoldingBuilds/Ternary-Bonsai-2-27B-Abliterated-PQ2_0-MTP-GGUF` (the 2-bit base
-  *with* the head), plus `ProCreations/…`, `ManniX-ITA/…`, `vinpix/…-Stock-MTP-GGUF`.
-  The head's weights are plain llama.cpp types (Q8_0 / Q6_K), not folded, so they need
-  either a decode path in the kernel or a host-side dequant to bf16 (~430 M parameters,
-  0.86 GB).
-- **Why it is the only route to 50 tok/s:** 48 of the 64 layers are gated-delta-net,
-  whose recurrence is sequential in the chain, so a k-token verification pass re-reads
-  the weights k times and amortises nothing. The chunked gated-delta-rule form (the
-  standard WY chunked delta rule, a 4x4 triangular solve per head) makes the k
-  positions verify in one weight read -- and the same build unlocks chunked prefill,
-  which is what a 1M-token context needs.
-- **Done when:** a receipt records >= 2 tokens accepted per forward pass and a
-  single-stream rate at `max_t` 8192 that the measurement, not the arithmetic, supports.
-
 ### TPU-07 · The real TPU blocker is the ternary unpack, ~9x off the HBM roofline
 
 - **Evidence:** the step reads 6.37 GiB of packed weights per token, and the slice's
@@ -637,6 +594,49 @@ on that decision; the facts they produced (Bonsai 2's GGUFs carry no MTP head;
 the base model does) are kept in `tpu/DO-NOT-RETEST.md` section 14 because they
 are facts about the artifact, and the route to 50 tok/s is now `TPU-03` plus
 `TPU-07`.
+
+### TPU-08 · Port the weights to the 2-bit `PQ2_0` format and the int8 MXU path
+
+- **Evidence:** `prism-ml/Ternary-Bonsai-2-27B-gguf` also publishes
+  `Ternary-Bonsai-2-27B-PQ2_0.gguf` (7.25 GB) with the **same model** -- the same
+  `prism.hadamard.*` metadata, the same 401 folded weight names, the same 28,672 sign
+  values -- and the 402 weight tensors are type 142 instead of 143. The format is
+  specified in the PrismML fork's own `ggml-common.h` / `ggml-quants.c`:
+  `uint8_t scales[QK_K/16]; uint8_t qs[QK_K/4]; ggml_half d;` with
+  `q = (qs[j+m] >> (l*2)) & 3; y = (q - 1) * d;`. The PTQ1_0 value is
+  `floor(3*((byte*p) & 0xFF)/256) - 1` -- a modular multiply per element, with a
+  row-dependent power that is what forces the group concatenation.
+- **Why:** a shift, a mask, a subtract and a scale per element, with **no row-dependent
+  power** -- the concatenation disappears structurally, and the four 2-bit planes can be
+  contracted as four clean matmuls. With int8 weights the unpacked traffic halves
+  (54 GB -> 27 GB), which is the only way the step approaches the HBM floor.
+- **The prices, stated:** the file is 1.4 GB bigger (6.37 -> ~7.8 GB of tiles on
+  device), which lowers the fp32-KV context ceiling from ~45k to ~38k tokens; and the
+  int8 path needs the activations quantised too (per 1024-element Hadamard block,
+  after the fold), which is a precision change and must be re-validated against the
+  model's gate.
+- **Done when:** a receipt records the model running from the `PQ2_0` file with the
+  same first token and the same generated text as the PTQ1_0 run, at a step time
+  measured against the PTQ1_0 baseline.
+
+### TPU-09 · Multi-token verification with a community MTP head and a chunked GDN
+
+- **Evidence:** the MTP head is available in community GGUFs that keep the same
+  `prism.hadamard.*` metadata: `sudoingx/Ternary-Bonsai-2-27B-PTQ1_0-MTP-GGUF` (866
+  tensors = 851 + the 15 `blk.64.*` tensors, `qwen35.nextn_predict_layers: 1`),
+  `BoldingBuilds/Ternary-Bonsai-2-27B-Abliterated-PQ2_0-MTP-GGUF` (the 2-bit base
+  *with* the head), plus `ProCreations/…`, `ManniX-ITA/…`, `vinpix/…-Stock-MTP-GGUF`.
+  The head's weights are plain llama.cpp types (Q8_0 / Q6_K), not folded, so they need
+  either a decode path in the kernel or a host-side dequant to bf16 (~430 M parameters,
+  0.86 GB).
+- **Why it is the only route to 50 tok/s:** 48 of the 64 layers are gated-delta-net,
+  whose recurrence is sequential in the chain, so a k-token verification pass re-reads
+  the weights k times and amortises nothing. The chunked gated-delta-rule form (the
+  standard WY chunked delta rule, a 4x4 triangular solve per head) makes the k
+  positions verify in one weight read -- and the same build unlocks chunked prefill,
+  which is what a 1M-token context needs.
+- **Done when:** a receipt records >= 2 tokens accepted per forward pass and a
+  single-stream rate at `max_t` 8192 that the measurement, not the arithmetic, supports.
 
 ---
 
