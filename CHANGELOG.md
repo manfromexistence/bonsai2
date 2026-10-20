@@ -106,12 +106,18 @@ in a renamed lot. Nothing was deleted.**
   gutted: 129 files on disk against 3445 tracked files showing as deleted, and
   no `Cargo.toml` in the hub path-depends on it; the `tpu/` kernels clone their
   own `llama.cpp` inside their Kaggle/Colab run directory,
-  `tpu/bonsai2-cached/kernel.py:220-230`); `ZZZ-bot-trash`; and ten loose root
-  files into `root-junk/`: the three videos (`Frieren Beyon Journey's End.mp4`,
-  `One Piece.mp4`, `Spiderman Into The SpiderVerse.mp4` — ~975 MB together),
-  `big146.bin` (153 MB), `Social.md` (3.9 MB), `small.gz`, `$o`, `db`,
-  `db-wal`, `TODO-ESSENCE.md`. All of them are denied by the `/*` rule and were
-  never tracked, so the hub git index is unchanged by the move.
+  `tpu/bonsai2-cached/kernel.py:220-230`); `superpowers` (the upstream
+  `obra/superpowers` clone — DX already carries the same content at
+  `driven/vendor/superpowers/`, 97 files tracked in the `driven` repo, at
+  version 7.0.0 commit `bb92a77` per `driven/vendor/superpowers/NOTICE.md`,
+  which is the exact commit the root clone was sitting on, so the root clone
+  was a pure duplicate and `driven` is the live copy);
+  `ZZZ-bot-trash`; and ten loose root files into `root-junk/`: the three videos
+  (`Frieren Beyon Journey's End.mp4`, `One Piece.mp4`,
+  `Spiderman Into The SpiderVerse.mp4` — ~975 MB together), `big146.bin`
+  (153 MB), `Social.md` (3.9 MB), `small.gz`, `$o`, `db`, `db-wal`,
+  `TODO-ESSENCE.md`. All of them are denied by the `/*` rule and were never
+  tracked, so the hub git index is unchanged by the move.
 - **Closed `MF-03`** (the folder-spelling drift). **Partly closed `HUB-10`**
   (the ~1 GB of video is parked; `image.png` is still at the root). Opened
   `MF-04` for the two parked siblings that still spell "deprecated" as

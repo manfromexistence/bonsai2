@@ -207,7 +207,7 @@ their CI, their releases, or their roadmaps.
 | `bin/` | Staged local binaries and the per-triple release builds. `dx.exe` and `dx.cmd` are the normal Windows entrypoints. |
 | `docs/` | The achievement register: one page per folder plus `docs/README.md` rules. |
 | `.dx/` | Hub runtime state and receipts. |
-| `DEPRICATED_10-20-2026/` | Parking lot for retired folders, repos, and root junk (43 entries on 2026-10-20: 30 git repos and 13 plain folders). Nothing in it is deleted; it is history kept out of the way. |
+| `DEPRICATED_10-20-2026/` | Parking lot for retired folders, repos, and root junk (44 entries on 2026-10-20: 31 git repos and 13 plain folders). Nothing in it is deleted; it is history kept out of the way. |
 | `AGENTS.md` | The operating manual for this hub. Read it first. |
 | `TODO.md`, `CHANGELOG.md`, `DX.md`, `PROMPTS.md` | Open work, dated change log, worker notes, prompts. |
 | `build.ps1` | Hub build entrypoint. |
@@ -224,6 +224,7 @@ These folders used to sit at the hub root and were moved into the parking lot
 | `native` | `DEPRICATED_10-20-2026\native-2026-10-09` | 2026-10-09 |
 | `mobile` | `DEPRICATED_10-20-2026\mobile-DEPRECATED-20261009-1616` | 2026-10-09 |
 | `llama.cpp` | `DEPRICATED_10-20-2026\llama.cpp` | 2026-10-20 |
+| `superpowers` | `DEPRICATED_10-20-2026\superpowers` | 2026-10-20 |
 | `ZZZ-bot-trash` | `DEPRICATED_10-20-2026\ZZZ-bot-trash` | 2026-10-20 |
 | `Frieren Beyon Journey's End.mp4`, `One Piece.mp4`, `Spiderman Into The SpiderVerse.mp4`, `big146.bin`, `Social.md`, `small.gz`, `$o`, `db`, `db-wal`, `TODO-ESSENCE.md` | `DEPRICATED_10-20-2026\root-junk\<same name>` | 2026-10-20 |
 

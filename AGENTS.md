@@ -27,9 +27,9 @@ manifest, and the public story for a family of ~20 separate products.
 
 **Folders that are *not* repos and must not be treated as source:**
 `bin/`, `docs/`, `native/`, `test/`, `zzz/`, `.workbuddy-ai/`,
-`DEPRICATED_10-20-2026/` (43 entries on 2026-10-20: 30 git repos and 13 plain
-folders, including `llama.cpp`, `ZZZ-bot-trash`, and a `root-junk/` folder of
-10 loose root files parked on 2026-10-20 — see
+`DEPRICATED_10-20-2026/` (44 entries on 2026-10-20: 31 git repos and 13 plain
+folders, including `llama.cpp`, `superpowers`, `ZZZ-bot-trash`, and a
+`root-junk/` folder of 10 loose root files parked on 2026-10-20 — see
 `docs/space-review-2026-09-23.md:57` for the original 22-repo measurement).
 
 ---
