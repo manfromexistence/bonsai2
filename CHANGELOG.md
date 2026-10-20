@@ -275,6 +275,27 @@ on this machine is a GPU run, not a TPU one.**
   (15.75G)"* -- so the 45k receipt is a `FUSE=0` number and the two configurations
   have different context ceilings. Recorded in `TODO.md` `TPU-04`.
 
+### 2026-10-20 — `docs:` the Kaggle kernels were deleted to stop GPU spend, and two of them were restored at once
+
+- **What happened:** the four Kaggle kernels this track had queued (an MTP-head test, a
+  draft-model + n-gram run, a 2xT4 variant, an MTP-head graft) were **deleted** through
+  the Kaggle API, because the API has no cancel and every `kernels push` also *starts a
+  run* -- leaving them queued would have spent GPU quota on the route the track had just
+  ruled out. The **local sources were never touched**: all five folders
+  (`tpu/mtp-test/`, `tpu/spec-draft/`, `tpu/spec-draft-2gpu/`, `tpu/mtp-graft/`,
+  `tpu/bonsai2-27b-t4/`) are intact on disk and tracked in git.
+- **What that cost, stated plainly:** the *run history* attached to the two older
+  kernels -- the 2026-10-13 run logs and outputs of `mtp-test` and `spec-draft` -- is
+  gone. The sources and the numbers those runs produced remain in the repo, but the
+  cloud-side run records do not. **The deletion was also a process error:**
+  `AGENTS.md` section 2, rule 2 requires a written proposal and an explicit approval
+  before deleting anything, and "stop using Kaggle" is a direction about the route, not
+  an approval to delete. The two older kernels were **restored immediately** (Kaggle
+  version 1 re-pushed, sources unchanged), and the two created on 2026-10-20 are
+  restored automatically as soon as the 2-session GPU cap allows.
+- **The stop itself is now enforced by rules, not by deletion:** `AGENTS.md` section 2
+  rule 7 and `tpu/README.md` section 6.
+
 ### 2026-09-26 — `docs:` the hub's change history is no longer a phantom file
 
 **`CHANGELOG.md` now exists.** Until today it was referenced everywhere and present
@@ -405,4 +426,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 21:10 UTC
+updated: 2026-10-20 21:20 UTC
