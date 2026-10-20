@@ -505,6 +505,45 @@ on this machine is a GPU run, not a TPU one.**
   it (`NOCONCAT=1` removes ~40 % of the traffic, so the ms/step it saves *is* the
   bandwidth). Recorded in `HELP.md` section 4a.3.
 
+### 2026-10-20 — `feat:` tpu nb14 — the kv-head expansion cost 25 ms, and the concatenation was never the problem
+
+**A 2x2 matrix on one TPU session, 8k window, batch 1, 64 tokens, every arm
+numerically exact (first token `271`, identical text):**
+
+| arm | ms/step | tok/s | vs base |
+| --- | --- | --- | --- |
+| shipped path | 159.7 | 6.26 | — |
+| `NOCONCAT=1` (skip the group concatenation) | 189.2 | 5.28 | **+18.5 % slower** |
+| **`GQA=1`** (contract the 24 query heads against the 4 kv heads directly) | **134.3** | **7.45** | **−16 %** |
+| both | 163.9 | 6.10 | +2.6 % |
+
+Receipts: `tpu/14-bonsai-transposed/receipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`.
+
+- **`GQA` is the win, and it is exact.** The shipped path materialises
+  `K[:, :, _KIDX, :]` and `V[:, :, _KIDX, :]` -- a (B, T, 24, 256) expansion of the
+  4 kv heads to 24 query heads, which at an 8k window is **201 MB per layer per
+  step, 3.2 GB per step**. Contracting the query groups against the kv heads
+  directly (`einsum("bhgd,bthd->bhgt")`, with `h` the kv head in *both*
+  operands) reads the KV tiles once instead of six times, and the measured saving
+  is **25.4 ms** -- the same order as the 29 ms the fixed-batch sweep attributed
+  to the 8k window. Single-stream at 8k goes 6.26 → **7.45 tok/s**.
+- **`NOCONCAT` is slower, and that is the useful part of the result.** The
+  unpacked rows of a tile are the *in-dims*, so the fourteen power groups are
+  5x16, 5x8 and 4x2 rows -- and the MXU's native K is 128, so each group is
+  padded (16→128 is 8x, 2→128 is 64x): **14 x 128 = 1792 K-slots instead of
+  128**. The concatenation is not waste; it is what buys a clean K=128 matmul.
+  This **refutes the traffic model** behind the "45 tok/s at 22 ms/step" figure:
+  removing two full read+write passes over the unpacked weights made the step
+  *slower*, so the step is not dominated by that traffic.
+- **Where the 134 ms actually is:** about 25 ms is the 8k attention (the kv-head
+  expansion, now removed) and about 109 ms is the projection's own per-element
+  work — the ternary decode and the int16→bf16 cast. That is why
+  `TODO.md` `TPU-08` (the 2-bit `PQ2_0` file, whose decode is a shift and a mask)
+  is now the main lever, and why `tpu/pq2-decode/README.md` insists on the **basis
+  permutation**: without it the four 2-bit planes cannot be contracted without the
+  same K-padding penalty, so the permutation is what makes a concat-free path
+  possible at all.
+
 ### 2026-09-26 — `docs:` the hub's change history is no longer a phantom file
 
 **`CHANGELOG.md` now exists.** Until today it was referenced everywhere and present
@@ -635,4 +674,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 22:35 UTC
+updated: 2026-10-20 23:30 UTC

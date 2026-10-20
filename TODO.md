@@ -549,10 +549,12 @@ plus one repo visibility change.
 
 - **Evidence:** the step reads 6.37 GiB of packed weights per token, and the slice's
   measured read bandwidth is 709 GB/s (`tpu/13-cost-sweep/README.md:28`), so the
-  traffic floor is **9.0 ms/token -- 104 tok/s**. The measured step is **181 ms
-  (5.5 tok/s)**, i.e. **~20x off that floor**, and the projection breakdown puts the
-  unpack at **82 % of a projection** (3.13 ms of 3.83 ms) -- the rest is the weight
-  DMA (0.29 ms) and the matmul.
+  traffic floor is **9.0 ms/token -- 104 tok/s**. The measured step is **134.3 ms
+  (7.45 tok/s)** with the kv-head expansion removed, i.e. **~15x off that floor**,
+  and the projection breakdown puts the unpack at **82 % of a projection**
+  (3.13 ms of 3.83 ms) -- the rest is the weight DMA (0.29 ms) and the matmul.
+  The 2x2 matrix adds the decisive negative: cutting the unpack's memory traffic
+  made the step *slower*, so the remaining ~109 ms is per-element work, not traffic.
 - **What has been ruled out, by measurement:** HBM bandwidth (86 % of spec on this
   slice), program count (`TO` 128 -> 1024 is 1.18x, saturating at 512), kernel
   launches (36 % fewer launches moved the step 0.5 %, 2026-10-20), DMA count, the
@@ -565,13 +567,17 @@ plus one repo visibility change.
   multiply out of the kernel. The cheap spelling is already the arithmetic form
   (one multiply, one mask, one shift per element) against a per-(byte, power)
   lookup table, which would be a gather.
-- **What is still open:** the decode is bound by VPU data movement, and the known
-  spellings measure 1.393 ms per projection (int16 lanes, `concatenate`) against a
-  0.29 ms DMA floor. The next step is a **cost breakdown at the current lane-aligned
-  layout** -- the existing breakdown (`tpu/13-cost-sweep/`) was taken on the old,
-  lane-starved layout and cannot be reused -- to separate the weight DMA, the field
-  extraction, the group concatenation and the cast-and-scale, so the next kernel
-  change is aimed at the measured term rather than a guess.
+- **What the 2x2 matrix settled (2026-10-20):** the step at an 8k window is 134.3 ms
+  with the kv-head expansion removed (`receipt-14-gqa-b1-f16-tc1024.json`, 7.45 tok/s)
+  -- about 25 ms of attention and about **109 ms of the projection's own per-element
+  work**, the ternary decode and the int16->bf16 cast. And the traffic model is
+  **refuted**: removing both group concatenations made the step **18.5 % slower**
+  (`receipt-14-nc-b1-f16-tc1024.json`), because the MXU pads each 16/8/2-row group
+  to K=128, so the concatenation is what buys a clean matmul. The lever is therefore
+  the *decode arithmetic and the output width*, not the movement of the unpacked
+  weights -- which is exactly what `TPU-08` changes, and why its basis permutation is
+  mandatory: without it the four 2-bit planes cannot be contracted without the same
+  K-padding penalty.
 - **The measurement that frames it:** at batch 1 the *entire* 8k window costs 19 %
   (152.3 ms/step at `max_t` 83 against 180.9 ms at `max_t` 8192 --
   `receipt-14-ctx64-b1-f16-tc1024.json` against
