@@ -77,7 +77,7 @@ trait in this port so the code can be built and tested without them:
 ## Honest status
 
 **repo-managed, and it runs.** The Rust workspace compiles, `cargo test
---workspace` is green (**741 passed, 0 failed**), and `cargo clippy
+--workspace` is green (**759 passed, 0 failed**), and `cargo clippy
 --workspace --all-targets -- -D warnings` is clean. `dx-hackin` drives a real
 model through the ported engine: the request goes out, the tool calls come
 back, the tools execute in a real Kali container, and the lifecycle tool ends

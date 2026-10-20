@@ -13,6 +13,46 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `fix:` dx-hackin's bug hunt - four panics, a stream that lost its events, and a budget that could not fire
+
+**A bug-hunting pass over the port found five classes of defect, all proved by
+execution, and all fixed.**
+
+- **Four panics on a multi-byte character.** A `&str` slice at a fixed byte
+  offset panics when the offset lands inside a multi-byte character. Three of
+  the four took a string the **model** supplies: the CVE and CWE checks in
+  `dx-hackin-tools/src/reporting/validate.rs` (one of which walked the string
+  byte by byte and sliced inside a character), and the Exa page block in
+  `dx-hackin-web/src/client.rs`, whose text comes from a **web page** — so
+  that one was reachable from outside. The fix compares **bytes**, and the
+  Exa cut now counts **characters**, which is what the Python's `len(text)`
+  and `text[:N]` do.
+- **A stream that silently lost its events.** The server-sent-events reader
+  decoded **each chunk on its own**, so a chunk boundary inside a multi-byte
+  character — which happens routinely on a network — turned the character
+  into `U+FFFD`, made the event fail to parse, and the failed parse was
+  **skipped**. Any non-ASCII output from a model could vanish without a
+  trace. The framing now keeps the bytes until the line is whole and decodes
+  it once, as a separate tested unit.
+- **A stream that could eat the machine's memory.** The same reader grew its
+  buffer without bound until a newline arrived. The pending line is now
+  capped at 8 MiB, past which the stream is refused.
+- **A budget that could not fire.** The provider read the cost from
+  `usage.cost_usd` — a field **no provider sends**. The Python reads
+  `usage.cost`, which OpenRouter and LiteLLM do send. So the budget's total
+  stayed at zero and `--max-budget` **never stopped anything**. The cost is
+  now read the way the Python reads it, including the BYOK case and the
+  rule that only a cost **greater than zero** counts — a negative cost
+  otherwise walks the total backwards and the ceiling is never reached.
+- **What is still missing, and it is named.** The **local** cost estimate —
+  the LiteLLM price map — is not ported, and stays `HK-13`. The budget
+  therefore works against a gateway that reports a cost and cannot against
+  an endpoint that reports only tokens. The `--max-budget` help now says
+  exactly that.
+- **The checks are proved.** The four panics were reproduced in a standalone
+  program before they were fixed. The workspace is at **759 tests**, up from
+  741; fmt, clippy and rustdoc are clean.
+
 ### 2026-10-21 - `chore:` dx-hackin's citations are verified, its CI is measured, and the private/public line is drawn
 
 **A polish pass over `dx-hackin` found 24 stale citations, proved the licence
