@@ -168,6 +168,53 @@ scripts under `colab_run/` that pointed at the moved notebooks were repointed. T
 what was true when they were written, and this entry is the map from those paths to the
 present ones.
 
+### 2026-10-21 - `chore:` dx-forkness's promises are now receipts
+
+**A polish pass over the product closed the gap between what the repository said
+about itself and what anything was checking.**
+
+- **The minimum Rust version is verified.** The workspace declared
+  `rust-version = "1.88"` and nothing tested it. A new `msrv` CI job builds and
+  tests the workspace on 1.88.0 itself, and `make msrv` runs the same two commands
+  locally. The `+1.88.0` is deliberate: the repository's `rust-toolchain.toml` pins
+  the *default* channel to `stable`, and a toolchain file in the working directory
+  overrides `rustup default`, so the job has to name the version to test the floor.
+  Measured on this host: the workspace builds and the whole suite passes on 1.88.0.
+- **CI honours the committed lock file.** Every cargo invocation in the workflow
+  and every target in the `Makefile` carries `--locked`. The dependency graph a
+  green run proves is now exactly the one in `Cargo.lock`; a resolution change that
+  was never committed cannot pass.
+- **The port cannot contain `unsafe` code.** There is none, and the workspace's
+  lint table now says `unsafe_code = "forbid"` - stronger than `deny`, because it
+  cannot be overridden downstream and it fails the build rather than warning.
+  Verified with a probe: an `unsafe` block fails with `-F unsafe-code`.
+- **No duplicate crate versions, and the gate denies them.** The last one was
+  `windows-sys` - 0.59 through `fs4`, 0.61 through `clap` - so two copies of the
+  same Windows bindings were linked into one binary. It went away by moving to
+  `fs4` 1.x, whose `windows-sys` is the 0.61 `clap` already wanted. The lock call
+  goes through the trait explicitly, because `std`'s inherent `File::lock` is
+  stable only from 1.89 and would shadow it on a newer toolchain.
+  `deny.toml` now **denies** a duplicate rather than warning about one, so
+  `cargo deny check` is clean with no warnings at all.
+- **The crates cannot be published to crates.io by accident.** `publish = false` on
+  all five: they ship as GitHub release binaries, and the `dx-forkness-*` names on
+  crates.io are not ours to claim.
+- **The repository's own conventions are written down.** An `.editorconfig` that
+  keeps the working tree LF on every platform - what the asset-provenance check and
+  the `git add` warnings kept tripping over - and that leaves the vendored
+  `python/` tree alone, because an editor that trimmed its trailing whitespace
+  would silently change the specification. A `docs/README.md` that says what each
+  of the four documents is for, a supported-versions table in `SECURITY.md`, and
+  dependabot now watching the workflow's own action pins.
+- **The one-off lint migration script is gone.** `scripts/fix_pedantic.py` was
+  referenced by nothing, and its docstring described the ASCII case-insensitive
+  extension matching that was reverted to match the reference - running it would
+  have reintroduced a divergence from the specification.
+
+The release binary is **4.47 MB** on `x86_64-pc-windows-msvc`, measured on
+2026-10-21. The suite is 346 tests with 0 failures, plus eight differentials against
+the live Python, and it is green on Rust 1.88.0.
+
 ### 2026-10-21 - `chore:` the `forkness` repository is `essence-dx/forkness`, not `essence-dx/dx-forkness`
 
 **The last repository in the org carrying the `dx-` prefix lost it.**

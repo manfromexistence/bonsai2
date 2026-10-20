@@ -34,8 +34,9 @@ DX Forkness is a **DX tool** in the house sense: a binary driven through
 | The benchmark runners | A rollout is launched the way the reference launches it, with the same argument lists, environment and deadlines — LAB's `opencode/run_opencode.py`, JobBench's `jb_opencode_runner.py`, and WorkBuddy's Harbor job. The WorkBuddy job YAML was diffed against the live Python: byte for byte identical. |
 | The gate suite | `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings` under the **`pedantic`** group with no inline allows, `cargo test --workspace` (**346 tests, 0 failures**), `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps`, `cargo deny check`, two parity scripts, an asset provenance check, and the local demo with its budget identity. `make ci` runs the whole set and exits 0. |
 | Measured coverage | **70.72% of lines** and 70.34% of regions, by `cargo llvm-cov`; the thin places are named rather than hidden. |
-| The supply chain | `cargo deny check` passes. Getting there took three advisories in `zip` and one in `quick-xml`; the fix was to move off them — `zip` is 9.0.5 and `quick-xml` 0.41.0 — and the renderers still match the reference byte for byte. |
+| The supply chain | `cargo deny check` passes with **no warnings at all**. Getting there took three advisories in `zip` and one in `quick-xml`; the fix was to move off them — `zip` is 9.0.5 and `quick-xml` 0.41.0 — and the renderers still match the reference byte for byte. The last duplicate crate version went the same way: `windows-sys` 0.59 (through `fs4`) and 0.61 (through `clap`) were two copies of the same Windows bindings in one binary, and moving to `fs4` 1.x removed it. `deny.toml` now **denies** a duplicate rather than warning about one. |
 | The two state files | `forkness/TODO.md` carries every open item with its evidence and its done-when; `forkness/CHANGELOG.md` carries what changed, dated. The two are never edited in the same direction. |
+| The promises are receipts | Three things the repository says about itself are **checked**, not asserted. The **minimum Rust version** is built and tested on 1.88.0 itself, by a CI job and by `make msrv`; the **absence of `unsafe`** is `forbid`den in the workspace lint table, so a probe `unsafe` block fails the build with `-F unsafe-code`; and the **dependency graph** is held to `Cargo.lock` by `--locked` on every cargo invocation, in CI and in the `Makefile` alike. |
 
 ## Validation To Check
 
@@ -51,6 +52,7 @@ DX Forkness is a **DX tool** in the house sense: a binary driven through
 | `forkness/docs/PARITY.md` | The parity matrix: every reference module, its Rust counterpart, its verdict, and the known differences. |
 | `forkness/TODO.md` | The authoritative state. Every open item with its evidence and its done-when. |
 | `cargo test --workspace` | The behaviour holds, with no network, no credentials and no benchmark. |
+| `cargo +1.88.0 test --workspace --all-features` | It still builds and passes on the **declared** minimum Rust version, so the floor is a receipt rather than a claim. |
 | `cargo test --workspace -- --ignored` | The port still matches the **live** Python. Needs `openpyxl` and `python-pptx`. |
 | `make -C forkness ci` | Every gate the CI workflow runs, in one command. |
 
