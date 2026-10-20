@@ -74,23 +74,35 @@ trait in this port so the code can be built and tested without them:
 ## Honest status
 
 **repo-managed, and it runs.** The Rust workspace compiles, `cargo test
---workspace` is green (**564 passed, 0 failed**), and `cargo clippy
+--workspace` is green (**605 passed, 0 failed**), and `cargo clippy
 --workspace --all-targets -- -D warnings` is clean. `dx-hackin` drives a real
 model through the ported engine: the request goes out, the tool calls come
-back, the tools execute, and the lifecycle tool ends the run. It was verified
-end to end here against a local mock of the OpenAI API — two turns, a real
-`think` call, a real `finish_scan` call, the report artifacts written, and
-exit `0`.
+back, the tools execute in a real Kali container, and the lifecycle tool ends
+the run. It was verified end to end here against a local mock of the OpenAI
+API — the root agent took two turns, called `think`, called `finish_scan`, the
+report artifacts were written, and the process exited `0`.
+
+The port now covers the **agent loop** (the rule that plain text never ends a
+turn), the **provider** (an OpenAI-compatible client with the upstream's turn
+guard, retry policy and stream deadlines), the **budget** (one shared guard,
+the graduated warnings, the 90 % reserve), the **session store** (with the
+optimistic guard), the **request log** (one bounded record per attempt, and
+never a prompt), the **tool set** (42 tools), the **sandbox** (a real Kali
+container, created before the first tool call and deleted at the end), the
+**multi-agent graph** (a child really spawns, gets its own session, and
+reports back), and the **operating doctrine** (the upstream's prompt, ported).
 
 **Not claimed.** The port is **not** feature-complete, and it is **not**
-release-qualified. The **sandbox is never created** — the Docker runtime is
-ported but nothing calls it, so `exec_command` has no container to run in.
-The proxy tools, the multi-agent spawner, the request log, the subscription
-sign-in, the dedupe judge, the pricing, the MCP layer, the skills, the TUI,
-the viewer, the cloud CLI and the telemetry are **not ported**. No
-`dx-hackin` binary has been released, and the upstream's published benchmark
-(96% on XBEN, measured on upstream **v0.4.0**) is a property of the Python
-implementation, not of this port.
+release-qualified. The **MCP layer** is not ported, so the MCP dispatch tools
+remain stubs. The **skill packs** are not ported, so the knowledge blocks
+render empty. The **web-search client** is not ported. The **dedupe judge**
+and the **pricing** are not ported. The **TUI**, the **viewer**, the **cloud
+CLI** and the **telemetry** are not ported. No `dx-hackin` binary has been
+released, and the upstream's published benchmark (96% on XBEN, measured on
+upstream **v0.4.0**) is a property of the Python implementation, not of this
+port. The scan was verified against a **mock** of the OpenAI API, not against
+a real model, and the sandbox could not be brought up on the machine this was
+built on because Docker is not installed there.
 
 The authoritative, itemised state lives in `hackin/TODO.md` (what is open,
 with evidence and a done-when check) and `hackin/CHANGELOG.md` (what changed,

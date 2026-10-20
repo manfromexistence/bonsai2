@@ -53,22 +53,29 @@ page and a row.**
   `cargo clippy --workspace --all-targets -- -D warnings` → clean; `cargo fmt
   --all -- --check` → clean.
 - **It runs.** The agent loop, the provider, the budget, the session store, the
-  turn guard and a 42-tool toolbox are ported and wired together, so
-  `dx-hackin` drives a real model through the engine: the request goes out, the
-  tool calls come back, the tools execute, and the lifecycle tool ends the run.
-  This was verified end to end here against a local mock of the OpenAI API —
-  two turns, a real `think` call, a real `finish_scan` call, the report
-  artifacts written, exit `0`.
-- **What this entry does not claim.** The **sandbox is never created** — the
-  Docker runtime is ported but nothing calls it, so `exec_command` has no
-  container. The proxy tools, the multi-agent spawner, the request log, the
-  subscription sign-in, the dedupe judge, the pricing, the MCP layer, the
-  skills, the TUI, the viewer, the cloud CLI and the telemetry are **not
-  ported** — `hackin/TODO.md` carries the itemised backlog with `file:line`
-  evidence and a done-when check for each. The upstream's published benchmark
-  (96% on XBEN) is a property of the **Python v0.4.0** implementation and is
-  **not** claimed for this port. No binary has been built and no repository has
-  been published.
+  turn guard, the request log and a 42-tool toolbox are ported and wired
+  together, so `dx-hackin` drives a real model through the engine: the request
+  goes out, the tool calls come back, the tools execute in a real Kali
+  container, and the lifecycle tool ends the run. This was verified end to end
+  here against a local mock of the OpenAI API — two turns, a real `think` call,
+  a real `finish_scan` call, the report artifacts written, exit `0`.
+- **The sandbox is real, the children really spawn, and the doctrine is
+  ported.** The container is created before the first tool call and deleted at
+  the end; a child agent gets its own session and reports back to its parent's
+  mailbox; and the agent reads the upstream's 532-line operating doctrine
+  rather than a summary of it. Every provider attempt is now recorded in a
+  bounded log that never captures a prompt.
+- **What this entry does not claim.** The **MCP layer** is not ported, so the
+  MCP dispatch tools remain stubs. The **skill packs** are not ported, so the
+  knowledge blocks render empty. The **web-search client** is not ported. The
+  **dedupe judge** and the **pricing** are not ported. The **TUI**, the
+  **viewer**, the **cloud CLI** and the **telemetry** are not ported. No
+  artifact has been published, and the upstream's published benchmark (96% on
+  XBEN, measured on upstream **v0.4.0**) is a property of the Python
+  implementation, not of this port. The scan was verified against a **mock** of
+  the OpenAI API, not against a real model, and the sandbox could not be
+  brought up on the machine this was built on because Docker is not installed
+  there.
 - **The product keeps its own ledger**, as the hub requires of every product folder:
   `hackin/TODO.md` (32 open items, plus a 17-row deviation ledger) and
   `hackin/CHANGELOG.md` (what changed, dated, one record per event). The hub's
