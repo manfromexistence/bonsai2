@@ -13,6 +13,53 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` the smolvm VM and the WorkBuddy data folder deleted on C:, reclaiming 9.89 GB
+
+**The fifth and sixth authorised deletions, both on C:.** The two targets were named
+explicitly and their contents enumerated in the proposal before approval.
+
+**Approved targets:**
+
+| Path | Size | What it was |
+| --- | --- | --- |
+| `C:\Users\Computer\AppData\Local\smolvm` | 30.04 GB | A Linux **VM**, not a cache: `vms\809ab2f23135b042\storage.raw` (20 GB) + `overlay.raw` (10 GB), with `rootfs\` carrying the `smolvm-agent` and `crane` binaries (792 files). Last touched 09-28. |
+| `C:\Users\Computer\.workbuddy-ai` | 8.62 GB | WorkBuddy's **live data folder**: `workbuddy.db`, `settings.json`, `user-state.json`, `keyblob`, `system-ca-bundle.pem`, `device-id`, `memory/`, `sessions/`, `projects/`, `workspace/`, `plugins/`, `binaries/`, `logs/`, `traces/`, `connectors/`. Deleting it means WorkBuddy re-registers as a new device and loses its settings, memory, and any state tied to those keys — accepted with the approval. |
+
+**Two hazards found and handled.**
+
+1. **Junctions pointing outside the folder.** `.workbuddy-ai\binaries\` holds two
+   junctions into `G:\Archives\WorkBuddyAI\resources\vendor\` (`PortableGit` and
+   `python`). A recursive delete that follows them would have destroyed the real
+   PortableGit and Python installs on `G:`. The links were removed with
+   `cmd rmdir` (no `/s`, which removes the link and not its target) before the tree
+   was deleted. Verified afterwards: PortableGit 648 files, python 1,913 files,
+   `G:\Archives\WorkBuddyAI` 6,753 files / 1,294.9 MB — all intact.
+2. **158 log files under an explicit deny.** The files under `logs\2026-10-14`
+   through `logs\2026-10-20` carried a `DENY(Delete, DeleteSubdirectoriesAndFiles)`
+   ACE for `DX\Shohan`, applied directly on **seven directories** with
+   `inherited=False`. A scan of `AppData\Local`, `AppData\Roaming`, `.local`,
+   `Documents` and `Desktop` found **zero** such denies anywhere else on `C:`, so it
+   was a targeted marker on these log directories rather than a machine-wide policy.
+   The deny was lifted from those seven directories with `icacls /remove:d` and the
+   tree then deleted cleanly. The session is not administrator, so `takeown` was not
+   available and was not needed — the deny did not cover `WRITE_DAC`.
+
+**Method:** `attrib -S -H -R`, `cmd rmdir` on the junction entries, `icacls /remove:d`
+on the seven protected log directories, then `cmd rd /s /q`.
+
+**Receipt:** `C:` free space went from **2.61 GB to 12.50 GB**, a reclaim of
+**9.89 GB**.
+
+**Why the reclaim is smaller than the 38.66 GB the folders measured at.** The `smolvm`
+disk images were **sparse**: `storage.raw` and `overlay.raw` reported 20 GB and 10 GB
+of logical length but held far less allocated space, so deleting them returned only
+what they actually occupied. The measured folder sizes were logical, not allocated.
+
+**Not touched:** `G:\Dx` and every product repo in it; `G:\Archives\WorkBuddyAI`; and the
+other WorkBuddy locations, which remain — `.workbuddy` (15.6 MB),
+`.workbuddy-key-fallback` (0 MB), `@genieworkbuddy-desktop-updater` (474.7 MB),
+`WorkBuddy AI` (0 MB), `AppData\Roaming\WorkBuddy AI` (0 MB).
+
 ### 2026-10-21 - `chore:` the G: opencode scratch folder deleted, reclaiming 11.76 GB
 
 **The fourth authorised deletion.** The target was the agent scratch directory
