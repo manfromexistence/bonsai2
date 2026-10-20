@@ -32,8 +32,8 @@ it deliberately does not claim.
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
 | **P2** | 7 | hygiene and the long tail |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
-| **TPU track** | 7 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **35** | total open |
+| **TPU track** | 8 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
+| | **36** | total open |
 
 **Pass of 2026-10-20 (fifth): the total moves 35 → 33 and P2 moves 9 → 7.** Two P2 items
 left the ledger because the work was done. `HUB-08` is **closed** — the 20-byte root
@@ -544,6 +544,29 @@ plus one repo visibility change.
   entitlement"* — so the account is fine and the accelerator pool is the constraint.
 - **Done when:** `tpu/DO-NOT-RETEST.md` carries the unlock procedure and the symptom, so
   the next agent does not spend 40 minutes rediscovering it.
+
+### TPU-10 · The whole-model jit cannot run batch 80: restore the per-layer path for the aggregate config
+
+- **Evidence:** `full_step` (all 64 layers in one `jax.jit`) needs **20.1 GB of HLO
+  temporaries against 15.75 GiB of HBM**, so every batch-80 run fails to compile:
+  *"CompileTimeHbmOom: ... HLO temporaries (20.11G) exceeds available HBM (15.75G).
+  HLO module: jit_full_step"*. `FUSE=0` does not help, because `FUSE` governs the
+  *projection* fusion (400 -> 256 launches), not the whole-model jit; the 45k window
+  fails the same way (18.92G). Measured 2026-10-20 on Colab TPU v5e-1.
+- **What it costs:** the **281.01 tok/s aggregate configuration no longer runs on the
+  shipped kernel**. The per-layer-jit version that produced it is in this
+  repository's history (commit `22e94a1` and earlier) and its receipt
+  (`14-bonsai-transposed/receipt-14-b80-f16-tc1024.json`) is still valid -- but the
+  two numbers belong to two different kernels and must never be quoted as one
+  configuration.
+- **Why it matters beyond tidiness:** the grouped attention (`GQA=1`) saves 25 ms per
+  step at batch 1 by removing the kv-head expansion, and that expansion is **80x
+  larger at batch 80** (201 MB per layer per step at 8k becomes 16 GB per step at
+  batch 80). The aggregate path is therefore where the GQA win should be biggest, and
+  it is exactly the path the whole-model jit took out of reach.
+- **Done when:** a receipt records the aggregate configuration running again with
+  `GQA=0` and with `GQA=1`, with the tok/s of each and the first token `11`, so the
+  grouped attention is priced on the path that scales.
 
 ### TPU-07 · The real TPU blocker is the ternary unpack, ~9x off the HBM roofline
 

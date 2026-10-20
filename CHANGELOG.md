@@ -435,16 +435,18 @@ on this machine is a GPU run, not a TPU one.**
   rules out the cheapest-sounding fix: the trit value is
   `floor(3 * ((byte * p) & 0xFF) / 256) - 1`, so the power enters through a modular
   multiply and a threshold and **cannot** be folded into the activation.
-- **A trade-off the fusion introduces, now measured at both ends:** the fused
-  whole-model program holds far more HLO temporaries alive, so it fits only in the
-  single-stream regime. At a 45k window it fails to compile (*"CompileTimeHbmOom: ...
-  HLO temporaries (18.92G) exceeds available HBM (15.75G)"*), and **at batch 80 it
-  fails the same way (20.08G against 15.75 GiB) in `jit_full_step`**. The aggregate
-  path -- the 281.01 tok/s configuration -- therefore still needs the per-layer jit
-  (`FUSE=0`), and the two configurations have different ceilings: `FUSE=1` is a
-  single-stream optimisation (and a 57 s compile instead of 142 s), `FUSE=0` is the
-  one that scales to batch 80 and to a 45k window. Recorded in `TODO.md` `TPU-04` and
-  `tpu/DO-NOT-RETEST.md`.
+- **The whole-model jit is a single-stream regime, and the aggregate path is
+  currently unreachable.** `full_step` (all 64 layers in one `jax.jit`) needs
+  **20.1 GB of HLO temporaries against 15.75 GiB of HBM**, so it fails to compile
+  at batch 80 (*"CompileTimeHbmOom: ... HLO temporaries (20.11G) exceeds available
+  HBM (15.75G). HLO module: jit_full_step"*) and at a 45k window (18.92G) -- with
+  `FUSE=0` as well, because `FUSE` governs the *projection* fusion (400 -> 256
+  launches) and not the whole-model jit. **So the 281.01 tok/s aggregate
+  configuration no longer runs on the shipped kernel**: the per-layer-jit version
+  that produced it is in this repository's history (commit `22e94a1` and earlier),
+  and restoring it is `TODO.md` `TPU-10`. The single-stream numbers
+  (6.26 -> 7.45 tok/s at 8k) are the current kernel's, and the aggregate number
+  is the earlier kernel's -- the two must not be quoted as one configuration.
 
 ### 2026-10-20 — `docs:` the Kaggle kernels were deleted to stop GPU spend, and two of them were restored at once
 
@@ -682,4 +684,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 23:40 UTC
+updated: 2026-10-20 23:50 UTC
