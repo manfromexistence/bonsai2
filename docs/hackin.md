@@ -69,9 +69,11 @@ trait in this port so the code can be built and tested without them:
 ## Honest status
 
 **repo-managed.** The Rust workspace compiles, `cargo test --workspace` is
-green, and `cargo clippy --workspace -- -D warnings` is clean. The port covers
-the upstream's pure-logic core and its two I/O boundaries (Docker sandbox,
-Caido proxy).
+green (**441 passed, 0 failed**), and `cargo clippy --workspace --all-targets
+-- -D warnings` is clean. The port covers the upstream's pure-logic core, its
+two I/O boundaries (Docker sandbox, Caido proxy), and the CLI. The binary was
+run end to end: it creates the run directory, writes `run.json`, and exits `1`
+with an honest message that the agent loop is not ported.
 
 **Not claimed.** The port is **not** feature-complete, and it is **not**
 release-qualified. The agent loop, the LLM provider layer, the tool surface,

@@ -49,8 +49,11 @@ page and a row.**
   structural differences; the markdown and CSV artifacts are **byte-identical**,
   `\r\n` terminators included. The LLM crate additionally records the Python module
   outputs as fixtures and asserts the Rust reproduces them.
-- **Verified in the product repo:** `cargo test --workspace` → 367 passed, 0 failed;
-  `cargo clippy --workspace -- -D warnings` → clean; `cargo fmt --check` → clean.
+- **Verified in the product repo:** `cargo test --workspace` → 441 passed, 0 failed;
+  `cargo clippy --workspace --all-targets -- -D warnings` → clean; `cargo fmt
+  --all -- --check` → clean. The binary was run end to end: it creates the run
+  directory, writes `run.json`, and exits `1` with an honest message that the
+  agent loop is not ported — a `0` would claim a clean scan that never ran.
 - **What this entry does not claim.** `dx-hackin` **cannot run a scan**. The agent
   loop, the budget hooks, the agent factory and its 43 tools, the provider layer, the
   scan runner, the prompts, the session store, the MCP layer, the skills, the TUI, the
