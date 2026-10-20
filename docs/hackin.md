@@ -145,3 +145,6 @@ dated, one record per event).
 - `hackin/TECH.md` — the architecture of the Python original
 - `hackin/crates/Cargo.toml` — the Rust workspace manifest
 - `docs/forkness.md` — the same pattern, for the closest sibling product
+
+MIT OR Apache-2.0
+updated: 2026-10-21 00:00 UTC
