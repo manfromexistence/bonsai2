@@ -13,6 +13,31 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` the G: recycle bin emptied, reclaiming 18.73 GB
+
+**The third authorised deletion, and the lowest risk of the three.** Recycle-bin content has
+already been removed from its original location, so emptying it reclaims space without
+destroying anything still in use.
+
+**Approved target:** `G:\$RECYCLE.BIN\S-1-5-21-353084537-3046954507-215530408-1001` —
+22.81 GB, 57,353 files. That SID is the current user (`Shohan`) and was the **only** SID on
+the volume, so there was no other user's bin to leave alone.
+
+**What was in it:** 6,585 `$I` index records (1.2 MB), 4,168 `$R` payload files (0.47 GB)
+and 2,417 `$R` payload directories, with timestamps from 2006-07-24 to 2026-10-21.
+
+**Method:** `attrib -S -H` over the tree, then `cmd rd /s /q`. The SID folder carries the
+System attribute, so the attributes were cleared first.
+
+**Receipt:** free space on `G:` went from **75.92 GB to 94.65 GB**, a reclaim of
+**18.73 GB** (`Get-PSDrive G`, measured immediately before and after). The measured folder
+size was 22.81 GB; the difference is space the volume had already recovered from the
+payload, plus the concurrent session's own writes during the window. The bin now holds
+**0 entries and 0 MB**.
+
+**`G:` is now at 94.65 GB free of 476.92 GB (19.8%)**, up from 5.74 GB at the start of this
+cleanup, and clear of the `ENV-01` done-when of free space above 50 GB.
+
 ### 2026-10-21 - `fix:` dx-hackin's bug hunt - four panics, a stream that lost its events, and a budget that could not fire
 
 **A bug-hunting pass over the port found five classes of defect, all proved by
