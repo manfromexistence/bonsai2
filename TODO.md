@@ -81,7 +81,7 @@ gated-delta-rule form). Both are in `HELP.md` section 4a with the exact formats.
 is **closed**: the context cost at fixed batch is measured (batch 1, `max_t` 83 / 1024 /
 8192 → 152.3 / 153.6 / 180.9 ms per step), so the whole 8k window costs 19 % and the
 context is not the blocker -- the unpack is. The receipts are
-`tpu/14-bonsai-transposed/receipt-14-ctx64|1024|8192-b1-f16-tc1024.json`.
+`tpu/14-lane-aligned-ternary-kernel/receipt-14-ctx64|1024|8192-b1-f16-tc1024.json`.
 
 **Pass of 2026-10-20 (third): the total moves 38 → 35 and no score moves.** Three items
 left the ledger because the **route** was withdrawn, not because the work was done:
@@ -143,7 +143,7 @@ The hub's entire knowledge base exists only on this machine.
   (~180 KB: the register, 21 per-tool pages and the space review), `DX.md` (19.8 KB),
   eight other root files (`AGENTS.md`, `CAP.md`, `COLAB.md`, `DEPRECATED_README.md`,
   `DX_TOOLS_AI_GAP.md`, `JULES_BUILD_PROMPT.md`, `MINICPM5-200MB-PLAN.md`, `PLAN.md`)
-  and one scratch file (`tpu/14-bonsai-transposed/kernel.py.bak`).
+  and one scratch file (`tpu/14-lane-aligned-ternary-kernel/kernel.py.bak`).
   `git ls-files docs` returns 0 and `git ls-files DX.md` returns nothing, so the
   `Done when` is not met and this item stays open.
 - **Why it matters:** `docs/README.md:83` calls the register "the internal canonical map"
@@ -455,7 +455,7 @@ These stay visible on purpose. A blocker that is not written down becomes a sile
 | **BLK-02** | `sshd.exe` absent, nothing on `:22` | SSH-tunnel path is written and tested but never run live | `OPEN-WORK-2026-09-19.md:29` (Q-A16) |
 | **BLK-03** | `src-tauri` cannot link (`ort-sys`) | Desktop spawn/supervise, WSL choice, OS notification host op cannot be compiled here | `OPEN-WORK-2026-09-19.md:73` |
 | **BLK-04** | No `GH_TOKEN`/`GITHUB_TOKEN` in this shell; `essence-dx` is private | Full `cargo` builds 401 on the private `check` dependency; release assets unverifiable anonymously | `DX.md:277`, `DX.md:34` |
-| **BLK-05** | The account's **GitHub Actions billing** is unsettled | Every workflow in the org is created and scheduled, then refused: *"The job was not started because recent account payments have failed or your spending limit needs to be increased."* No job executes, in any repo. | `essence-dx/forkness` run `39479589995` (2026-10-21), all nine jobs created and none started; `essence-dx/bot` runs of 2026-10-17 hit the identical wall |
+| **BLK-05** | The account's **GitHub Actions billing** is unsettled | Every workflow in the org is created and scheduled, then refused: *"The job was not started because recent account payments have failed or your spending limit needs to be increased."* No job executes, in any repo. **Public** repositories are unaffected: the identical one-step workflow succeeds in `essence-dx/browser`. | `essence-dx/forkness` run `39479589995` (2026-10-21), all nine jobs created and none started; `essence-dx/bot` runs of 2026-10-17 hit the identical wall; `essence-dx/hackin` run `39484211367` (2026-10-21), all seven jobs created and none started |
 
 **Un-spelling note:** `BLK-04` also blocks `DIST-01`, and `DIST-01` blocks `DIST-02`,
 `DIST-03` and `DIST-04`. Four of the five distribution items collapse into one credential
@@ -463,9 +463,18 @@ plus one repo visibility change.
 
 **`BLK-05` note:** this one is **account-level, not repository-level**. It is not fixed
 by any change to a workflow, and it is not specific to `essence-dx/forkness` - `essence-dx/bot`'s
-own workflows were refused the same way three days earlier. The fix is in the account's
-**Billing & plans** settings. Until it is settled, no CI result in this org can be
-claimed, and a red X on a workflow is **not** evidence that the code is broken.
+own workflows were refused the same way three days earlier, and `essence-dx/hackin`'s were
+refused on 2026-10-21. The fix is in the account's **Billing & plans** settings. Until it is
+settled, no CI result in this org can be claimed, and a red X on a workflow is **not** evidence
+that the code is broken.
+
+**`BLK-05` — the public/private line, measured.** The blocker was isolated on 2026-10-21 by
+pushing the *identical* one-step workflow to `essence-dx/browser`, a **public** repository in
+the same organisation: it **succeeded**. The same workflow in the private `essence-dx/hackin`
+fails with every job created and none started. The organisation is on GitHub's **free** plan,
+where private repositories get no hosted-runner minutes unless billing is enabled with a
+spending limit. The line is therefore **visibility**, not configuration: no workflow file
+needs changing, and nothing in any repository can fix it.
 
 ---
 
@@ -479,12 +488,12 @@ claimed, and a red X on a workflow is **not** evidence that the code is broken.
   track, not refuted.
 - **The baseline it must beat, and the ceiling on this lever:** the weight DMA of one
   projection is 0.29 ms of its 3.83 ms and the unpack arithmetic is the rest
-  (`tpu/13-cost-sweep/README.md:63-76`). So even a perfect overlap buys at most the
+  (`tpu/13-projection-cost-breakdown/README.md:63-76`). So even a perfect overlap buys at most the
   **7.6 %** of the step, and the A/B behind the last `CHANGELOG.md` entry says the step
   is VPU-bound rather than DMA-exposed. This is a small, well-priced lever — worth one
   session, not worth hoping on.
 - **The knob exists and has been tried:** `PREFETCH` in
-  `tpu/14-bonsai-transposed/kernel.py` sets `num_scalar_prefetch` on the
+  `tpu/14-lane-aligned-ternary-kernel/kernel.py` sets `num_scalar_prefetch` on the
   `PrefetchScalarGridSpec`. **`PREFETCH=1` does not compile with this grid** --
   Pallas reports *"Pytree for `in_specs` and `inputs` do not match"*, because the
   prefetch mechanism wants the prefetched dimension to be a *scalar* dim and this
@@ -523,7 +532,7 @@ claimed, and a red X on a workflow is **not** evidence that the code is broken.
 
 ### TPU-04 · 64k context needs a q4 KV cache that does not exist yet
 
-- **Evidence:** `tpu/14-bonsai-transposed/receipt-14-mem-ceiling.json` — at `max_t`
+- **Evidence:** `tpu/14-lane-aligned-ternary-kernel/receipt-14-mem-ceiling.json` — at `max_t`
   65536 the attention step cannot even be loaded (`jit_attn_step` wants 3.26 G, 184.53 M
   free) and at 49152 it is 140 MB short; 45056 fits and runs at 2.86 tok/s
   (`receipt-14-b1-f16-tc1024-45056.json`). fp32 KV is 128 KiB/token/sequence, so 64k is
@@ -574,7 +583,7 @@ claimed, and a red X on a workflow is **not** evidence that the code is broken.
 - **What it costs:** the **281.01 tok/s aggregate configuration no longer runs on the
   shipped kernel**. The per-layer-jit version that produced it is in this
   repository's history (commit `22e94a1` and earlier) and its receipt
-  (`14-bonsai-transposed/receipt-14-b80-f16-tc1024.json`) is still valid -- but the
+  (`14-lane-aligned-ternary-kernel/receipt-14-b80-f16-tc1024.json`) is still valid -- but the
   two numbers belong to two different kernels and must never be quoted as one
   configuration.
 - **Why it matters beyond tidiness:** the grouped attention (`GQA=1`) saves 25 ms per
@@ -589,7 +598,7 @@ claimed, and a red X on a workflow is **not** evidence that the code is broken.
 ### TPU-07 · The real TPU blocker is the ternary unpack, ~9x off the HBM roofline
 
 - **Evidence:** the step reads 6.37 GiB of packed weights per token, and the slice's
-  measured read bandwidth is 709 GB/s (`tpu/13-cost-sweep/README.md:28`), so the
+  measured read bandwidth is 709 GB/s (`tpu/13-projection-cost-breakdown/README.md:28`), so the
   traffic floor is **9.0 ms/token -- 104 tok/s**. The measured step is **134.3 ms
   (7.45 tok/s)** with the kv-head expansion removed, i.e. **~15x off that floor**,
   and the projection breakdown puts the unpack at **82 % of a projection**

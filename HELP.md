@@ -26,9 +26,9 @@ go-ahead. GPU kernels under `tpu/` are kept for the record and marked out of sco
 | RoPE | 64 dims, `freq_base 1e7`, IMROPE half-split pairs | GGUF header + `04-*.py` |
 | ternary scheme | `prism.hadamard.*`: block 1024, normalized-Sylvester-Walsh-Hadamard, explicit signs (28,672 = 5120+6144+17408) | GGUF header |
 | MTP head | **absent** — 851 tensors, none named `nextn`/`mtp`, no `qwen35.nextn_block_count`; the base `Qwen/Qwen3.8-27B` has one | headers read by byte-range, all three conversions (PTQ1_0, PQ2_0, F16) |
-| machine | Colab **TPU v5e-1**, one core, **15.75 GiB HBM**, ~709 GB/s measured HBM read | `13-cost-sweep/README.md:28` |
+| machine | Colab **TPU v5e-1**, one core, **15.75 GiB HBM**, ~709 GB/s measured HBM read | `13-projection-cost-breakdown/README.md:28` |
 | stack | `jax 0.11.2` + `libtpu 0.0.50` (stock Colab's jax 0.7.2 cannot compile Pallas) | `tpu/DO-NOT-RETEST.md` §1 |
-| weights on device | 6.37 GiB (28→32 byte rows, +14 % padding) | `14-bonsai-transposed/README.md` |
+| weights on device | 6.37 GiB (28→32 byte rows, +14 % padding) | `14-lane-aligned-ternary-kernel/README.md` |
 
 ---
 
@@ -40,9 +40,9 @@ Ordered by how much it was worth. "Receipt" names the file that owns the number.
 
 | # | Method | Effect | Receipt |
 | --- | --- | --- | --- |
-| 1 | **Lane-aligned tiles**: store the packed block as `(32, rows)` and compute `x @ w` so the out-columns sit on the 128 lanes (Pallas maps only the last two dims to the register file; Mosaic puts a matmul's N axis on the lanes) | **29.66 → 281.01 tok/s** (9.5×) at batch 80 | `14-bonsai-transposed/receipt-14-b80-f16-tc1024.json` |
+| 1 | **Lane-aligned tiles**: store the packed block as `(32, rows)` and compute `x @ w` so the out-columns sit on the 128 lanes (Pallas maps only the last two dims to the register file; Mosaic puts a matmul's N axis on the lanes) | **29.66 → 281.01 tok/s** (9.5×) at batch 80 | `14-lane-aligned-ternary-kernel/receipt-14-b80-f16-tc1024.json` |
 | 2 | **Batch ladder** 32 → 80 with f16 state storage | 2.09× aggregate; stops at the **memory wall** (15.67 of 15.75 GiB) | same + `receipt-14-b32…`, `-b64…`, `-b48…` |
-| 3 | **Decode spelling**: `concatenate` instead of `stack(axis=1).reshape` (a layout conversion), then int16 lanes | 1.33× then 1.20× on the decode | `13-cost-sweep/README.md` Q5 |
+| 3 | **Decode spelling**: `concatenate` instead of `stack(axis=1).reshape` (a layout conversion), then int16 lanes | 1.33× then 1.20× on the decode | `13-projection-cost-breakdown/README.md` Q5 |
 | 4 | **Out-tile TC 512 → 1024** | +5.5 % at batch 80 | `receipt-14-b80-f16-tc1024.json` |
 | 5 | **Fused 64-layer step**: all 64 layers in one `jax.jit`, the 61-chunk vocab loop in a second | **4.62 → 5.54 tok/s** single-stream at 8k; compile 142 s → 57 s | `receipt-14-fuse1-b1-f16-tc1024.json` |
 | 6 | **Persistent compile cache** (`/content/jaxcache`) + a compile watchdog | the rerun's prefill is 4.6 s instead of a fresh 140 s compile | same run's prefill line |
@@ -93,17 +93,17 @@ was never measured until 2026-10-20, and it is small.
 | `PREFETCH=0..4` | `num_scalar_prefetch` on the grid spec | does not compile at 1+ on this grid |
 
 All four arms of the 2×2 (shipped / `NOCONCAT` / `GQA` / both) run in one session;
-receipts are `tpu/14-bonsai-transposed/receipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`.
+receipts are `tpu/14-lane-aligned-ternary-kernel/receipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`.
 
 ### 2.5 Tooling built along the way
 
 | Tool | What it does | Where |
 | --- | --- | --- |
 | `ensure_setup.py` + `setup_fast.sh` | idempotent setup: pin jax/libtpu, download the 5.5 GB GGUF (skip if present), verify | `G:\Temp\UserTemp\opencode\colab_run\` |
-| `run14_ask.sh` | one run = restart kernel → `colab exec` with the env knobs → tee to `14-ask.log` | same |
-| `gguf_graft.py` | grafts an MTP head into a GGUF (header rewrite + tensor append); **self-tested** on synthetic GGUFs | `tpu/mtp-graft/kernel.py` (inlined) |
+| `run14_ask.sh` | one run = restart kernel → `colab exec` with the colab-env-patch knobs → tee to `14-ask.log` | same |
+| `gguf_graft.py` | grafts an MTP head into a GGUF (header rewrite + tensor append); **self-tested** on synthetic GGUFs | `tpu/gpu-mtp-head-graft-test/kernel.py` (inlined) |
 | GGUF header scanner | reads a 5.9 GB file's metadata from 40 MB of range requests | `G:\Temp\UserTemp\opencode\gguf_one.py` |
-| compile watchdog | a thread that prints every 60 s while the first fused step compiles | `14-bonsai-transposed/kernel.py` |
+| compile watchdog | a thread that prints every 60 s while the first fused step compiles | `14-lane-aligned-ternary-kernel/kernel.py` |
 
 ### 2.6 The GPU route — recorded, out of scope
 
@@ -309,7 +309,7 @@ Colab pool quota and its re-auth unlock, `TPU-06` closed (the fixed-batch contex
 # one run = restart kernel, then exec with the knobs
 bash run14_ask.sh '1:float16' 1024 64 1 'your prompt here' 8192
 #   RUNS=BATCH:state_dtype   TC=out-tile columns   N_TOKENS   CACHE   PROMPT   MAX_T
-# env knobs: FUSE=0|1  NOCONCAT=0|1  GQA=0|1  PREFETCH=0..4
+# colab-env-patch knobs: FUSE=0|1  NOCONCAT=0|1  GQA=0|1  PREFETCH=0..4
 ```
 
 Etiquette the track requires: **always run the real 64-layer model** (never a

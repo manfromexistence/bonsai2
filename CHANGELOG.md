@@ -13,6 +13,52 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` dx-hackin's citations are verified, its CI is measured, and the private/public line is drawn
+
+**A polish pass over `dx-hackin` found 24 stale citations, proved the licence
+allow list, and measured a CI blocker that had been taken on trust.**
+
+- **The citations are checked, not asserted.** The port's central rule is
+  that every ported item cites the Python `file:line` it came from. The new
+  `hackin/scripts/check-citations.py` verifies that against the reference
+  checkout: the cited path exists, the cited line range is inside the file, a
+  header's "(N lines)" claim is the file's real length, the cited range covers
+  the symbol it names, and the backticks around a citation balance. It found
+  **24** stale citations on its first run — **five** wrong size claims, **five**
+  ranges past the end of their file, **four** symbols cited at the wrong lines,
+  **one** class cited at the wrong lines, and **two** misattributions. All are
+  fixed, and the Rust diff is doc-comment-only.
+- **A truncated path.** Two citations in `hackin/TODO.md` had lost their
+  opening backtick and their first letter — `eference/strix-python/...` — the
+  signature of an earlier edit that ate a backtick-`r`. Repaired, and the
+  backtick-balance check now catches that class.
+- **The licence allow list is proven.** `hackin/scripts/check-licences.py`
+  reads every locked crate's licence out of the registry cache and evaluates
+  the SPDX expression the way cargo-deny does. **234 crates checked, 0 not
+  allowed.** Two allow-list entries are currently unused; cargo-deny reports
+  that as a warning, and a stale entry beats a licence that silently stops
+  being allowed.
+- **The CI does not run, and now that is measured rather than assumed.**
+  Every job of every run on `essence-dx/hackin` fails in **two seconds with
+  zero steps**. The blocker was isolated by pushing the *identical* one-step
+  workflow to `essence-dx/browser`, a **public** repository in the same
+  organisation, where it **succeeded**: the line is **visibility**, not
+  configuration. This is the hub's `BLK-05`, now with a third receipt and a
+  public/private control.
+- **The checks are tested.** The citation linter's four failure modes were
+  each injected into a file and confirmed to fail the run. A check that cannot
+  fail is not a check.
+- **The drift checks run on Windows now.** The Makefile's script targets
+  called `python3`, which on this machine is the Microsoft Store's
+  `python3.exe` alias — a stub that cannot run a script. The interpreter is
+  now resolved at run time.
+- **Verified in the product repo:** `cargo test --workspace` → 741 passed, 0
+  failed, 36 suites; `cargo clippy --workspace --all-targets -- -D warnings` →
+  clean; `cargo fmt --all -- --check` → clean; `cargo doc --workspace
+  --no-deps` with `-D warnings` → clean; `make deny-skips`, `make licences`,
+  `make citations` and `make skills` → all clean. **None of that is a CI
+  result** — CI never executed here.
+
 ### 2026-10-21 - `docs:` the KV cache dtype is selectable, and the window ceiling is the whole-model jit, not the cache
 
 - **`KVDTYPE=fp32|fp16|bf16`** in `tpu/14-bonsai-transposed/kernel.py`. The write
@@ -31,6 +77,43 @@ Nothing in this file is release-qualified.
   Pallas kernel). Read through an f32 einsum, a 4-bit cache is upcast straight back to
   32 bits per element and wins nothing -- which is why the first step is 16-bit, not
   4-bit.
+
+### 2026-10-21 - `chore:` every folder in `tpu/` is renamed to say what it is
+
+The folder names were a mix of what-they-are and when-they-happened
+(`14-bonsai-transposed`, `mtp-test`, `bonsai2-4way`). They now say what each
+one is, and the sequence number still carries the order of the work.
+
+| old | new |
+| --- | --- |
+| `04-bonsai-tpu-forward` | `04-reference-forward-pass` |
+| `07-pallas-fusion` | `07-pallas-matmul-findings` |
+| `13-cost-sweep` | `13-projection-cost-breakdown` |
+| `14-bonsai-transposed` | `14-lane-aligned-ternary-kernel` |
+| `pq2-decode` | `pq2-2bit-weight-format` |
+| `env` | `colab-env-patch` |
+| `archive/01-tpu-env-probe` | `archive/01-environment-and-pallas-probe` |
+| `archive/02-gguf-prism-metadata` | `archive/02-gguf-format-and-sign-metadata` |
+| `archive/03-fwht-kernel-test` | `archive/03-hadamard-transform-tests` |
+| `archive/05-bonsai-tpu-run` | `archive/05-run-harness` |
+| `archive/06-bonsai-tpu-fast` | `archive/06-batched-kv-decode` |
+| `archive/08-bonsai-scan` | `archive/08-lax-scan-over-layers` |
+| `archive/09-bonsai-int8` | `archive/09-int8-weights` |
+| `archive/10-bonsai-fused` | `archive/10-fused-ternary-matmul` |
+| `archive/11-bonsai-fused-full` | `archive/11-fully-fused-64-layer-model` |
+| `archive/12-bonsai-bigdma` | `archive/12-windowed-dma-in-blocks` |
+| `archive/bonsai2-{kernel,fast,cached,4way,tunnel}` | `archive/llamacpp-{baseline-kernel,fast-kernel,cached-kernel,four-model-comparison,tunnel-server}` |
+| `archive/tunnel-test` | `archive/tunnel-connectivity-test` |
+| `out-of-scope-gpu/bonsai2-27b-t4` | `out-of-scope-gpu/gpu-llamacpp-t4-baseline` |
+| `out-of-scope-gpu/mtp-test` | `out-of-scope-gpu/gpu-mtp-head-availability-test` |
+| `out-of-scope-gpu/spec-draft` | `out-of-scope-gpu/gpu-draft-model-speculation-test` |
+| `out-of-scope-gpu/spec-draft-2gpu` | `out-of-scope-gpu/gpu-draft-model-two-t4-test` |
+| `out-of-scope-gpu/mtp-graft` | `out-of-scope-gpu/gpu-mtp-head-graft-test` |
+
+`git mv` throughout, so every folder keeps its history. Every path reference in
+the live documents and in the `colab_run/` scripts was rewritten, and the entries
+below keep the **old** names on purpose -- they record what was true when they
+were written.
 
 ### 2026-10-21 - `chore:` the `tpu/` folder is split: the live track at the root, everything else named
 
