@@ -32,7 +32,7 @@ it deliberately does not claim.
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
 | **P2** | 8 | hygiene and the long tail |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
-| **TPU track** | 6 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
+| **TPU track** | 5 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
 | | **34** | total open |
 
 **Pass of 2026-10-20 (fourth): the total moves 35 → 34 and P2 moves 9 → 8.** Two P2
@@ -44,6 +44,12 @@ the unreachable-name junk file is no longer at the root: a byte-level listing of
 root file, name escaped to codepoints, shows no U+F02A name and no 663-byte file.
 `HUB-10` stays open with its first half closed — the ~975 MB of video is parked in
 `DEPRICATED_10-20-2026/root-junk/`, `image.png` is still at the root.
+
+**Pass of 2026-10-20 (fourth): the total moves 35 → 34 and no score moves.** `TPU-06`
+is **closed**: the context cost at fixed batch is measured (batch 1, `max_t` 83 / 1024 /
+8192 → 152.3 / 153.6 / 180.9 ms per step), so the whole 8k window costs 19 % and the
+context is not the blocker -- the unpack is. The receipts are
+`tpu/14-bonsai-transposed/receipt-14-ctx64|1024|8192-b1-f16-tc1024.json`.
 
 **Pass of 2026-10-20 (third): the total moves 38 → 35 and no score moves.** Three items
 left the ledger because the **route** was withdrawn, not because the work was done:
@@ -483,6 +489,13 @@ plus one repo visibility change.
   free) and at 49152 it is 140 MB short; 45056 fits and runs at 2.86 tok/s
   (`receipt-14-b1-f16-tc1024-45056.json`). fp32 KV is 128 KiB/token/sequence, so 64k is
   8 GiB of KV on a 15.75 GiB budget that already holds 6.37 GiB of weights.
+- **The fused step costs compile-time memory:** with `FUSE=1` the 45k window no longer
+  compiles at all -- *"CompileTimeHbmOom: ... the total memory required for HLO
+  temporaries (18.92G) exceeds available HBM (15.75G). HLO module: jit_full_step"*
+  (run log 2026-10-20 20:14). The 45k receipt above is therefore a `FUSE=0` number, and
+  the two configurations have different context ceilings. That is a real trade-off of
+  the fusion: it compiles in 57 s instead of 142 s and is numerically exact, but it holds
+  more temporaries live.
 - **The fix and its price:** q4 KV is 16 KiB/token/sequence, so 64k becomes 1 GiB and
   the window fits at ~11.3 GiB — but the kernel has no q4 KV path and no blocked or
   paged attention, and both are new kernel work rather than a configuration change.
@@ -500,22 +513,6 @@ plus one repo visibility change.
 - **Done when:** `tpu/DO-NOT-RETEST.md` carries the unlock procedure and the symptom, so
   the next agent does not spend 40 minutes rediscovering it.
 
-### TPU-06 · The context cost at fixed batch has never been measured
-
-- **Evidence:** the step-time curve in `tpu/14-bonsai-transposed/README.md` moved batch
-  and context together — 284.7 ms (batch 80, `max_t` 64), 309 ms (batch 64, `max_t` 160),
-  638 ms (batch 48, `max_t` 320), 662 ms (batch 32, `max_t` 512) — so **the curve cannot
-  be attributed**: the two longest-context runs also used the *smaller* batches, which
-  rules out batch as the sole cause and leaves context unquantified. A claim made in
-  conversation on 2026-10-19 that those jumps were "batch-driven, not context" does not
-  survive that comparison and is withdrawn.
-- **Why it matters:** every long-context plan (TPU-03, TPU-04) is priced against the
-  context cost, and the 8k-window target is only meaningful once that cost is known.
-- **Done when:** one run at batch 1 with `max_t` ∈ {64, 1024, 8192, 45056} prints the
-  ms/step curve at fixed batch, and the receipt states the per-1k-token cost.
-
----
-
 ### TPU-07 · The real TPU blocker is the ternary unpack, ~9x off the HBM roofline
 
 - **Evidence:** the step reads 6.37 GiB of packed weights per token, and the slice's
@@ -529,12 +526,25 @@ plus one repo visibility change.
   launches (36 % fewer launches moved the step 0.5 %, 2026-10-20), DMA count, the
   k-loop, and the unpack's instruction count (a 1.4x cheaper shift chain changed
   nothing -- the cost is data movement *inside the VPU*).
+- **Ruled out by algebra (2026-10-20): the power cannot be folded into the
+  activation.** The trit value is `floor(3 * ((byte * p) & 0xFF) / 256) - 1`, so the
+  byte's magnitude and the row's power enter through a modular multiply and a
+  threshold -- the value is *not* `q * c_p`, and no per-row scale can move the
+  multiply out of the kernel. The cheap spelling is already the arithmetic form
+  (one multiply, one mask, one shift per element) against a per-(byte, power)
+  lookup table, which would be a gather.
 - **What is still open:** the decode is bound by VPU data movement, and the known
   spellings measure 1.393 ms per projection (int16 lanes, `concatenate`) against a
-  0.29 ms DMA floor. A formulation that never materialises the unpacked weights --
-  folding the per-dimension power pattern into the activation, so the kernel only
-  has to widen 2-bit values -- is the unexplored direction, and the only one that can
-  put the TPU in the same range as the GPU route.
+  0.29 ms DMA floor. The next step is a **cost breakdown at the current lane-aligned
+  layout** -- the existing breakdown (`tpu/13-cost-sweep/`) was taken on the old,
+  lane-starved layout and cannot be reused -- to separate the weight DMA, the field
+  extraction, the group concatenation and the cast-and-scale, so the next kernel
+  change is aimed at the measured term rather than a guess.
+- **The measurement that frames it:** at batch 1 the *entire* 8k window costs 19 %
+  (152.3 ms/step at `max_t` 83 against 180.9 ms at `max_t` 8192 --
+  `receipt-14-ctx64-b1-f16-tc1024.json` against
+  `receipt-14-ctx8192-b1-f16-tc1024.json`), so the floor for this kernel is the
+  **unpack**, not the context.
 - **Done when:** a receipt records a step time below 40 ms at batch 1 / `max_t` 8192
   with the first token still `271` and the text byte-identical to
   `receipt-14-fuse1-b1-f16-tc1024.json`.
@@ -629,4 +639,4 @@ number survives being added up. It does **not** mean any product is release-qual
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-20 20:45 UTC
+updated: 2026-10-20 21:10 UTC

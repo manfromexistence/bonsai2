@@ -251,6 +251,29 @@ on this machine is a GPU run, not a TPU one.**
   while the base model `Qwen/Qwen3.8-27B` does carry one. Any future TPU-side
   speculation therefore needs its draft from somewhere else.
 
+### 2026-10-20 — `docs:` the context cost at fixed batch is measured, and the unpack is the blocker
+
+- **The curve that had never been measured, now measured** (batch 1, the fused
+  64-layer step, the same 17-token prompt throughout): `max_t` 83 → **152.3 ms/step
+  (6.57 tok/s)**, `max_t` 1024 → 153.6 ms (6.51 tok/s), `max_t` 8192 → **180.9 ms
+  (5.53 tok/s)**. Receipts: `tpu/14-bonsai-transposed/receipt-14-ctx64-b1-f16-tc1024.json`,
+  `receipt-14-ctx1024-b1-f16-tc1024.json`, `receipt-14-ctx8192-b1-f16-tc1024.json`.
+- **So the entire 8k window costs 19 %** at batch 1, and the best single-stream number
+  on this track is **6.57 tok/s** at a short window. The earlier 638/662 ms step times
+  were a *batch x context* interaction, not context: they were measured at batches 48
+  and 32 while the 284.7 ms run was at batch 80.
+- **The conclusion that re-scopes the 50 tok/s work:** the blocker is the
+  per-weight-byte **ternary unpack** (152 ms at a 64-token window, where the context
+  cost is negligible), and 50 tok/s means 20 ms/step -- so the unpack has to get
+  ~7.6x faster. `TODO.md` `TPU-07` now carries that, together with the algebra that
+  rules out the cheapest-sounding fix: the trit value is
+  `floor(3 * ((byte * p) & 0xFF) / 256) - 1`, so the power enters through a modular
+  multiply and a threshold and **cannot** be folded into the activation.
+- **A trade-off the fusion introduces:** with the fused step the 45k window no longer
+  compiles -- *"CompileTimeHbmOom: ... HLO temporaries (18.92G) exceeds available HBM
+  (15.75G)"* -- so the 45k receipt is a `FUSE=0` number and the two configurations
+  have different context ceilings. Recorded in `TODO.md` `TPU-04`.
+
 ### 2026-09-26 — `docs:` the hub's change history is no longer a phantom file
 
 **`CHANGELOG.md` now exists.** Until today it was referenced everywhere and present
@@ -381,4 +404,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 20:45 UTC
+updated: 2026-10-20 21:10 UTC
