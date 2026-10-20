@@ -68,7 +68,8 @@ in a renamed lot. Nothing was deleted.**
 - **Reclassified the non-DX root folders** as client work rather than junk:
   `dhakaraiment`, `esportsfire`, `ikra`, `lms`, and `bhcrd` now have a
   "Client and adjacent projects (not DX)" table in `README.md`.
-- **Hub root went from 47 folders to 43.** Free space on `G:` was 19.15 GB
+- **Hub root went from 47 folders to 45** (`llama.cpp` and `ZZZ-bot-trash` left the
+  root; the parking lot was renamed in place). Free space on `G:` was 19.15 GB
   before the move and 20.04 GB after (`Get-PSDrive G`) — the moves are
   same-volume metadata operations, so they cost no space.
 
