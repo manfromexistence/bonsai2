@@ -32,17 +32,18 @@ it deliberately does not claim.
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
 | **P2** | 9 | hygiene and long-tail distribution |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
-| **TPU track** | 9 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **38** | total open |
+| **TPU track** | 8 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
+| | **37** | total open |
 
-**Pass of 2026-10-20: the total moves 29 → 38 and no score moves.** The nine new items
-are the execution track's open work (`GPU-01`…`GPU-03`, `TPU-01`…`TPU-06`), each filed
-with the evidence that proves it is open. Adding items to a ledger is not progress, so
-the published score is unchanged — the rule the 2026-09-26 pass was held to. One of the
-new items also **withdraws** a claim made in conversation on 2026-10-19: that the
-638/662 ms step times were batch-driven rather than context-driven does not survive the
-fixed-batch comparison, so the correction is filed (`TPU-06`) rather than quietly
-dropped.
+**Pass of 2026-10-20 (second): the total moves 38 → 37 and no score moves.** Two items
+left the ledger, both because the work was done, not because the ledger was tidied:
+`GPU-02` is **closed** — the MTP-head question is now answered from the file's own
+header, which no further session can improve on — and `TPU-01` is **withdrawn** — its
+done-when was "≤ 100 ms/step at 256 launches" and the measurement says 181.3 ms, so the
+launch-overhead theory it rested on is refuted and the correction is in
+`CHANGELOG.md` rather than quietly dropped. `GPU-04` was filed in their place: the
+graft that replaces the MTP route. The earlier pass added the nine items; this one
+pruned two of them and added one.
 
 **Hub documentation-governance: 19 % → 78 %** (19.45 → 77.6 exact). Derived, not felt — the
 rubric and the arithmetic are in the **Score rubric** section at the end of this file, and
@@ -448,19 +449,6 @@ context window**, for this model, with a receipt.
   for Bonsai 2 27B, with the acceptance rate, the exact flags and the build commit
   recorded next to it.
 
-### GPU-02 · Does Bonsai 2's PTQ1_0 GGUF still carry the MTP head?
-
-- **Evidence:** `tpu/mtp-test/kernel.py:8-12` states the uncertainty in full: the
-  50.44 tok/s reference was measured on Qwen's own Qwen3.8-27B GGUF, while this track's
-  target is PrismML's ternary PTQ1_0 quantization of the same base, and whether
-  quantization kept the MTP head "is not documented anywhere I could find".
-- **Two outcomes, both worth the ~6 minutes** the notebook estimates: llama.cpp refuses
-  with *"model does not have a MTP head"* — then the grafted-MTP files (7.0 GB) are the
-  only path — or it runs, and this becomes the first MTP-speculation number for Bonsai 2
-  27B, which nobody has published.
-- **Done when:** the `mtp-test` notebook has run, and `tpu/TPU-STATUS.md` records which
-  outcome occurred, with the log path, the measured tok/s and the acceptance rate.
-
 ### GPU-03 · Stack n-gram speculation on top of MTP
 
 - **Evidence:** llama.cpp's `--spec-type engram-mod` (n-gram) stacked with MTP reached
@@ -475,21 +463,26 @@ context window**, for this model, with a receipt.
 - **Done when:** the same prompt set that produced GPU-01's number is run with MTP and
   with MTP + n-gram, and both acceptance rates are recorded side by side.
 
-### TPU-01 · The step is launch-overhead-bound: fuse the projections that share an input
+### GPU-04 · Graft the base model's MTP head into the PTQ1_0 file
 
-- **Evidence:** **180.6 ms/step at batch 1 / `max_t` 8192** (fused step,
-  `receipt-14-b1-f16-tc1024-fused.json`) against **284.7 ms/step at batch 80 /
-  `max_t` 64** (`receipt-14-b80-f16-tc1024.json`). Eighty sequences cost 1.58× one
-  sequence, so the marginal cost of a sequence is ~1.3 ms and the fixed cost is ~176 ms.
-  The step makes ~400 `proj` calls (48 GDN layers × 6 projections + 16 attention layers ×
-  7), i.e. ~0.44 ms of fixed cost per projection.
-- **The lever:** three projection groups share one input — `attn_qkv`+`attn_gate` and
-  `ffn_gate`+`ffn_up` on a GDN layer, `attn_q`+`attn_k`+`attn_v` on an attention layer —
-  so a multi-output Pallas kernel can take 400 launches down to ~190 without changing a
-  weight byte.
-- **Done when:** a receipt records **≤ 100 ms/step at batch 1 / `max_t` 8192** with the
-  first token still `271` and the generated text byte-identical to
-  `receipt-14-b1-f16-tc1024-fused.json`.
+- **Evidence:** Bonsai 2's three published GGUFs carry **no** MTP head (measured from
+  the headers, 2026-10-20: 851 tensors, 0 named `nextn`/`mtp`, no
+  `qwen35.nextn_block_count`), but the base model does: the HF card records
+  `base_model: Qwen/Qwen3.8-27B`, and community GGUFs of that base are published with
+  the MTP head intact (`HauhauCS/...-MTP-GGUF`, `JonathanColetti/...-GGUF` tagged
+  `mtp`). llama.cpp's MTP path reads the head from the model file's own
+  `n_layer_nextn` block, so the head has to be *inside* the target file.
+- **What the graft costs:** the nextn tensors must be fetched from the base checkpoint,
+  converted to GGUF, and merged into the 5.9 GB PTQ1_0 file — and the merge has to
+  preserve PrismML's custom quant type, which the standard `gguf-py` writer may not
+  know. The head is small (about half a gigabyte in bf16).
+- **Why it is worth it:** the reference MTP configuration is 50.44 tok/s at 48.3 %
+  acceptance, and MTP acceptance on a chat-formatted prompt is ~83 % at one draft token
+  (morphllm.com) — far above what an 0.8B draft model or n-gram matching will reach on
+  open prose.
+- **Done when:** a merged GGUF loads in the llama.cpp build this repo already uses, and
+  a receipt records the tok/s and the acceptance rate at `-c 8192` with the head in the
+  file.
 
 ### TPU-02 · Overlap the weight DMA with compute
 
@@ -499,25 +492,43 @@ context window**, for this model, with a receipt.
   the way to let the compiler place operands in HBM for overlap. Notebook 14's kernel
   sets `num_scalar_prefetch=0` and never uses `pl.ANY` — so this is **untested** on this
   track, not refuted.
-- **The baseline it must beat:** the weight DMA of one projection is 0.29 ms of its
-  3.83 ms, and the unpack arithmetic is the rest (`tpu/13-cost-sweep/README.md:63-76`).
+- **The baseline it must beat, and the ceiling on this lever:** the weight DMA of one
+  projection is 0.29 ms of its 3.83 ms and the unpack arithmetic is the rest
+  (`tpu/13-cost-sweep/README.md:63-76`). So even a perfect overlap buys at most the
+  **7.6 %** of the step, and the A/B behind the last `CHANGELOG.md` entry says the step
+  is VPU-bound rather than DMA-exposed. This is a small, well-priced lever — worth one
+  session, not worth hoping on.
+- **The knob exists:** `PREFETCH` in `tpu/14-bonsai-transposed/kernel.py` sets
+  `num_scalar_prefetch` on the `PrefetchScalarGridSpec`, which prefetches along the
+  grid's last dimension — the in-block dim, i.e. the next weight tile. It is 0 by
+  default, so nothing has been spent on it yet.
 - **Done when:** a receipt records a lower ms/step than TPU-01's run with the output
   text unchanged, and the prefetch and memory-space settings are in the receipt.
 
 ### TPU-03 · Multi-token verification: the only route to 50 tok/s on the TPU
 
-- **Evidence:** MTP acceptance falls with depth unless the head is fine-tuned (FastMTP,
-  arXiv 2509.18362: 80 % / 56 % / 36 % at k=1/2/3 for a vanilla head), and EAGLE-3's
-  aggregate gain collapses at batch 64 (1.38×) while staying large at batch 1 — which is
-  our case (iotdigitaltwinplm, 2026).
+- **Why it is the only route (measured 2026-10-20):** cutting 36 % of the kernel
+  launches moved the step time by 0.5 % (`receipt-14-fuse0-b1-f16-tc1024.json` against
+  `receipt-14-fuse1-b1-f16-tc1024.json`: 182.3 ms against 181.3 ms). The step pays for
+  the per-weight-byte VPU work — the ternary unpack — which does not shrink with batch
+  (180.6 ms/step at batch 1, 284.7 ms/step at batch 80). A verification pass computes
+  k tokens against the *same* unpacked weights, so it amortises that cost k ways; no
+  other lever on this kernel does.
+- **The arithmetic that has to come out right:** 50 tok/s is 9-10 accepted tokens per
+  200 ms pass, i.e. **k ≈ 16 candidates at ~0.6 acceptance**, or k ≈ 24 at 0.4. MTP
+  acceptance falls with depth unless the head is fine-tuned (FastMTP, arXiv 2509.18362:
+  80 % / 56 % / 36 % at k=1/2/3 for a vanilla head), and EAGLE-3's aggregate gain
+  collapses at batch 64 (1.38×) while staying large at batch 1 — which is our case
+  (iotdigitaltwinplm, 2026).
 - **The hard part is named:** 48 of this model's 64 layers are gated-delta-net, so a
-  k-token chain needs the chunked delta-rule form; the 16 attention layers can take k
-  queries in one pass behind a chain mask, but the GDN state update is sequential in the
-  chain. The projections are shared across the chain, which is exactly why the weight
-  traffic can be amortised.
+  k-token chain needs the GDN state updated k times in sequence against one state, not
+  k independent states; the 16 attention layers can take k queries in one pass behind a
+  chain mask. The projections are shared across the chain, and the Pallas out-tile is
+  already `(B, TC)`, so batching k candidates through the existing kernel is free —
+  the recurrence and the mask are the work.
 - **Done when:** a receipt records **≥ 2 tokens accepted per forward pass** and
   **≥ 15 tok/s single-stream at `max_t` 8192**, with the acceptance rate measured rather
-  than assumed.
+  than assumed, and the same text as the single-token run for the accepted prefix.
 
 ### TPU-04 · 64k context needs a q4 KV cache that does not exist yet
 

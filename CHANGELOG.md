@@ -89,6 +89,56 @@ on this machine is a GPU run, not a TPU one.**
   context cost at fixed batch has never been measured. Filed as `TODO.md` `TPU-06`
   rather than left as a settled claim.
 
+### 2026-10-20 — `feat:` tpu nb14 — projection fusion is numerically exact, and it refutes the launch-overhead theory
+
+- **What changed** (`tpu/14-bonsai-transposed/kernel.py`): the three projection groups
+  that share one input are now served by a single Pallas launch. `attn_qkv`+`attn_gate`
+  (GDN layers), `attn_q`+`attn_k`+`attn_v` (attention layers) and `ffn_gate`+`ffn_up`
+  (both layer kinds) all have IN=5120, and the tile layout is block-major in the
+  out-column, so concatenating the member tiles along the row axis *is* the combined
+  tile. The member tiles are released after combining, so device bytes are unchanged at
+  6.37 GiB. `FUSE=0` restores the old path; `PREFETCH` was added as a knob for the
+  DMA/compute overlap and is 0 by default.
+- **Measured, same session, same prompt, same window** (`max_t` 8192, batch 1, 64
+  generated): **FUSE=0 → 5.49 tok/s, 182.3 ms/step, 400 launches**;
+  **FUSE=1 → 5.52 tok/s, 181.3 ms/step, 256 launches**. First token `271` in both and
+  the 64 generated tokens are byte-identical, so the fusion is numerically exact.
+  Receipts: `receipt-14-fuse0-b1-f16-tc1024.json`, `receipt-14-fuse1-b1-f16-tc1024.json`.
+- **The refutation, which is the point:** removing **36 % of the kernel launches moved
+  the step time by 0.5 %.** The per-step cost is therefore *not* launch overhead, and
+  the plan built on that assumption (`TODO.md` `TPU-01`, "≤ 100 ms/step at 256
+  launches") is withdrawn. What the step actually pays for is the per-weight-byte VPU
+  work — the ternary unpack — which is the same for one sequence as for eighty
+  (180.6 ms/step at batch 1 against 284.7 ms/step at batch 80). **Only a pass that
+  processes several tokens against the same unpacked weights can amortise it**, which is
+  exactly what multi-token verification does, and why `TPU-03` is now the only route to
+  50 tok/s on this hardware.
+- **One real gain, recorded so it is not lost:** the fused program compiles in
+  **57.5 s** against **142.3 s** for the 400-launch program, because there are fewer
+  distinct Pallas programs to lower. The fusion is kept for that reason and for its
+  exactness; it is not kept for speed.
+
+### 2026-10-20 — `docs:` Bonsai 2's GGUFs have no MTP head — the 50 tok/s route needs a graft or a draft model
+
+- **Measured from the artifact, not inferred:** the GGUF headers of all three PrismML
+  conversions were read with byte-range requests (40 MB each, no 5.9 GB download):
+  `Ternary-Bonsai-2-27B-PTQ1_0.gguf`, `-PQ2_0.gguf` and `-F16.gguf` each report
+  **851 tensors, 64 blocks, and zero tensors named `nextn`/`mtp`**, and none of them
+  carries a `qwen35.nextn_block_count` key. The architecture is `qwen35` with
+  `context_length 262144`, 24/4 heads, `full_attention_interval 4` (48 GDN + 16
+  attention), and the `prism.hadamard.*` metadata that defines the ternary scheme.
+- **Consequence:** `--spec-type draft-mtp` cannot work on this file. The 50.44 tok/s
+  at 48.3 % acceptance that made MTP the obvious route was measured on
+  **Qwen/Qwen3.8-27B**, which is Bonsai 2's base model and *does* ship an MTP head
+  (the HF card records `base_model: Qwen/Qwen3.8-27B`).
+- **What remains:** graft the base model's MTP head into the PTQ1_0 file, or use a
+  separate draft model (the repo's `spec-draft` kernel uses Qwen3.5-0.8B Q4_0), or use
+  the n-gram family, which needs no second model at all. All three are measured on
+  Kaggle T4 at `-c 8192` now.
+- **`TODO.md` `GPU-02` is closed by this entry**: the question it asked — does the
+  PTQ1_0 GGUF carry an MTP head — is answered from the file itself, in a way no
+  further session can improve on.
+
 ### 2026-09-26 — `docs:` the hub's change history is no longer a phantom file
 
 **`CHANGELOG.md` now exists.** Until today it was referenced everywhere and present
