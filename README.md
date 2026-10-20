@@ -213,8 +213,7 @@ their CI, their releases, or their roadmaps.
 | --- | --- | --- |
 | `dhakaraiment` | `manfromexistence/dhakaraiment` | Client work. Dhaka Raiment garment-house marketing site and browser CMS, Next.js 16 / Bun / Tailwind v4, media on Catbox. It will be relocated out of `G:\Dx` by its owner; left in place and untouched until then. |
 | `esportsfire` | `manfromexistence/esportsfire` | Client-adjacent product. Live Free Fire matches, ranked ladders, and open tournaments for the South Asian scene. Next.js + Tauri v2 + Bun. Not in the DX register. |
-| `ikra` | *none* | Client-adjacent product. Global Islamic LMS with super-admin / teacher / student / guardian roles, Next.js 16 + Bun + Tailwind v4 + shadcn/ui. Git repo with no `origin` remote and 70 dirty files. Not in the DX register. |
-| `lms` | *none* | Scratch scaffold for the LMS track, not a separate product. `package.json` is still named `nextjs-postgresql-template` and the folder ships a `ikra.zip` copy of the `ikra` project, with Drizzle/libSQL config. `ikra/` is the live tree. |
+| `ikra` | *none* | Client-adjacent product. Global Islamic LMS with super-admin / teacher / student / guardian roles, Next.js + Bun + Tailwind v4 + shadcn/ui, on a Drizzle/libSQL database with Playwright browser tests. **This folder was the `lms/` scaffold until 2026-10-20, when it was renamed to `ikra`;** the earlier no-database `ikra` prototype is parked at `DEPRICATED_10-20-2026/ikra`. Not a git repo. Not in the DX register. |
 | `bhcrd` | *none* | Client research scratch. Kaggle notebooks, GPU probes, and the BPS2025 Bangla handwritten character recognition dataset for a `hwcr` model. No DX linkage. |
 
 ## Hub infrastructure
@@ -245,6 +244,7 @@ These folders used to sit at the hub root and were moved into the parking lot
 | `superpowers` | `DEPRICATED_10-20-2026\superpowers` | 2026-10-20 |
 | `magnitude` | `DEPRICATED_10-20-2026\magnitude` | 2026-10-20 |
 | `treg` | `DEPRICATED_10-20-2026\treg` | 2026-10-20 |
+| `ikra` | `DEPRICATED_10-20-2026\ikra` | 2026-10-20 |
 | `ZZZ-bot-trash` | `DEPRICATED_10-20-2026\ZZZ-bot-trash` | 2026-10-20 |
 | `Frieren Beyon Journey's End.mp4`, `One Piece.mp4`, `Spiderman Into The SpiderVerse.mp4`, `big146.bin`, `Social.md`, `small.gz`, `$o`, `db`, `db-wal`, `TODO-ESSENCE.md` | `DEPRICATED_10-20-2026\root-junk\<same name>` | 2026-10-20 |
 

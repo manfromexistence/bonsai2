@@ -130,16 +130,27 @@ renamed lot. Nothing was deleted.**
   `MF-04` for the two parked siblings that still spell "deprecated" as
   "depricated".
 - **Reclassified the non-DX root folders** as client work rather than junk:
-  `dhakaraiment`, `esportsfire`, `ikra`, `lms`, and `bhcrd` now have a
+  `dhakaraiment`, `esportsfire`, `ikra`, and `bhcrd` now have a
   "Client and adjacent projects (not DX)" table in `README.md`.
+- **Renamed the root `lms/` folder to `ikra/`.** `lms/` was the LMS project — a
+  Next.js + Bun + Tailwind v4 + shadcn/ui app on Drizzle/libSQL, with
+  Playwright browser tests under `artifacts/` — but it carried a scaffold name:
+  `package.json` still said `nextjs-postgresql-template`, and it shipped an
+  `ikra.zip` snapshot (216 entries) of itself. The earlier `ikra/` prototype
+  (Next.js 16, no database, commit `771b0dd feat: bootstrap Ikra Islamic LMS`)
+  had already been parked at `DEPRICATED_10-20-2026/ikra` by a concurrent
+  session, so the root name was free and the project now carries the name it
+  always had. The rename is metadata-only and byte-identical: 1478.7 MB and
+  33,301 files before and after.
 - **Hub root folder count.** This session parked five root folders —
-  `llama.cpp`, `ZZZ-bot-trash`, `superpowers`, `magnitude`, `treg` — and the
-  root stood at **41 folders** when this entry was written. The count moved
-  from 47 because a concurrent session parked `bhcrd` and removed the broken
-  `codebase-memory-mcp` clone during the same window; those are not this
-  session's moves. Free space on `G:` was 19.15 GB
-  before the move and 20.04 GB after (`Get-PSDrive G`) — the moves are
-  same-volume metadata operations, so they cost no space.
+  `llama.cpp`, `ZZZ-bot-trash`, `superpowers`, `magnitude`, `treg` — and
+  renamed a sixth (`lms` to `ikra`). The root stood at **41 folders** when
+  this entry was written. The count moved from 47 because a concurrent session
+  parked `bhcrd` and `ikra`, and removed the broken `codebase-memory-mcp`
+  clone, during the same window; those are not this session's moves. Free
+  space on `G:` was 19.15 GB before the moves and 20.04 GB after
+  (`Get-PSDrive G`) — the moves are same-volume metadata operations, so they
+  cost no space.
 
 ### 2026-10-20 — `docs:` the 50 tok/s route: MTP speculation on the GPU, launch fusion on the TPU
 
