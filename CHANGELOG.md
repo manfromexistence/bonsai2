@@ -13,6 +13,41 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` the G: opencode scratch folder deleted, reclaiming 11.76 GB
+
+**The fourth authorised deletion.** The target was the agent scratch directory
+`G:\Temp\UserTemp\opencode` — 11.86 GB, 107,499 files, 2,541 top-level entries
+(300 directories and 2,241 loose files) accumulated by agent sessions over roughly
+two weeks.
+
+**Why it was safe.** Three checks, all run before the delete:
+
+- **No in-flight work.** Zero files had been written in the last 20 minutes. The
+  newest write was 03:04:48 — the tail of a jax install into the `dmlvenv`
+  virtualenv that had already finished. `dmlvenv\pyvenv.cfg` opened without a
+  lock and no pip process was running. The two live python processes belong to
+  Antigravity and work under `C:\Users\Computer\.gemini\antigravity\`, not
+  under this folder.
+- **32 git repos live inside** (`llama.cpp` clones, `bonsai2-repo`,
+  `clonecheck`, `llama-eg2`, `petdex-latest`, `push_tpu`,
+  `whiteboard-provenance` and more). **Every one reported `dirty=0`**, so no
+  uncommitted work could be lost, and each is a re-clonable clone.
+- **Zero reparse points**, so no junction or symlink could carry the delete
+  outside the folder. That was the specific hazard found on the `node_modules`
+  trees earlier in this cleanup; it does not apply here.
+
+**Method:** `cmd rd /s /q`.
+
+**Receipt:** free space on `G:` went from **86.53 GB to 98.29 GB**, a reclaim of
+**11.76 GB** (`Get-PSDrive G`, measured immediately before and after).
+
+**What remains in `G:\Temp`:** 14.85 GB, of which `UserTemp` is 12.38 GB and
+cargo's own temp cache is 2.23 GB.
+
+**Not touched:** `G:\Dx` and every product repo in it. The opencode data
+directory on `C:` (`C:\Users\Computer\.local\share\opencode`, holding the live
+16.6 GB session database) is a separate tree and was left alone.
+
 ### 2026-10-21 - `feat:` the chunked gated-delta recurrence, verified against the one we ship
 
 **What is new:** `tpu/multi-token-verification/` — the exact *k*-token form of the
