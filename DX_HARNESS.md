@@ -1,54 +1,46 @@
-# DX_HARNESS.md — the plan for `G:\Dx\harness`
+# DX_HARNESS.md — the dx-harness: what it is, where it is, what is left
 
-> **What this file is.** A plan, written to be argued with. It proposes a new
-> `G:\Dx\harness` folder: a small, headless, fast-building Rust workspace that
-> holds the dx-harness **engine** with no GUI and no TUI, where every feature
-> can be tested with a CLI command instead of a mouse.
+> **What this file is.** The status page for the DX agent harness: what the
+> harness is, which tree owns it, what has been built, what is proven, and
+> what is still open. Every claim names its tier — **repo-managed** (the code
+> exists), **executed** (something ran and produced the number), or
+> **not yet claimed**.
 >
-> **What this file is not.** Not a decision, and not a schedule. Nothing here has
-> been built. Every "done" claim in this document is **repo-managed** — the code
-> exists in some tree — and nothing is **executed** unless the table says so.
-
-Companion files: `AGENTS.md` (how to work in this hub), `TODO.md` (the hub
-ledger), `CHANGELOG.md` (what shipped), `docs/README.md` (the register).
+> **What this file is not.** Not a plan and not a promise. It is a record.
+>
+> Companion files: `AGENTS.md` (how to work in this hub), `TODO.md` (the hub
+> ledger), `CHANGELOG.md` (what shipped), `docs/README.md` (the register).
 
 ---
 
-## 1. The problem this solves
+## 1. The short version
 
-Today the harness engine lives in two places that both cost too much to test:
+The **dx-harness** is the agent engine: the thing that plans work, calls
+tools, reads and writes files, runs commands, and holds a conversation. It is
+the **grok-build** harness (upstream `xai-org/grok-build`, Apache-2.0) with
+the DX additions on top.
 
-| Where | What it is | Cost to test |
-|---|---|---|
-| `G:\Dx\tui` | 172-member workspace, 92 `crates/codegen` crates | `cargo check -p xai-grok-pager-bin` needs a cold build; the tree's `target/` reached **27.78 GB** before `cargo clean` on 2026-10-20 |
-| `G:\Dx\bot\crates\` | 103-crate vendored copy of the harness closure | Smaller, but **has never been compiled on this machine** — `bot/crates/target/` and `bot/src-tauri/target/` do not exist |
+It currently lives in **three** trees. That is the problem this page exists
+to make legible.
 
-The 2026-10-20 session proved the cost concretely: a single cold
-`cargo check` on tui ran 19 hours and died to a **disk-full** error, not a
-compile error. Then `cargo test` died the same way. `G:` is now at
-**~10 GB free**.
+| Tree | What it is | Built? | Tests run? |
+|---|---|---|---|
+| `G:\Dx\tui` | **the source of truth.** A hard fork of grok-build, 172 members, 92 `crates/codegen`. Merges upstream regularly. | `cargo check -p xai-grok-pager-bin` passed 2026-10-20 (1m59s, 0 errors) **after** a 19-hour cold build | never on this HEAD |
+| `G:\Dx\bot\crates\` | **a copy**, vendored into the Tauri app. 103 members. | **never** — no `target/` dir has ever existed here | never |
+| `G:\Dx\harness` | **a copy**, built for testing. 125 members, own git repo, 2 commits. | **green** — `dx-harness.exe` builds and runs | **yes** — the resolver is 9/9 and the corpus is 13/13 offline |
 
-Meanwhile the features we actually want are **not testable as shipped**:
-
-- `dx-harness` is **off by default** (`bot/src-tauri/Cargo.toml:113`;
-  `default = ["win32-shell", "grammarcheck", "zeroclaw-channels"]`).
-- `bot/src-tauri/src/dx_harness.rs` is gated `#![cfg(feature = "dx-harness")]`,
-  and **nothing constructs `DxHarness`** — `bot/HARNESS.md` §0 says so plainly.
-- The GUI cannot be driven in this environment, and neither can the TUI.
-
-**The thesis:** a headless harness with a CLI surface can be tested by an agent
-without a GUI, without a TUI, and without paying AI money for every check.
+**`G:\Dx\harness` is the newest and the only one that can be tested.** It
+exists because the other two cannot be tested quickly. It now has a working
+CLI, a working model route, and a real measurement.
 
 ---
 
-## 2. What already exists — do not rebuild it
+## 2. What was actually found before building anything
 
-This is the most important section, because it is the one that is easiest to
-get wrong. **Most of the "5 new things" are already copied into
-`G:\Dx\bot\crates\`, byte-identical to tui's current working tree, and
-already committed.**
+### 2.1 The five DX features are already in bot's copy
 
-Measured 2026-10-21 by SHA-256 comparison of every file:
+This was the single biggest surprise, and it changed the plan. Measured
+2026-10-21 by SHA-256 comparison of every file:
 
 | # | Feature | tui file | In `bot/crates`? | Identical to tui? | Committed in bot? |
 |---|---|---|---|---|---|
@@ -58,335 +50,509 @@ Measured 2026-10-21 by SHA-256 comparison of every file:
 | 4 | Arg healing + ≤30-token notes | `crates/codegen/xai-grok-shell/src/session/helpers/tool_input_parsing.rs` | yes | **yes** | yes |
 | 5 | Compact tool catalog (4,946→4,533 B) | `crates/codegen/xai-grok-agent/templates/dx_serializer_compact_tools.md` | yes | **yes** | yes |
 
-Also already in bot: `suppress_tool_card` (hidden meta tools) at
+Plus `suppress_tool_card` (hidden meta tools) at
 `xai-grok-shell/src/session/acp_session_impl/tool_calls.rs:2773,3042,3384`.
 
-**Whole-tree diff:** 2,590 `.rs` files exist in both trees. **35 differ, and
-none of them is §0 work** — they are unrelated upstream churn
+**Whole-tree diff:** 2,590 `.rs` files in both trees → **35 differ, and none
+of them is §0 work.** They are unrelated upstream churn
 (`xai-fast-worktree/src/copy/cow.rs`, `xai-grok-agent/src/prompt/user_message.rs`,
 `xai-grok-sampler/src/client.rs`, and 32 test files). Bot has **zero** tui-only
 files under `xai-grok-shell/src`.
 
-`bot/PROVENANCE.md` records the copy: 103 crates, source `G:\Dx\tui` @
-`54891ed8`, Apache-2.0, three documented deviations.
+So the work was **not** "copy five things into bot". It was already done.
 
-### What is deliberately *not* in bot, and should stay out
+### 2.2 What is genuinely missing
+
+| Gap | Measurement |
+|---|---|
+| **46 of tui's 47 `common/token/*` crates are absent from bot** | bot has only `common/token/route`. The 47 total **0.9 MB** of source. |
+| **Six of those token crates have zero tests** | `tool-router` (246 lines), `token-budget` (282), `prefix-cache` (299), `core` (370) — all **0 `#[test]`**. `prompt-compress` has 2. `compaction` has 0. |
+| **No golden corpus exists in any tree** | a repo-wide search for `*golden*` / `*corpus*` outside `target/` returns 3 hits, none of them a tool-call corpus. This is the one thing blocking the §0a measurement. |
+| **The small-first prompt policy does not exist** | only one hand-configured case, `SessionRecapConfig` |
+| **`bot/crates` has never been compiled** | no `target/` dir, in bot or in `bot/src-tauri` |
+
+### 2.3 What is correctly absent from bot, and stays absent
 
 | Not copied | Why |
 |---|---|
-| `xai-grok-pager`, `xai-grok-pager-bin`, `xai-grok-pager-render`, `xai-grok-pager-diff`, `xai-grok-pager-minimal`, `xai-grok-pager-pty-harness` | the ratatui/crossterm TUI — a pure ACP *client*. Bot replaces it with a GUI; the harness replaces it with a CLI. |
-| `xai-ratatui-inline`, `xai-ratatui-textarea`, `xai-grok-mermaid`, `third_party/mermaid-to-svg` | TUI rendering |
-| `common/dx` | the dx UI crate. Its `push_tool_block` skip for `ToolDetails` is a **GUI** concern and does not belong in a headless harness. |
-| `xai-grok-markdown`, `xai-grok-markdown-core` | **except** `xai-grok-markdown-core`, which bot *does* need — see §7, this is a live bug. |
+| `xai-grok-pager` + the 5 other pager crates | the ratatui/crossterm TUI — a pure ACP *client*. Bot replaces it with a GUI; the harness replaces it with a CLI. |
+| `xai-ratatui-inline`, `xai-ratatui-textarea` | terminal rendering |
+| `xai-grok-mermaid`, `xai-grok-markdown`, `xai-grok-markdown-core` | rendering, TUI-side |
+| `common/dx` | the dx UI crate. Its `push_tool_block` skip for `ToolDetails` is a GUI concern. |
 
-**Consequence for the `/model` picker and the session tab strip:** both live in
-`xai-grok-pager` (`model_catalog.rs`, `views/session_tabs.rs`). They are
-**TUI features, not harness features.** They do not belong in `G:\Dx\harness`.
-They belong in tui, and in bot's GUI as its own surface. The harness supplies
-the *engine* underneath both.
+**Consequence:** the `/model` picker (`model_catalog.rs`) and the session tab
+strip (`views/session_tabs.rs`) live in **`xai-grok-pager`**. They are **TUI
+features, not harness features.** They do not belong in the harness. The
+harness supplies the engine underneath both.
 
 ---
 
-## 3. The proposed layout
+## 3. `G:\Dx\harness` — what exists
+
+Created 2026-10-21. Its own git repo, **no commits yet** (12 untracked
+files). 0.07 GB of source.
 
 ```
-G:\Dx\harness\                  <- new git repo, own origin
-├── Cargo.toml                  <- workspace root, members = harness crates only
-├── crates/
-│   ├── codegen/                <- copied from tui, engine-only crates
-│   ├── common/                 <- copied from tui, leaf crates
-│   └── build/                  <- xai-proto-build (protobuf codegen helper)
-├── cli/                        <- the NEW thing: small, fast, headless binaries
-│   ├── dx-harness-cli/         <- one command per feature
-│   └── ...
-├── PROVENANCE.md               <- copy origin, revision, deviations (model on bot's)
-├── TODO.md
-├── CHANGELOG.md
-└── AGENTS.md
+G:\Dx\harness\
+├── Cargo.toml              generated - do not hand-edit
+├── Cargo.lock
+├── rust-toolchain.toml     1.96.0, same pin as tui
+├── cli/dx-harness-cli/     the headless CLI (new)
+├── crates/                 the engine (125 members)
+│   ├── codegen/            72
+│   ├── common/             15 + token/ 7
+│   ├── prod-mc/            1
+│   └── build/              1
+├── scripts/
+│   ├── gen_workspace.py    generates Cargo.toml from tui
+│   ├── sync_from_tui.sh    re-syncs the closure from tui
+│   └── dev.sh              the build/test recipes
+├── PROVENANCE.md  README.md  TODO.md  CHANGELOG.md  AGENTS.md  .gitignore
 ```
 
-### The `cli/` crate is the point
+### 3.1 The copy
 
-Every feature gets **one small binary** that exercises it against a real
-provider and prints a receipt. No GUI, no TUI, no mouse. This is the pattern
-`tui/crates/codegen/xai-rlm` already uses — 12 example binaries
-(`simple_test.rs`, `recursive_reduce.rs`, `phase1_demo.rs`, …) in one crate.
+125 workspace members, copied from `G:\Dx\tui` at `3e49a0f6` (**dirty working
+tree** — the five features exist only there, uncommitted).
 
-Proposed commands, one per planned feature:
+**20 TUI/GUI crates deliberately absent**, and **12 upstream workspace
+dependencies dropped** for the same reason. Every drop is listed in
+`G:\Dx\harness\PROVENANCE.md` §4.3.
 
-| Command | Exercises | Done when |
+**Six token crates are new to this copy** (bot does not have them):
+`dx-token-core`, `tool-router`, `prefix-cache`, `prompt-compress`,
+`token-budget`, `compaction`.
+
+**Six out-of-tree relative paths rewritten** — `../../../prod/mc/…` →
+`../../prod-mc/…` in the six crates that need the types crate.
+
+**The workspace root is generated, not hand-written.**
+`scripts/gen_workspace.py` copies `[workspace.package]` and
+`[workspace.lints.clippy]` verbatim, keeps the workspace dependencies whose
+paths exist, rewrites the path prefixes, adds the two entries tui lacks
+(`prod-mc-cli-chat-proxy-types` and the six token crates), and emits the
+member list from what is actually on disk.
+
+### 3.2 The CLI — `dx-harness`
+
+One binary, thirteen subcommands. **No GUI, no TUI, no mouse.**
+
+| Command | What it proves | Costs AI? |
 |---|---|---|
-| `dx-harness-tool-route` | smart tool routing: which tools get sent this turn, and why | prints the selected tool set + token delta vs. full catalog |
-| `dx-harness-resolver` | tolerant resolver + arg healing | prints healed calls, the ≤30-token note, and the single-pass success rate |
-| `dx-harness-small-first` | small-first prompt: a cheap model for a cheap job | prints which model handled which sub-task and the cost |
-| `dx-harness-token` | token-efficiency: prefix cache hit rate, prompt compression | prints before/after tokens from `dx-token.exe` |
-| `dx-harness-rlm` | recursive long-context runtime | prints the reduction tree and the answer |
-| `dx-harness-git` | git harness: worktree isolation for parallel agents | prints worktree create/merge round-trip |
-| `dx-harness-turn` | one full agent turn, headless, over ACP channels | prints the turn end-to-end with no UI |
+| `features` | the command list | no |
+| `model "<prompt>"` | a real model answers, end to end | **yes** |
+| `tool-route "<request>"` | smart tool selection + the token delta | no |
+| `token "<text>"` | prompt compression, measured | no |
+| `prefix-cache "<prefix>"` | the stable-prefix key | no |
+| `budget "<model>"` | the token budget for a model | no |
+| `compact "<text>"` | conversation compaction | no |
+| `resolver` | the tolerant resolver, against a real tool catalog | no |
+| `corpus-offline` | the resolver over the corpus's near-misses | no |
+| `corpus` | the §0a measurement: a real model, the real resolver | **yes** |
+| `small-first "<task>"` | the cheapest-model policy | **yes** (one word) |
+| `rlm` | the recursive long-context runtime | no |
+| `git` | worktree isolation for parallel agents | no |
 
----
+**Only three commands spend AI money, and all three are optional.** The
+token pipeline and the resolver must be provable *offline*, on every run, at
+zero cost. That split is the point.
 
-## 4. The five feature areas — what is real today
+### 3.3 Model access — the route that actually works
 
-Measured, not assumed. "Real" means the code exists and reads as an
-implementation, not that it has been executed.
+**The trap.** The OpenCode Zen public lane refuses direct calls:
 
-### 4.1 Smart tool routing
+```
+POST https://opencode.ai/zen/v1/chat/completions
+-> HTTP 403 {"type":"error","error":{"type":"FreeTierError",
+     "message":"OpenCode's free tier can only be used from within OpenCode."}}
+```
 
-| Where | State |
-|---|---|
-| `tui/crates/common/token/tool-router/` | **246 lines, 0 tests.** Dynamically selects relevant tools per turn instead of sending all 50+. Its own doc header says *"Evidence (TOKEN.md — REAL): 50 tools, send only 5 relevant = 90% schema token savings"* and warns *"keyword-based routing is fragile; future: use classifier"*. |
-| `tui/crates/common/token/reasoning-router/`, `batch-router/`, `multimodal-router/` | same family, same shape: ~1 file, 0 tests |
-| `tui/crates/common/token/core/` (`dx-token-core`) | 370 lines, 0 tests |
-| bot's copy | **`tool-router` is not in bot** — bot has only `common/token/route` out of 47 token crates |
+**With `Bearer public` and with a valid `oc_sk_` key alike.** The free models
+are not on that path.
 
-**This is the largest real gap.** 46 of tui's 47 `common/token/*` crates are
-missing from bot. They total **0.9 MB** of source — cheap to copy — but 6 of
-the largest have **zero tests**, so copying them copies untested scaffolding.
+**The route that works** is the "go" inference gateway — the URL the
+models.dev catalog names for the `opencode-go` provider:
 
-### 4.2 RLM (recursive long-context runtime)
+```
+https://opencode.ai/inference/go/openai/v1/chat/completions
+```
 
-| Where | State |
-|---|---|
-| `tui/crates/codegen/xai-rlm/` | 1,959 lines, 12 example binaries. Description: *"Embeddable recursive long-context runtime for question answering, summarization, and agent-context preparation."* **In bot already, byte-identical.** |
-| `tui/crates/common/token/rlm/` | 17 files, 2,536 lines. **Not in bot.** |
-| `tui/crates/codegen/xai-grok-tools/src/implementations/grok_build/rlm/` | tool-side RLM implementation |
+It needs **two** headers, both mandatory:
 
-### 4.3 Token efficiency
+| Header | Value | If missing |
+|---|---|---|
+| `Authorization` | `Bearer <oc_sk_ key>` | 401/403 |
+| `x-opencode-session` | a **fresh id per request** | `400 MissingSessionID` |
 
-| Where | State |
-|---|---|
-| `tui/crates/common/token/` | **47 crates, 0.9 MB total.** Includes `prefix-cache` (299 lines), `prompt-compress` (231), `token-budget` (282), `semantic-cache`, `compaction`, `governor`, `live-token-prune`, `retrieval-budget`, `response-cache`, `whitespace-normalize`, `schema-minifier`, `output-truncator`, and 12 modality compressors (video/pdf/ocr/audio/vision). **Only 2 crates have tests** (`prompt-compress` 2, `semantic-cache` 1). |
-| `tui/crates/common/xai-grok-token-optimization/` | the transforms crate. **In bot already.** |
-| `tui/crates/codegen/xai-grok-agent/templates/dx_serializer_compact_tools.md` | the 28-tool compact catalog, 4,533 B ≈ 1,133 tokens. **In bot already.** |
-| `G:\Dx\bin\dx-token.exe` | **already built and working.** `dx-token count --ai <file>` counts with the repo's own tokenizer. This is the measurement tool and it already exists — no new work needed. |
+Reusing one session id makes the *second* request on it fail. Verified
+2026-10-21 with `minimax-m3.1-flash-free` → **HTTP 200, `HARNESS_OK`**.
 
-### 4.4 Small-first prompt
+The CLI has three routes:
 
-| Where | State |
-|---|---|
-| `tui/crates/codegen/xai-grok-shell/src/util/config/resolve/session_recap.rs` | **the precedent.** `SessionRecapConfig { model, reasoning_effort, user_message_max_chars, agent_reply_max_chars, transcript_max_chars, timeout_ms }` — a cheap model on a cheap job, at low effort, with no tools. |
-| `tui/crates/codegen/xai-grok-shell/src/session/acp_session_tests/recap_display_only_tests.rs:797` | the test that proves it: `recap_request_uses_small_model_and_compact_transcript` |
-| `tui/crates/common/token/reasoning-router/` | the routing half — exists, untested |
+| Route | How | Reaches |
+|---|---|---|
+| `OpenCodeGo` (default) | direct HTTP to the go gateway | `minimax-m3.1-flash-free` and the other free models |
+| `OpenCode` (fallback) | shells out to `opencode run --format json --auto` | `opencode-go/*` models |
+| `Direct` | direct HTTP to any OpenAI-compatible endpoint | `tokenharbor`, `deepseek`, anything keyed |
 
-**The generalisation is the work.** `SessionRecapConfig` is one hand-configured
-case. "Small-first" as a *policy* means: classify the sub-task, pick the
-cheapest model that can do it, cap effort, strip tools, and record the
-decision. That policy does not exist yet in any tree.
+**The curl-only path**, which needs no build at all:
 
-### 4.5 Git harness
+```bash
+bash scripts/model.sh "Reply with exactly: HARNESS_OK"
+# HARNESS_OK
+```
 
-| Where | State |
-|---|---|
-| `tui/crates/codegen/xai-fast-worktree/` | worktree isolation for parallel agents. **In bot already.** 3 of its files differ from tui's working tree — unrelated upstream churn (`copy/cow.rs`, `git/safety_tests/gate.rs`, `worktree/plan.rs`). |
-| `tui/crates/codegen/xai-grok-workspace/` | the workspace daemon. **In bot already.** |
-
-### 4.6 The tool layer (already done, needs proving)
-
-The §0 work from tui — tolerant resolver, arg healing, in-context learning
-loop, hidden meta tools, compact catalog — is **fully present in bot** (§2
-above). It needs a *receipt*, not more code.
-
----
-
-## 5. Provider access — "my OpenCode key, CLI only"
-
-### What is available on this machine, measured
+### 3.4 Credentials on this machine
 
 | Fact | Value |
 |---|---|
-| `opencode` CLI | `G:\Dev\Tools\Scoop\apps\nodejs\26.4.0\opencode.ps1` — supports `opencode run --prompt "<text>" --format json --auto --model provider/model` |
-| opencode config | `%USERPROFILE%\.config\opencode\opencode.json` — providers `gmi` and `tokenharbor`; `opencode.jsonc` sets `model` and `small_model` to `opencode-go/muse-spark-1.3-contributor` |
-| `gmi` | base `https://api.gmi-serving.com/v1`, models `MiniMaxAI/MiniMax-M3`, `MiniMaxAI/MiniMax-M2.7`, `Qwen/Qwen3.8-27B` |
-| `tokenharbor` | base `https://tokenharbor.ai/v1`, models `deepseek-v4.1-flash:free`, `deepseek-v4.1-flash`, `th-orchestra` |
+| The `oc_sk_` key | written to `C:\Users\Computer\.dx\opencode-key` (51 bytes, mode-restricted). Read from there, or from `$OPENCODE_API_KEY`. Never printed, never written by a tool. |
+| OpenCode Console | **stored** (OAuth, `opencode auth export` → `integrationID: opencode`) |
 | `TOKENHARBOR_API_KEY` | **set**, 73 chars |
 | `DEEPSEEK_API_KEY` | **set**, 35 chars |
-| `GMI` key | **not found** as an env var and **not** in `opencode.json` — the `gmi` provider has a base URL and model list but no visible credential |
-| `opencode` auth store | `%USERPROFILE%\.local\share\opencode\` — **no `auth.json`**. Credentials are in env vars and in the provider config. |
-| `opencode.db` | 16.62 GB. **This is a large disk consumer in the user's home dir, unrelated to the harness.** |
+| `gmi` provider (MiniMax-M3, Qwen3.8-27B) | base URL + model list present in `opencode.json`, **but no key found** |
+| `opencode` CLI | `G:\Dev\Tools\Scoop\apps\nodejs\26.4.0\opencode.ps1` |
+| `opencode` Zen public catalog | **85 models**, `GET https://opencode.ai/zen/v1/models` with `Bearer public` → HTTP 200 |
+| `opencode.db` | **16.62 GB** in the user profile — a large disk consumer unrelated to the harness |
 
-### The design
+### 3.5 Build speed — the levers
 
-Two access paths, both CLI-only:
-
-1. **In-process, via the harness's own provider layer.** The harness talks to
-   any OpenAI-compatible endpoint directly. `tokenharbor` and `gmi` are both
-   `@ai-sdk/openai-compatible` — plain `/v1/chat/completions`. The harness
-   already has the machinery: `xai-grok-shell/src/agent/community_models.rs`
-   builds `ModelEntryConfig` entries with `base_url` + `api_key` +
-   `extra_headers`, and the Zen free lane (`space-bunny-free`) is already
-   wired through it. **In bot already, byte-identical.**
-2. **Out-of-process, via `opencode run --format json`.** For anything that
-   needs OpenCode's own routing, skills or subagents.
-
-**Cost discipline.** The user's point is that AI spend should go to *real*
-verification, not to running the test suite. The split:
-
-| Spend AI on | Do not spend AI on |
+| Lever | State |
 |---|---|
-| The **golden corpus** — 200–500 real tool calls run against a live mid model, measuring single-pass success, silent-wrong rate, and token delta | Pure-function tests (resolver, arg healing, compaction, prefix cache) — these must run offline, with a mock inference server |
-| One end-to-end turn per feature, on a real provider | Every regression run |
+| `sccache` 0.17.0 at `G:\Dx\bin\sccache.exe` | **installed and never configured.** Now wired as `RUSTC_WRAPPER`. **1,255 cache hits** over the session. |
+| `CARGO_INCREMENTAL` | **must be unset** when sccache is the wrapper — sccache refuses: *"incremental compilation is prohibited."* The first build attempt died on exactly that. |
+| `CARGO_TARGET_DIR` | unset — every project builds into its own `target/` |
+| `-j 2` | the only safe job count. `-j 12` dies with exit code 1 and **zero cargo output**; `-j 4` gives `rustc-LLVM ERROR: out of memory`. Measured on this machine (`tui/justfile:61-67`). |
+| `rust-toolchain.toml` | **added** — pins 1.96.0 like tui. Without it the build used `stable` and the two trees compiled the same code with different compilers. |
+| **Rebuild time** | **7.5 s** after the cold build. |
 
-The harness already has the mock: `xai-grok-test-support` provides
-`MockInferenceServer` (used by the recap test above). It is **in bot already**.
+### 3.6 The `engine` feature is off by default
 
-### The golden corpus is the missing measurement
+The full engine (`xai-grok-shell`) pulls in `xai-codebase-graph` → `mimalloc`
+→ a **C build**, and this machine's environment has zig's `INCLUDE`/`LIB`
+pointing at the MSVC compiler, which breaks `cc-rs`:
 
-`tui/TODO.md` §0a is blocked on exactly this:
+```
+c1xx: fatal error C1083: Cannot open source file: '/WX-'
+```
+
+So the default build links only the token crates and `xai-grok-tools` — no C
+compiler needed. The engine is behind `--features engine`.
+
+---
+
+## 4. The §0a measurement — the golden corpus
+
+This is the one deliverable that makes `G:\Dx\tui\TODO.md` §0a measurable,
+and it exists in **no other tree**. §0a was blocked on exactly this:
 
 > *Tolerant execution model: prefer execution with safe fallbacks over strict
 > `invalid_arguments → retry`; validation failures that cannot be healed keep
 > the current graceful error. **Measure:** single-pass success up, silent-wrong
-> ≈ 0, token delta vs full-schema baseline (**golden corpus** × local/cloud
+> ≈ 0, token delta vs full-schema baseline (golden corpus × local/cloud
 > models).*
 
-**No golden corpus exists in any tree.** A repo-wide search for `*golden*` and
-`*corpus*` outside `target/` returns three hits, none of them a tool-call
-corpus. **This is the one deliverable that makes §0a measurable, and it is
-exactly the thing a headless harness CLI is for.**
+### 4.1 What was built
+
+`G:\Dx\harness\corpus\golden.json` — **13 entries**. Each declares a real
+tool call, what the harness *should* do with it, and a `near_miss` to feed
+the resolver.
+
+Two runners, and the split is the point:
+
+| Command | Cost | What it measures |
+|---|---|---|
+| `dx-harness corpus-offline` | **free** | every `near_miss` fed to the **real** resolver, checked against the expected tool. Deterministic. |
+| `dx-harness corpus` | one model call per entry | the model picks a tool itself; the real resolver runs over its answer |
+
+The live runner does **not** tell the model the answer — it gives the
+catalog and asks the model to choose. A corpus that names the tool measures
+obedience, not capability.
+
+### 4.2 The offline result — 13/13, free, deterministic
+
+```
+Read-File            -> read_file          ok
+GrepSearch           -> grep_search        ok
+RunInTerminal        -> run_in_terminal    ok
+WriteFile            -> write_file         ok
+ListDir              -> list_dir           ok
+grep                 -> grep_search        ok
+read-file            -> read_file          ok
+READFILE             -> read_file          ok
+Run-In-Terminal      -> run_in_terminal    ok
+list_dir             -> list_dir           ok
+deploy_to_production -> (not found)        ok
+send_email           -> (not found)        ok
+teleport             -> (not found)        ok
+
+checked: 13   passed: 13   failed: 0
+```
+
+**The offline probe caught a wrong expectation in the corpus itself.**
+`run_terminal` does **not** resolve to `run_in_terminal`: normalising gives
+`runterminal` and `runinterminal`, which is not a substring either way. The
+resolver fixes **separators and case, not missing words**. The corpus now
+says so, and the case uses `Run-In-Terminal` instead.
+
+### 4.3 The live result — and it is not good enough yet
+
+`minimax-m3.1-flash-free`, 2026-10-21:
+
+| | |
+|---|---|
+| entries | 13 |
+| exact | 9 |
+| healed | 2 |
+| refused | 2 |
+| **silent wrong** | **3 (23.1%)** |
+| single pass | 84.6% |
+
+**Do not read 84.6% as a good score.** Three of thirteen answers were wrong
+in a way the harness could not detect:
+
+| Request | The model reached for | Why it is silent-wrong |
+|---|---|---|
+| `send_email` | `send_feedback` | **`send_feedback` exists.** The resolver resolved it as a unique substring, and the turn "succeeded" while doing the wrong thing. |
+| `teleport` | `run_in_terminal` | same shape — a real tool, the wrong one |
+| one entry | *(no tool call)* | the model emitted nothing parseable; refused |
+
+**This is the failure mode the corpus exists to catch, and it is not fixed.**
+The resolver's substring fallback is too eager when the request is for a
+tool that does not exist. The fix belongs upstream in
+`xai-grok-tools/src/tolerant.rs` — the substring fallback needs a stronger
+uniqueness test, or a "the model asked for something outside the catalog"
+signal that refuses rather than guesses.
+
+### 4.4 The tool-routing number, measured
+
+`dx-harness tool-route "run the test suite and check for failures"` over a
+50-tool catalog:
+
+```
+Routed 15/50 tools: 5000 -> 1500 schema tokens (70.0% saved).
+```
+
+**70% of the schema tokens dropped.** The crate's own doc header claims
+"50-90% on schema tokens" — 70% is inside that band, measured on a
+synthetic catalog.
 
 ---
 
-## 6. Making builds fast — and not running out of disk
+## 5. Verification status — the honest ledger
 
-This is the part that killed the 2026-10-20 session. Treat it as a hard
-constraint, not an optimisation.
-
-### Current state
-
-| Fact | Value |
-|---|---|
-| `G:` free | **~10 GB** (was 26.35 GB after `cargo clean`, now 10 GB — `hackin` +15.19 GB and `forkness` +9.33 GB grew since) |
-| `G:\Dx\tui\target` after clean | 0 GB (was 27.78 GB) |
-| `sccache` | **0.17.0 at `G:\Dx\bin\sccache.exe` — installed, never configured** (`RUSTC_WRAPPER` unset) |
-| `CARGO_INCREMENTAL` | unset in this shell; tui's `justfile` sets it to `1` |
-| `CARGO_TARGET_DIR` | unset — every project builds into its own `target/` |
-| `G:\Dx\bot\crates\target` | **does not exist** |
-| `G:\Dx\bot\src-tauri\target` | **does not exist** |
-
-### The plan
-
-| Lever | Effect |
-|---|---|
-| **One shared `CARGO_TARGET_DIR`** for `harness` + `bot/crates` | the 103-crate closure compiles **once**, and bot's harness copy becomes a warm cache instead of a second cold build |
-| **`RUSTC_WRAPPER=G:\Dx\bin\sccache.exe`** | sccache is already on disk. It is the single biggest win for *repeated* builds, because harness development is iterative, not one-shot |
-| **`CARGO_INCREMENTAL=1`** | matches tui's `justfile` |
-| **A dedicated disk for `target/`** | `target/` is regenerable output. Point it at a volume with room rather than fighting `G:` |
-| **Never a cold build at `-j 12` or `-j 4`** | tui's `justfile:61-67` records the measured failure: `-j 12` dies with exit code 1 and **zero cargo output**; `-j 4` gives `rustc-LLVM ERROR: out of memory` on `xai-grok-pager`. `-j 2` is the only safe path |
-| **A `just`-style recipe set** | `just check`, `just test`, `just cli <name>` — one command, no arguments to remember |
-| **`--offline` is not an option** | `tui/TODO.md:494` records that test deps are not all cached |
-
-### The disk truth nobody wants to hear
-
-`G:` is at ~10 GB free with `hackin`, `forkness`, `esportsfire` and `codebase`
-all growing. **A second cold build of the 103-crate closure does not fit.** The
-harness must therefore start by **reusing** what exists — sharing a target dir
-with `bot/crates`, and getting `bot/crates` built **once**, properly, before
-anything new is compiled.
-
-`G:\Dx\bot\TODO.md` §2 claims the build was "GREEN on Windows, EXIT 0, 0
-errors" on 2026-10-11. That receipt is real but the artifacts are gone (no
-`target/`), and that ledger line is over a month old.
+| Claim | Tier | Evidence |
+|---|---|---|
+| The harness workspace resolves | **executed** | `cargo metadata --no-deps` → EXIT 0, 125 members |
+| **The CLI builds and runs** | **executed** | `cargo build -p dx-harness-cli --release -j 2` → EXIT 0; `dx-harness.exe` runs |
+| **A rebuild takes 7.5 s** | **executed** | second build after the cold one |
+| **1,255 sccache cache hits** | **executed** | `sccache --show-stats`, 2026-10-21 |
+| **`minimax-m3.1-flash-free` answers, direct** | **executed** | HTTP 200 `HARNESS_OK` on the go gateway |
+| **The Zen lane refuses direct calls** | **executed** | HTTP 403 `FreeTierError`, with `Bearer public` **and** with a valid `oc_sk_` key |
+| **The resolver heals near-misses** | **executed** | 9/9 in `dx-harness resolver`; 13/13 in `corpus-offline` |
+| **The corpus measured the live model** | **executed** | 13 entries, `minimax-m3.1-flash-free`, 3 silent-wrongs |
+| **Tool routing saves 70% of schema tokens** | **executed** | 5000 → 1500 tokens over a 50-tool catalog |
+| The 5 DX features are in bot's copy, byte-identical | **repo-managed** | SHA-256 on every file |
+| 35 of 2,590 shared `.rs` files differ, none §0 work | **repo-managed** | file-by-file hash diff |
+| 46 of 47 token crates absent from bot | **repo-managed** | directory listing |
+| 6 token crates have **0 tests** | **repo-managed** | `#[test]` count per file |
+| No golden corpus exists in tui or bot | **repo-managed** | it exists only in `G:\Dx\harness` |
+| `bot/crates` has never been compiled | **repo-managed** | no `target/` dir exists |
+| **The full engine links** | **not yet claimed** | `mimalloc`'s C build fails on this machine's MSVC env |
+| The §0a silent-wrong rate is acceptable | **not yet claimed** | **3/13 — it is not** |
+| WASM for the website / VS Code extension | **not yet claimed** | §9 |
 
 ---
 
-## 7. Known bugs to fix on the way
+## 6. Disk — the constraint that shaped everything
 
-These are measured, and two of them are in files this plan touches.
+`G:` was at **7.3 GB free** at the worst point on 2026-10-21, then recovered
+to **78.2 GB** when other work finished. The lesson from 2026-10-20 stands:
+a cold build of this closure is tens of gigabytes, and the volume was full.
+
+| Event | Measurement |
+|---|---|
+| `G:\Dx\tui\target` before `cargo clean` | **27.78 GB** |
+| `cargo clean` result | `Removed 45927 files, 27.8GiB total` |
+| `G:` free after that clean | 26.35 GB (94.5% used) |
+| `G:` free during the harness build (worst) | **7.3 GB** — `forkness` +4.24 GB and `hackin` +2.51 GB grew *while the build ran* |
+| `G:` free now | **78.2 GB** |
+| `G:\Dx\harness\target` | **deleted externally** during the build; the source tree is intact at 0.07 GB |
+
+**Standing rule:** never delete `target/` to make room — report it
+(`G:\Dx\AGENTS.md` §2.2). And check free space before any heavy build.
+
+---
+
+## 7. The blocker — fixed, and what it taught
+
+The harness CLI did not compile. One error, two sites:
+
+```
+error[E0599]: no variant, associated function, or constant named `Max`
+              found for enum `async_openai::types::responses::ReasoningEffort`
+  --> crates/codegen/xai-grok-sampling-types/src/types.rs:783:54
+  --> crates/codegen/xai-grok-sampling-types/src/types.rs:796:41
+```
+
+**Root cause — a dropped `[patch.crates-io]`.** `G:\Dx\tui\Cargo.toml:3-4` has:
+
+```toml
+[patch.crates-io]
+async-openai = { git = "https://github.com/our-forks/async-openai.git",
+                 rev = "95b52ebdedf42143083cf3d6f0e0be7c84e9c808" }
+```
+
+The fork has `ReasoningEffort::Max`. The registry's `async-openai` 0.33.1
+does not. `scripts/gen_workspace.py` copied `[workspace.package]` and
+`[workspace.lints.clippy]` but **not** `[patch.crates-io]`, so cargo
+resolved the registry version.
+
+| Tree | `async-openai` source | Has the patch? |
+|---|---|---|
+| `G:\Dx\tui` | the git fork (`our-forks/async-openai` @ `95b52ebd`) | yes |
+| `G:\Dx\bot\crates` | registry 0.33.1 | **no** |
+| `G:\Dx\harness` | the git fork | **yes — now** |
+
+**The fix:** `gen_workspace.py` now carries `[patch.crates-io]` across, and
+**refuses to write a manifest without it** — it exits with a fatal error
+rather than emitting a manifest that cannot compile.
+
+**`G:\Dx\bot\crates` has the same bug**, and never found it because that
+tree has never been compiled. That is the single most valuable thing this
+work produced: it is a real, reproducible defect in a sibling tree, found
+by building instead of reading.
+
+> Note `bot/TODO.md` §2 records a fix for a *different* skew of the same crate
+> ("`ReasoningEffort::Max` vs `async-openai 0.33.1`"). That entry is about the
+> **registry** version; the git fork is the actual upstream answer.
+
+### The second blocker — `mimalloc` and a broken C toolchain
+
+`xai-grok-shell` → `xai-codebase-graph` → `mimalloc` → `libmimalloc-sys`, a
+**C build**. It failed:
+
+```
+c1xx: fatal error C1083: Cannot open source file: '/WX-'
+```
+
+The cause is the environment, not the code: `INCLUDE` and `LIB` point at
+**zig**'s libc (`G:\Dev\Tools\Scoop\apps\zig\0.16.0\lib\...`) while the
+compiler is MSVC's `cl.exe`. The two disagree about what `/WX-` means.
+
+**The fix, for now:** the full engine is behind an off-by-default `engine`
+feature. The default build links the token crates and `xai-grok-tools` — no C
+compiler needed. **The proper fix is a clean MSVC environment** (correct
+`INCLUDE`/`LIB`, or a `cc` that speaks to the right toolchain), and that is
+still open.
+
+---
+
+## 8. Known bugs to fix on the way
 
 | # | Where | Problem |
 |---|---|---|
-| 1 | `bot/src-tauri/Cargo.toml:274` | `xai-grok-markdown-core = { path = "../../tui/crates/codegen/xai-grok-markdown-core" }` — the **only** dep that escapes the vendored copy. Everything else points at `../crates/codegen/…`. `xai-grok-markdown-core` **is** vendored in bot. This line makes bot's build silently depend on tui's tree — the exact coupling a standalone harness is supposed to break. |
-| 2 | `bot/src-tauri/Cargo.toml:324-326` | `[patch.crates-io]` → `libsodium-sys` and `libxdo-sys` at `../../../Rustdesk/libs/…`. Cargo reads `[patch]` **regardless of features**, so a default build needs `G:\Rustdesk` present. `bot/HARNESS.md` §0 confirms: *"resolution fails on any machine that is not this one."* |
-| 3 | `bot/src-tauri/Cargo.toml:113` | `dx-harness` is not in `default`. Nothing constructs `DxHarness`. |
-| 4 | `bot/HARNESS.md` §0 | The duplicate `zeroclaw-*` crates under `crates/common/agent/` are labelled 1.0.0 but are an **older, trimmed** snapshot of the 0.8.5 copies. They coexist only because `dx-harness` is off; enabling it links two incompatible `zeroclaw-config` types. |
-| 5 | `bot/crates/Cargo.toml` | Auto-assembled from tui's root manifest, 103 members. Its header says *"Do not hand-edit the deps table; regenerate it from upstream."* Any new crate needs the generator, not a manual edit. |
-| 6 | `bot/TODO.md:86-89` | *"Use **Bash**, not PowerShell — PowerShell's ConPTY sandbox is broken on this machine."* True on 2026-10-11; **not true today** — `pwsh` 7.6.2 runs fine and `just --list` resolves. Needs re-measuring before it is trusted as a constraint. |
-
----
-
-## 8. The sequence
-
-Each step names what it proves. Steps 0–2 are prerequisites, not features.
-
-| # | Step | Done when |
-|---|---|---|
-| 0 | **Free disk, deliberately.** Report the space situation; propose, do not delete. | `G:` has headroom for one closure build |
-| 1 | **Build `bot/crates` once**, cold, with `CARGO_INCREMENTAL=1` and a shared target dir | `cargo check --workspace --all-targets` exits 0, and the receipt is written down |
-| 2 | **Build `bot/src-tauri` with `--features dx-harness`** | the link is proven, or the `zeroclaw-config` collision is named and fixed |
-| 3 | Create `G:\Dx\harness` — a git repo with its own origin, `Cargo.toml`, `PROVENANCE.md`, `TODO.md`, `CHANGELOG.md`, `AGENTS.md` | `git -C G:\Dx\harness status -sb` shows a clean repo with a real remote |
-| 4 | Copy the **harness-only** closure from tui (tui's engine crates + `common/token/*` + `build/`), *not* from bot's stale copy | `cargo metadata --no-deps` exits 0; the closure excludes every `pager`/`ratatui` crate |
-| 5 | Add the `cli/` crate with the first command (`dx-harness-turn`) | one real agent turn completes headless, with output |
-| 6 | Build the **golden corpus** runner | the corpus is committed, and the §0a measurement (single-pass success, silent-wrong, token delta) has a number behind it |
-| 7 | Add the remaining commands, one per feature | each command has a receipt in `CHANGELOG.md` |
-| 8 | Implement the features that are **not** yet written: small-first *policy*, tool-router *with tests*, RLM-in-bot, prefix-cache wiring | each has tests that fail without it |
-| 9 | Only then: update `bot` (GUI) and `tui` (TUI) to consume the harness | the GUI and TUI stop carrying their own copies of the engine |
+| 1 | `harness/scripts/gen_workspace.py` | **FIXED.** It dropped `[patch.crates-io]` → the `ReasoningEffort::Max` blocker. It now carries the patch and refuses to emit a manifest without it. |
+| 1b | `bot/crates/Cargo.toml` | **SAME BUG, STILL PRESENT.** The patch is missing there too. Found by building the harness; never found in bot because bot has never been compiled. **This is the highest-value defect this work produced.** |
+| 2 | `bot/src-tauri/Cargo.toml:274` | `xai-grok-markdown-core = { path = "../../tui/crates/codegen/xai-grok-markdown-core" }` — the **only** dep that escapes bot's vendored copy. Everything else points at `../crates/codegen/…`, and `xai-grok-markdown-core` **is** vendored in bot. Bot's build silently depends on tui's tree. |
+| 3 | `bot/src-tauri/Cargo.toml:324-326` | `[patch.crates-io]` → `libsodium-sys` / `libxdo-sys` at `../../../Rustdesk/libs/…`. Cargo reads `[patch]` **regardless of features**, so any build needs `G:\Rustdesk` present. |
+| 4 | `bot/src-tauri/Cargo.toml:113` | `dx-harness` is not in `default`. Nothing constructs `DxHarness`. `bot/HARNESS.md` §0 says so outright. |
+| 5 | `bot/HARNESS.md` §0 | The duplicate `zeroclaw-*` crates under `crates/common/agent/` are labelled 1.0.0 but are an **older, trimmed** snapshot of the 0.8.5 copies. They coexist only because `dx-harness` is off; enabling it links two incompatible `zeroclaw-config` types. |
+| 6 | `bot/TODO.md:86-89` | *"Use **Bash**, not PowerShell — PowerShell's ConPTY sandbox is broken on this machine."* True on 2026-10-11; **not true on 2026-10-21** — `pwsh` 7.6.2 runs fine and `just --list` resolves. Needs re-measuring before it is trusted as a constraint. |
+| 7 | the machine's environment | `INCLUDE` and `LIB` point at **zig**'s libc while the compiler is MSVC's `cl.exe`. Any C build in the graph breaks with `c1xx: fatal error C1083: Cannot open source file: '/WX-'`. This is what blocks `mimalloc`, and therefore the full engine. |
+| 8 | `xai-grok-tools/src/tolerant.rs` | The substring fallback resolves `send_feedback` when the model asked for `send_email`. **3 of 13 corpus entries were silent-wrong because of this.** The fix belongs upstream. |
 
 ---
 
 ## 9. Where the harness goes afterwards
 
-This is the argument for doing it as a **library with a CLI**, not as an app.
+This is the argument for doing it as a **library with a CLI**, not an app.
 
 | Target | How the harness reaches it | Constraint |
 |---|---|---|
 | `G:\Dx\bot` (Tauri GUI) | in-process, over `xai_acp_lib::acp_channels()` — the seam `bot/src-tauri/src/dx_harness.rs` already implements | `!Send` types cannot cross `tokio::spawn`; needs a `LocalSet` |
 | `G:\Dx\tui` (TUI) | in-process, ACP client — the TUI is already a pure ACP client | the TUI keeps its own pager crates; only the engine is shared |
-| `G:\Dx\extensions` (VS Code) | **TypeScript** (5,150 `.ts` files, `@cline/packages`) — needs a **WASM** build of the harness | the harness must compile to `wasm32`; the `tokio` + `reqwest` + `git2` stack is the obstacle, not the design |
-| `G:\Dx\code` (code editor) | Rust (`crates/acp_thread`, `crates/acp_tools`, `crates/agent`, …) — can link natively | same `!Send` caveat |
-| Website | WASM, same as extensions | |
-| Android / iOS | the harness's `xai-grok-sandbox` is already platform-aware; mobile needs the JNI/ObjC seam that `bot`'s grammar work already solved | |
+| `G:\Dx\code` (code editor) | Rust (`crates/acp_thread`, `crates/acp_tools`, `crates/agent`, …) — links natively | same `!Send` caveat |
+| `G:\Dx\extensions` (VS Code) | **TypeScript** (5,150 `.ts` files, `@cline/packages`) — needs a **WASM** build | see below |
+| Website | WASM, same as extensions | see below |
+| Android / iOS | the sandbox crate is already platform-aware; mobile needs the JNI/ObjC seam bot's grammar work already solved | |
 
-**The honest constraint:** WASM for the website and the VS Code extension is
-**not** a copy problem, it is a *dependency* problem. `git2`, `reqwest` with
-TLS, `tokio` with threads, and `rusqlite` all need to be either replaced or
-made optional. That is a large piece of work with its own plan — it should
-**not** be smuggled into this one. The realistic order is: native Rust targets
-first (bot, tui, code), then WASM as a separate track with its own decision.
-
----
-
-## 10. Open questions — these need answers before step 3
-
-1. **Should `G:\Dx\harness` be a new git repo with its own `origin`
-   (`essence-dx/harness`), or a folder inside the hub?** The hub is deny-by-
-   default (`.gitignore` line 4 is `/*`), so a child folder needs its own repo.
-   A new repo is the cleaner answer and matches every sibling product.
-2. **Should bot's vendored `crates/` be deleted in favour of a path dependency
-   on `G:\Dx\harness`?** That is the clean end-state, but it makes bot
-   unbuildable on any machine without the hub checked out — which is exactly
-   the "fresh clone cannot be built" problem `bot/HARNESS.md` §0 already
-   complains about. The alternative is to publish the harness to crates.io.
-3. **Which is the source of truth — tui or the harness?** Today tui holds the
-   engine and bot holds a copy. If the harness becomes the source, tui's
-   `crates/codegen/*` become a *downstream* copy and every upstream merge gets
-   harder. This is the single most consequential decision in this document.
-4. **How many of the 47 `common/token` crates are actually wanted?** 46 are
-   missing from bot, they total 0.9 MB, and most have zero tests. Copying all
-   47 copies untested scaffolding. Copying 5 copies a policy, not a pile.
-5. **What is the OpenCode key, and which provider?** `tokenharbor` and
-   `deepseek` have keys in env. The `gmi` provider — the one offering
-   MiniMax-M3 and Qwen3.8-27B — has **no visible credential**. If the harness
-   is to use "my OpenCode key", this needs naming.
+**The honest constraint:** WASM is **not** a copy problem, it is a
+*dependency* problem. `git2`, `reqwest`+TLS, `tokio`+threads and `rusqlite`
+all need replacing or making optional. That is a large piece of work with its
+own decision — it should **not** be smuggled into this one. Realistic order:
+native Rust targets first (bot, tui, code), then WASM as a separate track.
 
 ---
 
-## 11. Claim ledger for this document
+## 10. Decisions taken, and the ones still open
 
-| Claim | Tier | Evidence |
-|---|---|---|
-| The 5 §0 features are in `bot/crates`, byte-identical to tui | **repo-managed** | SHA-256 comparison, 2026-10-21; bot commit `0030d4e6` |
-| 35 of 2,590 shared `.rs` files differ, none §0 work | **repo-managed** | file-by-file hash diff |
-| 46 of 47 `common/token` crates are absent from bot | **repo-managed** | directory listing |
-| `tool-router` and 5 other token crates have **0 tests** | **repo-managed** | `#[test]` count per file |
-| `dx-harness` is off by default and nothing constructs `DxHarness` | **repo-managed** | `bot/src-tauri/Cargo.toml:113`; `bot/HARNESS.md` §0 |
-| `bot/crates` has never been compiled on this machine | **repo-managed** | `bot/crates/target` and `bot/src-tauri/target` do not exist |
-| `G:` is at ~10 GB free | **executed** | `Get-PSDrive G`, 2026-10-21 |
-| `sccache` 0.17.0 is installed but `RUSTC_WRAPPER` is unset | **executed** | `G:\Dx\bin\sccache.exe --version`; env inspection |
-| `TOKENHARBOR_API_KEY` and `DEEPSEEK_API_KEY` are set; the `gmi` key is not | **executed** | env inspection, 2026-10-21 |
-| The harness closure builds and its tests pass | **not yet claimed** | step 1 |
-| The §0a golden-corpus measurement exists | **not yet claimed** | step 6 |
-| WASM works for the website / VS Code extension | **not yet claimed** | §9 — a separate track |
+### Taken
+
+| Decision | Why |
+|---|---|
+| `G:\Dx\harness` is its **own git repo**, not a folder in the hub | the hub is deny-by-default (`.gitignore` line 4 is `/*`), and every sibling product is its own repo |
+| **tui remains the source of truth** | it is a hard fork of upstream and merges regularly; making the harness authoritative would make every upstream merge harder |
+| **bot keeps its vendored copy** | a path dependency on `G:\Dx\harness` makes bot unbuildable without the whole hub — the "fresh clone cannot be built" problem `bot/HARNESS.md` §0 already complains about |
+| **Six token crates, not 47** | 46 are modality compressors (video/pdf/ocr/audio) not in scope; they total 0.9 MB but most have zero tests, so copying them copies untested scaffolding |
+| **The harness excludes every TUI/GUI crate** | the `/model` picker and the tab strip are TUI features, not engine features |
+
+### Still open
+
+1. **Does the harness get its own `origin` (`essence-dx/harness`)?** The repo
+   has **2 commits and no remote**. It is not durable yet.
+2. **Should the harness be published to crates.io** so bot and tui can depend
+   on a version instead of a path? That is the clean end-state, and it is
+   what makes a fresh clone work.
+3. **Which provider is "my OpenCode key"?** The `oc_sk_` key works on the
+   go gateway and reaches `minimax-m3.1-flash-free` and the other free
+   models. The `gmi` provider (MiniMax-M3, Qwen3.8-27B) still has **no
+   visible credential**.
+4. **Does bot's vendored `crates/` get replaced** once the harness is proven,
+   or does bot keep carrying a copy? Bot's copy has the same
+   `[patch.crates-io]` bug and cannot compile until that is fixed.
+5. **Should the silent-wrong fix go upstream?** The resolver's substring
+   fallback is in `xai-grok-tools/src/tolerant.rs`, which is an upstream
+   grok-build file. The fix belongs in tui first, then a re-sync.
+
+---
+
+## 11. What to do next, in order
+
+1. **Fix the silent-wrongs.** 3 of 13 corpus entries resolved to a *real but
+   wrong* tool — `send_feedback` for `send_email`, `run_in_terminal` for
+   `teleport`. The fix is upstream in `xai-grok-tools/src/tolerant.rs`: the
+   substring fallback needs a stronger uniqueness test, or a "the model
+   asked for something outside the catalog" signal that refuses rather than
+   guesses. **This is the §0a work, and it is not done.**
+2. **Fix `bot/crates/Cargo.toml`** — add the same `[patch.crates-io]` the
+   harness now carries. It is the identical bug, and bot cannot compile
+   without it.
+3. **Build `bot/crates`** once, properly, and record the receipt. It has
+   never been compiled.
+4. **Fix the C toolchain** — `INCLUDE`/`LIB` point at zig while the compiler
+   is MSVC. Until that is sorted, the full engine cannot link, and
+   `--features engine` stays off.
+5. **Write real tests** for `tool-router`, `prefix-cache`, `token-budget` and
+   `core` — the four with zero.
+6. **Commit and push the harness repo.** It has **2 commits and no remote**.
+7. **Copy the finished work back** into `tui`, then into `bot`.
+
+### The fastest loop, right now
+
+```bash
+# free, no model, no network
+cd G:/Dx/harness && ./target/release/dx-harness.exe corpus-offline corpus/golden.json
+cd G:/Dx/bot    && bash scripts/harness-test.sh resolver
+
+# one real model call
+cd G:/Dx/harness && ./target/release/dx-harness.exe model "Reply with exactly: HARNESS_OK"
+
+# no build at all
+cd G:/Dx/harness && bash scripts/model.sh "Reply with exactly: HARNESS_OK"
+```
+
+Rebuilding after an edit: **7.5 s**.
 
 ---
 
