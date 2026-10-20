@@ -142,11 +142,18 @@ renamed lot. Nothing was deleted.**
   session, so the root name was free and the project now carries the name it
   always had. The rename is metadata-only and byte-identical: 1478.7 MB and
   33,301 files before and after.
-- **Hub root folder count.** This session parked five root folders —
-  `llama.cpp`, `ZZZ-bot-trash`, `superpowers`, `magnitude`, `treg` — and
-  renamed a sixth (`lms` to `ikra`). The root stood at **41 folders** when
-  this entry was written. The count moved from 47 because a concurrent session
-  parked `bhcrd` and `ikra`, and removed the broken `codebase-memory-mcp`
+- **Parked the root `tunnel/` folder.** It held a standalone `dx-tunnel` Rust
+  project — `src/main.rs`, `Cargo.toml`, `README.md`, `start.ps1` — whose whole
+  job is to expose a local axum server through a `bore` tunnel. Nothing in the
+  hub referenced it: no manifest path, no `build.ps1` entry, no `Cargo.toml`
+  path-dependency, no `dx` route, and no `TOOL_REGISTRY` entry. It is not a git
+  repository, so the parking lot is now the only copy of that source.
+  Byte-identical: 177.4 MB and 552 files before and after.
+- **Hub root folder count.** This session parked six root folders —
+  `llama.cpp`, `ZZZ-bot-trash`, `superpowers`, `magnitude`, `treg`, `tunnel` —
+  and renamed a seventh (`lms` to `ikra`). The root stood at **40 folders**
+  when this entry was written. The count moved from 47 because a concurrent
+  session parked `bhcrd` and `ikra`, and removed the broken `codebase-memory-mcp`
   clone, during the same window; those are not this session's moves. Free
   space on `G:` was 19.15 GB before the moves and 20.04 GB after
   (`Get-PSDrive G`) — the moves are same-volume metadata operations, so they
