@@ -49,7 +49,7 @@ page and a row.**
   structural differences; the markdown and CSV artifacts are **byte-identical**,
   `\r\n` terminators included. The LLM crate additionally records the Python module
   outputs as fixtures and asserts the Rust reproduces them.
-- **Verified in the product repo:** `cargo test --workspace` → 564 passed, 0 failed;
+- **Verified in the product repo:** `cargo test --workspace` → 611 passed, 0 failed;
   `cargo clippy --workspace --all-targets -- -D warnings` → clean; `cargo fmt
   --all -- --check` → clean.
 - **It runs.** The agent loop, the provider, the budget, the session store, the
@@ -64,7 +64,9 @@ page and a row.**
   the end; a child agent gets its own session and reports back to its parent's
   mailbox; and the agent reads the upstream's 532-line operating doctrine
   rather than a summary of it. Every provider attempt is now recorded in a
-  bounded log that never captures a prompt.
+  bounded log that never captures a prompt, and every call is attributed to
+  the agent that made it. A tool's output is bounded before it enters the
+  transcript, so one chatty command cannot blow the context window.
 - **What this entry does not claim.** The **MCP layer** is not ported, so the
   MCP dispatch tools remain stubs. The **skill packs** are not ported, so the
   knowledge blocks render empty. The **web-search client** is not ported. The
