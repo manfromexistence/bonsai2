@@ -25,13 +25,13 @@ to make legible.
 
 | Tree | What it is | Built? | Tests run? |
 |---|---|---|---|
-| `G:\Dx\tui` | **the source of truth.** A hard fork of grok-build, 172 members, 92 `crates/codegen`. Merges upstream regularly. | `cargo check -p xai-grok-pager-bin` passed 2026-10-20 (1m59s, 0 errors) **after** a 19-hour cold build | never on this HEAD |
-| `G:\Dx\bot\crates\` | **a copy**, vendored into the Tauri app. 103 members. | **never** — no `target/` dir has ever existed here | never |
-| `G:\Dx\harness` | **a copy**, built for testing. 125 members, own git repo, 2 commits. | **green** — `dx-harness.exe` builds and runs | **yes** — the resolver is 9/9 and the corpus is 13/13 offline |
+| `G:\Dx\tui` | **the upstream source.** A hard fork of grok-build, 172 members, 92 `crates/codegen`. Merges upstream regularly. | `cargo check -p xai-grok-pager-bin` passed 2026-10-20 (1m59s, 0 errors) **after** a 19-hour cold build | never on this HEAD |
+| `G:\Dx\bot\crates\` | **the working copy.** Bot's vendored closure — 103 crates, plus fixes tui does not have (§2.3). | **never** — no `target/` dir has ever existed here | never |
+| `G:\Dx\harness` | **the test copy**, mirroring bot. 125 members, own git repo, 3 commits. | **green** — `dx-harness.exe` builds and runs | **yes** — resolver 9/9, corpus 13/13 offline |
 
-**`G:\Dx\harness` is the newest and the only one that can be tested.** It
-exists because the other two cannot be tested quickly. It now has a working
-CLI, a working model route, and a real measurement.
+**`G:\Dx\harness` is the only one that can be tested.** The other two cannot
+be tested quickly: building tui took 19 hours and died to a disk-full error,
+and bot's copy has never been compiled at all.
 
 ---
 
@@ -71,7 +71,44 @@ So the work was **not** "copy five things into bot". It was already done.
 | **The small-first prompt policy does not exist** | only one hand-configured case, `SessionRecapConfig` |
 | **`bot/crates` has never been compiled** | no `target/` dir, in bot or in `bot/src-tauri` |
 
-### 2.3 What is correctly absent from bot, and stays absent
+### 2.3 Bot's copy is the better base — and it was the wrong call to ignore it
+
+**This was corrected on 2026-10-21, and the correction matters.**
+
+The harness tree was first copied from **tui**. Bot's vendored copy is
+better, in three concrete ways:
+
+1. **The `ReasoningEffort::Max` fix.** Tui maps `Max` to
+   `async_openai::ReasoningEffort::Max` and needs a `[patch.crates-io]`
+   pointing async-openai at a **git fork** that has that variant — a
+   dependency a fresh clone cannot resolve. Bot maps `Max` and `Xhigh` both
+   onto `Xhigh` **in code**, with a documented rationale, and needs **no
+   patch at all**.
+
+   ```rust
+   // `Xhigh` and `Max` both exceed `High`; the dependency's top level is
+   // `Xhigh`, so both map onto it.
+   Self::Xhigh | Self::Max => crate::rs::ReasoningEffort::Xhigh,
+   ```
+
+2. **Windows-vs-unix test portability fixes in 9 files that tui does not
+   have** — `xai-grok-config` (fs_atomic ×2), `xai-grok-hooks`
+   (runner/command), `xai-grok-lifecycle` (×3), `xai-grok-sandbox`
+   (example), `xai-grok-tools` (bash/mod), `xai-grok-workspace`
+   (workspace_server). **This machine is Windows.** Bot's `TODO.md` §2 lists
+   this work as done; tui never got it.
+
+3. **A live `#[test]`** in `xai-grok-sampler/src/client.rs` that tui lacks.
+
+**The two trees have diverged in BOTH directions.** Measured file by file
+2026-10-21: **2,576 identical, 9 newer in bot, 5 newer in tui.**
+
+So `G:\Dx\harness` mirrors **bot's** `crates/`, and
+`scripts/sync_from_bot.sh` is the re-sync. The **six token crates** are the
+exception — they are in tui and **not** in bot, so the sync re-adds them
+from tui.
+
+### 2.4 What is correctly absent from bot, and stays absent
 
 | Not copied | Why |
 |---|---|
@@ -112,14 +149,14 @@ G:\Dx\harness\
 
 ### 3.1 The copy
 
-125 workspace members, copied from `G:\Dx\tui` at `3e49a0f6` (**dirty working
-tree** — the five features exist only there, uncommitted).
+125 workspace members: **bot's 103 crates**, plus the **six token crates**
+from tui (bot does not have them).
 
 **20 TUI/GUI crates deliberately absent**, and **12 upstream workspace
 dependencies dropped** for the same reason. Every drop is listed in
 `G:\Dx\harness\PROVENANCE.md` §4.3.
 
-**Six token crates are new to this copy** (bot does not have them):
+**The six token crates are new to this copy** (bot does not have them):
 `dx-token-core`, `tool-router`, `prefix-cache`, `prompt-compress`,
 `token-budget`, `compaction`.
 
@@ -127,11 +164,26 @@ dependencies dropped** for the same reason. Every drop is listed in
 `../../prod-mc/…` in the six crates that need the types crate.
 
 **The workspace root is generated, not hand-written.**
-`scripts/gen_workspace.py` copies `[workspace.package]` and
-`[workspace.lints.clippy]` verbatim, keeps the workspace dependencies whose
-paths exist, rewrites the path prefixes, adds the two entries tui lacks
-(`prod-mc-cli-chat-proxy-types` and the six token crates), and emits the
-member list from what is actually on disk.
+`scripts/gen_workspace.py` takes **bot's** manifest as the source of the
+workspace settings, and tui's only for the workspace dependencies bot's
+pruned manifest omits. It:
+
+1. copies `[workspace.package]` and `[workspace.lints.clippy]` verbatim;
+2. keeps every `[workspace.dependencies]` entry whose `path` exists here;
+3. rewrites the path prefixes — **source-aware**, because tui's paths are
+   `crates/…` and bot's are `codegen/…` (bot's workspace root *is* its
+   `crates/` directory);
+4. **takes bot's version pins where the two disagree** — tui pins
+   `rusqlite = "0.37"`, bot pins `"0.39"`, and bot's crates need 0.39;
+5. copies `[patch.crates-io]` **only if the source has one** — bot's code
+   does not need it, so the harness's manifest has none;
+6. adds the entries neither manifest declares: `prod-mc-cli-chat-proxy-types`
+   and the six token crates;
+7. emits `[workspace.members]` from the directories actually present.
+
+**The sync is a mirror, not an overlay.** `scripts/sync_from_bot.sh` removes
+crates the source dropped, because bot's manifest is pruned and would not
+declare the leftovers.
 
 ### 3.2 The CLI — `dx-harness`
 
@@ -408,24 +460,25 @@ does not. `scripts/gen_workspace.py` copied `[workspace.package]` and
 `[workspace.lints.clippy]` but **not** `[patch.crates-io]`, so cargo
 resolved the registry version.
 
-| Tree | `async-openai` source | Has the patch? |
-|---|---|---|
-| `G:\Dx\tui` | the git fork (`our-forks/async-openai` @ `95b52ebd`) | yes |
-| `G:\Dx\bot\crates` | registry 0.33.1 | **no** |
-| `G:\Dx\harness` | the git fork | **yes — now** |
+**The first fix was to carry the patch across.** That was also wrong — it
+treated the symptom. The right fix is bot's: **map `Max` onto `Xhigh` in
+the code** and drop the dependency on a git fork entirely. Bot had already
+done that.
 
-**The fix:** `gen_workspace.py` now carries `[patch.crates-io]` across, and
-**refuses to write a manifest without it** — it exits with a fatal error
-rather than emitting a manifest that cannot compile.
+| Tree | `async-openai` source | Has the patch? | Needs it? |
+|---|---|---|---|
+| `G:\Dx\tui` | the git fork (`our-forks/async-openai` @ `95b52ebd`) | yes | **yes** |
+| `G:\Dx\bot\crates` | registry 0.33.1 | no | **no** — its code maps `Max` onto `Xhigh` |
+| `G:\Dx\harness` (now) | registry 0.33.1 | no | **no** — it inherits bot's fix |
 
-**`G:\Dx\bot\crates` has the same bug**, and never found it because that
-tree has never been compiled. That is the single most valuable thing this
-work produced: it is a real, reproducible defect in a sibling tree, found
-by building instead of reading.
+The generator now copies `[patch.crates-io]` **only if the source has one**,
+and the harness's manifest has none. **The real lesson:** tui's approach
+makes a fresh clone need a git fork it cannot resolve; bot's does not. The
+harness should be on bot's side of that line.
 
 > Note `bot/TODO.md` §2 records a fix for a *different* skew of the same crate
 > ("`ReasoningEffort::Max` vs `async-openai 0.33.1`"). That entry is about the
-> **registry** version; the git fork is the actual upstream answer.
+> **registry** version; bot's own code change is the actual answer.
 
 ### The second blocker — `mimalloc` and a broken C toolchain
 
@@ -452,8 +505,8 @@ still open.
 
 | # | Where | Problem |
 |---|---|---|
-| 1 | `harness/scripts/gen_workspace.py` | **FIXED.** It dropped `[patch.crates-io]` → the `ReasoningEffort::Max` blocker. It now carries the patch and refuses to emit a manifest without it. |
-| 1b | `bot/crates/Cargo.toml` | **SAME BUG, STILL PRESENT.** The patch is missing there too. Found by building the harness; never found in bot because bot has never been compiled. **This is the highest-value defect this work produced.** |
+| 1 | `harness/scripts/gen_workspace.py` | **FIXED.** It dropped `[patch.crates-io]` → the `ReasoningEffort::Max` blocker. It now copies the patch **only if the source has one**, and takes the source's version pins. Bot's source has no patch and does not need one. |
+| 1b | -- | *(was "bot/crates has the same bug". **That was wrong.** Bot has no patch because bot's code maps `Max` onto `Xhigh` itself. Bot was never broken - the harness was, because it was copied from tui.)* |
 | 2 | `bot/src-tauri/Cargo.toml:274` | `xai-grok-markdown-core = { path = "../../tui/crates/codegen/xai-grok-markdown-core" }` — the **only** dep that escapes bot's vendored copy. Everything else points at `../crates/codegen/…`, and `xai-grok-markdown-core` **is** vendored in bot. Bot's build silently depends on tui's tree. |
 | 3 | `bot/src-tauri/Cargo.toml:324-326` | `[patch.crates-io]` → `libsodium-sys` / `libxdo-sys` at `../../../Rustdesk/libs/…`. Cargo reads `[patch]` **regardless of features**, so any build needs `G:\Rustdesk` present. |
 | 4 | `bot/src-tauri/Cargo.toml:113` | `dx-harness` is not in `default`. Nothing constructs `DxHarness`. `bot/HARNESS.md` §0 says so outright. |
@@ -461,6 +514,7 @@ still open.
 | 6 | `bot/TODO.md:86-89` | *"Use **Bash**, not PowerShell — PowerShell's ConPTY sandbox is broken on this machine."* True on 2026-10-11; **not true on 2026-10-21** — `pwsh` 7.6.2 runs fine and `just --list` resolves. Needs re-measuring before it is trusted as a constraint. |
 | 7 | the machine's environment | `INCLUDE` and `LIB` point at **zig**'s libc while the compiler is MSVC's `cl.exe`. Any C build in the graph breaks with `c1xx: fatal error C1083: Cannot open source file: '/WX-'`. This is what blocks `mimalloc`, and therefore the full engine. |
 | 8 | `xai-grok-tools/src/tolerant.rs` | The substring fallback resolves `send_feedback` when the model asked for `send_email`. **3 of 13 corpus entries were silent-wrong because of this.** The fix belongs upstream. |
+| 9 | `tui` | tui lacks bot's 9 Windows-portability fixes and bot's `ReasoningEffort::Max` fix. **Tui is the weaker tree for this machine.** Those fixes should be ported back into tui, or tui should be re-synced from bot. |
 
 ---
 
@@ -492,7 +546,7 @@ native Rust targets first (bot, tui, code), then WASM as a separate track.
 | Decision | Why |
 |---|---|
 | `G:\Dx\harness` is its **own git repo**, not a folder in the hub | the hub is deny-by-default (`.gitignore` line 4 is `/*`), and every sibling product is its own repo |
-| **tui remains the source of truth** | it is a hard fork of upstream and merges regularly; making the harness authoritative would make every upstream merge harder |
+| **The engine comes from bot, not tui** | bot's copy has the `ReasoningEffort::Max` fix in code (no git fork needed) and 9 Windows-portability fixes. The trees diverged both ways; bot's extra fixes are the ones this machine needs. §2.3 |
 | **bot keeps its vendored copy** | a path dependency on `G:\Dx\harness` makes bot unbuildable without the whole hub — the "fresh clone cannot be built" problem `bot/HARNESS.md` §0 already complains about |
 | **Six token crates, not 47** | 46 are modality compressors (video/pdf/ocr/audio) not in scope; they total 0.9 MB but most have zero tests, so copying them copies untested scaffolding |
 | **The harness excludes every TUI/GUI crate** | the `/model` picker and the tab strip are TUI features, not engine features |
@@ -500,7 +554,7 @@ native Rust targets first (bot, tui, code), then WASM as a separate track.
 ### Still open
 
 1. **Does the harness get its own `origin` (`essence-dx/harness`)?** The repo
-   has **2 commits and no remote**. It is not durable yet.
+   has **3 commits and no remote**. It is not durable yet.
 2. **Should the harness be published to crates.io** so bot and tui can depend
    on a version instead of a path? That is the clean end-state, and it is
    what makes a fresh clone work.
@@ -508,12 +562,12 @@ native Rust targets first (bot, tui, code), then WASM as a separate track.
    go gateway and reaches `minimax-m3.1-flash-free` and the other free
    models. The `gmi` provider (MiniMax-M3, Qwen3.8-27B) still has **no
    visible credential**.
-4. **Does bot's vendored `crates/` get replaced** once the harness is proven,
-   or does bot keep carrying a copy? Bot's copy has the same
-   `[patch.crates-io]` bug and cannot compile until that is fixed.
+4. **Should bot's 9 Windows-portability fixes and its `Max` fix be ported
+   back into tui?** Tui is the weaker tree for this machine. Either tui is
+   re-synced from bot, or the fixes are ported upstream.
 5. **Should the silent-wrong fix go upstream?** The resolver's substring
-   fallback is in `xai-grok-tools/src/tolerant.rs`, which is an upstream
-   grok-build file. The fix belongs in tui first, then a re-sync.
+   fallback is in `xai-grok-tools/src/tolerant.rs`. The source is now bot,
+   so the fix lands in bot first.
 
 ---
 
