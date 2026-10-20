@@ -27,9 +27,9 @@ manifest, and the public story for a family of ~20 separate products.
 
 **Folders that are *not* repos and must not be treated as source:**
 `bin/`, `docs/`, `native/`, `test/`, `zzz/`, `.workbuddy-ai/`,
-`DEPRICATED_10-20-2026/` (45 parked items: 43 repos/folders from the
-2026-10-09 cleanup plus `llama.cpp`, `ZZZ-bot-trash`, and a `root-junk/`
-folder of 10 loose root files parked on 2026-10-20 — see
+`DEPRICATED_10-20-2026/` (43 entries on 2026-10-20: 30 git repos and 13 plain
+folders, including `llama.cpp`, `ZZZ-bot-trash`, and a `root-junk/` folder of
+10 loose root files parked on 2026-10-20 — see
 `docs/space-review-2026-09-23.md:57` for the original 22-repo measurement).
 
 ---
@@ -194,8 +194,8 @@ Also note the parking lot was renamed from the misspelled `DEPRICATED_9-17-2026`
 to `DEPRICATED_10-20-2026` on 2026-10-20, and that it contains two siblings
 still spelled differently (`dx-video-player-depricated-20260820-1856`,
 `os-depricated-20260820-1856`) — three spellings of the same word. Do not
-"fix" either one in place: renaming a folder that holds 43 pushed repos and
-folders is a proposal, not an edit (§2.2).
+"fix" either one in place: renaming a folder that holds 30 pushed repos and
+13 plain folders is a proposal, not an edit (§2.2).
 
 On-disk folders the manifest does **not** declare: `daemon`, `bot`, `token`, `tree`,
 `typesafe`, `native`, `os`, `mobile`, `video-player`, `extensions`, `test`, `zzz`, `bin`.

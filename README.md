@@ -23,7 +23,7 @@ dx --help             # the full public command surface
 
 A tool is a CLI binary driven through `dx <tool>` and published by
 `TOOL_REGISTRY` in `cli/src/update_registry.rs` (repo-managed). The registry
-currently holds 19 entries: the `cli` entry (published as `dx.exe`) plus 18
+currently holds 21 entries: the `cli` entry (published as `dx.exe`) plus 20
 companion tools.
 
 | Tool | Folder | Repository | Binary | Command |
@@ -32,7 +32,9 @@ companion tools.
 | check | `check` | `essence-dx/check` | `dx-check` | `dx check` |
 | dcp | `dcp` | `essence-dx/dcp` | `dx-dcp` | `dx dcp` |
 | driven | `driven` | `essence-dx/driven` | `dx-driven` | `dx driven` |
+| forkness | `forkness` | `essence-dx/dx-forkness` | `dx-forkness` | `dx forkness` |
 | forge | `forge` | `essence-dx/forge` | `dx-forge` | `dx forge`, `dx add` |
+| grimoire | `grimoire` | `essence-dx/grimoire` | `dx-grimoire` | `dx grimoire` |
 | i18n | `i18n` | `essence-dx/i18n` | `dx-i18n` | `dx i18n` |
 | icon | `icon` | `essence-dx/icon` | `dx-icon` | `dx icon` |
 | media | `media` | `essence-dx/media` | `dx-media` | `dx media` |
@@ -50,7 +52,9 @@ companion tools.
 
 `daemon` and `video-player` are DX tools with published release binaries in
 `bin/` (verified by directory listing on 2026-10-09) that have no `dx` route
-wired yet. Everything else in the table has a live `dx <tool>` command.
+wired yet. `forkness` and `grimoire` are DX tools with a `dx` route wired and
+no release artifact yet — see the honest command-surface status below.
+Everything else in the table has a live `dx <tool>` command.
 
 ### Install, update, and discovery
 
@@ -72,11 +76,19 @@ plus musl, macOS x64/arm64, Android, and armv7 entries as of 2026-10-09).
   `skilltune/` Rust workspace (ReflACT skill-document training: `train`,
   `gate`, `rank`, `apply`, `prompts`, `config`). It works once
   `dx-skilltune` is installed or built locally.
-- Added: `dx bot` and `dx typesafe` are registered and routed, but fail
+- Added: `dx bot` and `dx decisions` are registered and routed, but fail
   closed with an install hint until those workspaces publish a release
   binary. The bot workspace currently builds its Tauri app as `dxbot`, which
-  does not match the `dx-bot-<triple>` asset convention; typesafe is C++
-  and Python tooling with no `dx-typesafe` binary yet.
+  does not match the `dx-bot-<triple>` asset convention; the decisions
+  workspace is C++ and Python tooling with no `dx-decisions` binary yet.
+- Added: `dx grimoire` and `dx forkness` are registered and routed, and both
+  fail closed. `essence-dx/grimoire` has no GitHub release
+  (`gh release view` reports `release not found`) and `dx-grimoire` is not on
+  the npm registry, so `dx tool install grimoire` fails with `API 404`.
+  `essence-dx/dx-forkness` is not published on GitHub at all and the local
+  `forkness/` workspace has no `origin`, so `dx tool install forkness` fails
+  the same way. Both routes still find a locally built binary when one
+  exists.
 - Removed: `dx build`, `dx js`, `dx py`, and `dx agents` (plus the hidden
   `dx bundle` alias). They routed at the `build/`, `js/`, `py/`, and `agent/`
   trees, all of which are absent from this workspace, so every one of those
@@ -93,15 +105,85 @@ still expose a CLI route.
 | code | `code` | `essence-dx/code` | dx-code: GUI desktop code editor | `dx desktop sync-web` |
 | tui | `tui` | `essence-dx/tui` | dx-tui terminal UI | none (hidden `dx tui` launches `cli/tui`) |
 | bot | `bot` | `essencefromexistence/flow` | dx app for mobile and desktop | `dx bot` (fails closed until release) |
-| typesafe | `typesafe` | `essence-dx/dx-typesafe` | dx decision-model system | `dx typesafe` (fails closed until release) |
-| extensions | `extensions` | `essence-dx/extensions` | dx extensions | none |
+| decisions | `decisions` | `essence-dx/dx-decisions` | dx decision-model system | `dx decisions` (fails closed until release) |
+| extensions | `extensions` | `essence-dx/extensions` | DX Extensions — the DX fork of the Cline agent stack; `apps/dx-vscode` ships as the DX Command Center | none |
 | website | `website` | `essence-dx/website` | dx official website | `dx site` (hidden) |
 
-## Client project (not DX)
+## Vendored third-party workspaces
+
+These are real checkouts of other people's projects. They are **not** DX tools
+and carry no `dx <tool>` route. Keep them out of the tool table above.
+
+| Folder | Upstream remote | What it is | DX relationship |
+| --- | --- | --- | --- |
+| `magnitude` | `magnitudedev/magnitude` | Open-source inference engine for agents; compiles and tunes kernels on the host machine, claims up to 2x llama.cpp decode on Metal | Vendored reference. Its `native/llama-cpp-rs` is its own copy, unrelated to the parked `llama.cpp` below. |
+| `superpowers` | `obra/superpowers` | Agent methodology: composable skills plus a spec-first, TDD, subagent-driven workflow; ships plugin manifests for Claude, Codex, Cursor, Gemini, OpenCode and more | **Already vendored inside DX.** `driven/vendor/superpowers/` holds a copy of this tree, so this root clone is a duplicate of the DX-side copy. |
+| `treg` | `superdesigndev/treg` | "OpenRouter for tools": a catalog of thousands of priced API endpoints, vendor CLIs, and skills, with server-side credential injection | Vendored reference. Not DX-authored, not registered. |
+| `grimoire` | `essence-dx/grimoire` (upstream `morluto/rea`) | Reverse-engineering CLI and MCP server | **This one is a DX tool.** `package.json` declares `"name": "dx-grimoire"`, and git carries `upstream = morluto/rea`. See the tool table above. |
+
+`llama.cpp` (the `PrismML-Eng` Prism fork) was parked into
+`DEPRICATED_10-20-2026/llama.cpp` on 2026-10-20. Its working tree was already
+gutted at that point: 129 files on disk against 3445 tracked files showing as
+deleted, and no `Cargo.toml` in the hub path-depends on it. The `tpu/` kernels
+clone their own `llama.cpp` inside their Kaggle/Colab run directory
+(`tpu/bonsai2-cached/kernel.py:220-230`), so parking it breaks nothing.
+
+## Bonsai 2 27B on a TPU (measured)
+
+The `tpu/` track runs **Bonsai 2 27B** (the ~6 GB PTQ1_0 ternary GGUF) end to
+end on a **Colab TPU v5e-1** with every ternary projection served by a fused
+Pallas kernel that unpacks the packed weights in place -- llama.cpp has no TPU
+backend, so it is a from-scratch JAX forward pass. All figures are aggregate
+decode throughput across the batch, each with a receipt in `tpu/`:
+
+| Run, 2026-10-18 (`[exec]` on v5e-1) | Result | Receipt |
+| --- | --- | --- |
+| Batch 80, 32 tokens generated | **281.01 tok/s** | `tpu/14-bonsai-transposed/receipt-14-b80-f16-tc1024.json` |
+| Batch 80, 19-token prompt, 64 generated | 268.3 tok/s | `tpu/14-bonsai-transposed/receipt-14-prompt-b80-f16-tc1024.json` |
+| Batch 64, 128 generated | 207.1 tok/s | `tpu/14-bonsai-transposed/receipt-14-prompt-b64-f16-tc1024.json` |
+| Baseline before the layout fix | 29.66 tok/s | `tpu/11-bonsai-fused-full/receipt-dec-cat-int16-tc512.json` |
+
+The 9.5x came from storing the packed tiles so the out-columns sit on the
+TPU's 128-lane axis (`x @ w` over `(32, rows)`) instead of the 2-16-wide
+in-dim axis; the decoded weights are bit-identical. 281.01 tok/s is the best
+receipted aggregate, ~2.8x the 100 tok/s goal; it is not a per-stream rate
+(80 sequences share one v5e-1 core). Start at `tpu/README.md`; settled facts
+and the do-not-retest list live in `tpu/DO-NOT-RETEST.md`.
+
+**Two rates, not one.** The table above is aggregate: 80 conversations
+advancing in lockstep. The number that matters for latency is one
+conversation, and it was measured on 2026-10-19 (`[exec]` on v5e-1):
+
+| Single stream (batch 1), 2026-10-19 | Result | Receipt |
+| --- | --- | --- |
+| 8k window, 64 generated, 64-layer step fused into one jit | **5.54 tok/s** (180.6 ms/step) | `tpu/14-bonsai-transposed/receipt-14-b1-f16-tc1024-fused.json` |
+| the same run before the fusion | 4.62 tok/s (216.3 ms/step) | `tpu/14-bonsai-transposed/receipt-14-b1-f16-tc1024-franch.json` |
+| 45k window -- the largest fp32 window that runs at all | 2.86 tok/s | `tpu/14-bonsai-transposed/receipt-14-b1-f16-tc1024-45056.json` |
+| 49152 and 65536 windows | out of memory (140 MB and 3.1 GB short) | `tpu/14-bonsai-transposed/receipt-14-mem-ceiling.json` |
+
+Why single-stream is slow: 80 sequences cost only 1.58x one sequence
+(180.6 ms/step against 284.7 ms/step), so the step is ~85 % per-projection
+launch overhead across ~400 projections, not bandwidth -- the weight traffic
+floor is 9.0 ms. Reaching **50 tok/s for one stream** therefore needs
+multi-token verification, not tuning; the plan, with evidence and a `Done
+when` per item, is in `TODO.md` (`GPU-01`...`TPU-06`). The route that already
+carries a number is MTP speculative decoding, measured at 50.44 tok/s on the
+reference 27B dense checkpoint by the repo's own Kaggle T4 work
+(`tpu/mtp-test/kernel.py`).
+
+## Client and adjacent projects (not DX)
+
+These folders sit in `G:\Dx` but are **not** DX tools, DX products, or DX
+releases. They are client work and adjacent projects. The hub does not own
+their CI, their releases, or their roadmaps.
 
 | Folder | Repository | Status |
 | --- | --- | --- |
-| `dhakaraiment` | `manfromexistence/dhakaraiment` | Client work, not a DX tool or product. It will be relocated out of `G:\Dx` by its owner; left in place and untouched until then. |
+| `dhakaraiment` | `manfromexistence/dhakaraiment` | Client work. Dhaka Raiment garment-house marketing site and browser CMS, Next.js 16 / Bun / Tailwind v4, media on Catbox. It will be relocated out of `G:\Dx` by its owner; left in place and untouched until then. |
+| `esportsfire` | `manfromexistence/esportsfire` | Client-adjacent product. Live Free Fire matches, ranked ladders, and open tournaments for the South Asian scene. Next.js + Tauri v2 + Bun. Not in the DX register. |
+| `ikra` | *none* | Client-adjacent product. Global Islamic LMS with super-admin / teacher / student / guardian roles, Next.js 16 + Bun + Tailwind v4 + shadcn/ui. Git repo with no `origin` remote and 70 dirty files. Not in the DX register. |
+| `lms` | *none* | Scratch scaffold for the LMS track, not a separate product. `package.json` is still named `nextjs-postgresql-template` and the folder ships a `ikra.zip` copy of the `ikra` project, with Drizzle/libSQL config. `ikra/` is the live tree. |
+| `bhcrd` | *none* | Client research scratch. Kaggle notebooks, GPU probes, and the BPS2025 Bangla handwritten character recognition dataset for a `hwcr` model. No DX linkage. |
 
 ## Hub infrastructure
 
@@ -111,7 +193,7 @@ still expose a CLI route.
 | `bin/` | Staged local binaries and the per-triple release builds. `dx.exe` and `dx.cmd` are the normal Windows entrypoints. |
 | `docs/` | The achievement register: one page per folder plus `docs/README.md` rules. |
 | `.dx/` | Hub runtime state and receipts. |
-| `DEPRICATED_9-17-2026/` | Parking lot for retired folders and repos (40 items on 2026-10-09). Nothing in it is deleted; it is history kept out of the way. |
+| `DEPRICATED_10-20-2026/` | Parking lot for retired folders, repos, and root junk (43 entries on 2026-10-20: 30 git repos and 13 plain folders). Nothing in it is deleted; it is history kept out of the way. |
 | `AGENTS.md` | The operating manual for this hub. Read it first. |
 | `TODO.md`, `CHANGELOG.md`, `DX.md`, `PROMPTS.md` | Open work, dated change log, worker notes, prompts. |
 | `build.ps1` | Hub build entrypoint. |
@@ -119,14 +201,21 @@ still expose a CLI route.
 
 ## Parked folders
 
-These folders used to sit at the hub root and were moved into
-`DEPRICATED_9-17-2026/` (moves, not deletions) during the 2026-10-09 cleanup:
+These folders used to sit at the hub root and were moved into the parking lot
+(moves, not deletions) during the 2026-10-09 and 2026-10-20 cleanups:
 
-| Was at root | Now parked as |
-| --- | --- |
-| `.vscode`, `.workbuddy-ai`, `benchmark`, `test`, `zzz`, `pi-test`, `channels`, `exa` | `DEPRICATED_9-17-2026\<same name>` |
-| `native` | `DEPRICATED_9-17-2026\native-2026-10-09` |
-| `mobile` | `DEPRICATED_9-17-2026\mobile-DEPRECATED-20261009-1616` |
+| Was at root | Now parked as | Parked on |
+| --- | --- | --- |
+| `.vscode`, `.workbuddy-ai`, `benchmark`, `test`, `zzz`, `pi-test`, `channels`, `exa` | `DEPRICATED_10-20-2026\<same name>` | 2026-10-09 |
+| `native` | `DEPRICATED_10-20-2026\native-2026-10-09` | 2026-10-09 |
+| `mobile` | `DEPRICATED_10-20-2026\mobile-DEPRECATED-20261009-1616` | 2026-10-09 |
+| `llama.cpp` | `DEPRICATED_10-20-2026\llama.cpp` | 2026-10-20 |
+| `ZZZ-bot-trash` | `DEPRICATED_10-20-2026\ZZZ-bot-trash` | 2026-10-20 |
+| `Frieren Beyon Journey's End.mp4`, `One Piece.mp4`, `Spiderman Into The SpiderVerse.mp4`, `big146.bin`, `Social.md`, `small.gz`, `$o`, `db`, `db-wal`, `TODO-ESSENCE.md` | `DEPRICATED_10-20-2026\root-junk\<same name>` | 2026-10-20 |
+
+The parking lot was named `DEPRICATED_9-17-2026` and was renamed to
+`DEPRICATED_10-20-2026` on 2026-10-20, when the second batch was added. The
+older items keep their original 2026-10-09 park date in the table above.
 
 `mobile` was superseded by `bot`, which is the dx app for both mobile and
 desktop. `native` was the C++ renderer workspace that `dx native` and
@@ -153,4 +242,4 @@ PowerShell as the shell.
 | How do I work here without breaking it? | `AGENTS.md` |
 
 MIT OR Apache-2.0
-updated: 2026-10-09 10:16 UTC
+updated: 2026-10-20 00:00 UTC

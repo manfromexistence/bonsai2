@@ -30,10 +30,20 @@ it deliberately does not claim.
 | --- | --- | --- |
 | **P0** | 4 | durability — work that exists only on this machine, and routing that is dead |
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
-| **P2** | 9 | hygiene and long-tail distribution |
+| **P2** | 8 | hygiene and the long tail |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
 | **TPU track** | 6 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **35** | total open |
+| | **34** | total open |
+
+**Pass of 2026-10-20 (fourth): the total moves 35 → 34 and P2 moves 9 → 8.** Two P2
+items left the ledger because the work was done, and one took their place.
+`MF-03` is **closed** — the parking lot was renamed `DEPRICATED_9-17-2026` →
+`DEPRICATED_10-20-2026` on an approved rename, and the two inside-siblings that still
+spell "deprecated" as "depricated" became the new item `MF-04`. `HUB-09` is **closed** —
+the unreachable-name junk file is no longer at the root: a byte-level listing of every
+root file, name escaped to codepoints, shows no U+F02A name and no 663-byte file.
+`HUB-10` stays open with its first half closed — the ~975 MB of video is parked in
+`DEPRICATED_10-20-2026/root-junk/`, `image.png` is still at the root.
 
 **Pass of 2026-10-20 (third): the total moves 38 → 35 and no score moves.** Three items
 left the ledger because the **route** was withdrawn, not because the work was done:
@@ -333,23 +343,6 @@ its entries do not resolve.
 - **Note on crates.io:** it is the only row gated by *code*, not by a store — the private
   `essence-dx/check` git dependency is what makes `cargo install` fail today (`DX.md:277`).
 - **Done when:** each row is shipped or explicitly descoped in `CHANGELOG.md`.
-
-### HUB-09 · A junk file with an unreachable name sat at the repo root — CLOSED 2026-10-20
-
-- **Evidence (when it was open):** a 663-byte root file whose name was
-  `` + `This` (verified by codepoint: U+F02A U+F02A U+0054 U+0068 U+0069
-  U+0073). Its content was shell error text —
-  `lists: cannot open \`lists' (No such file or directory)` and eleven similar
-  lines — i.e. the residue of a command whose arguments were split word by word
-  and redirected into a file. It was documentation of nothing.
-- **It was also a live hazard:** `Test-Path -LiteralPath '**This'` returned
-  **False**, so agents could not reliably reference, ignore, or clean it.
-- **Closed on 2026-10-20 by evidence, not by action:** a byte-level listing of
-  every root file (name escaped to codepoints) shows **no U+F02A name and no
-  663-byte file** at the hub root. The file was already gone before the
-  2026-10-20 parking pass; this session moved `llama.cpp`, `ZZZ-bot-trash`, and
-  ten named root files, and that file was not among them.
-- **Done when:** the root listing no longer contains it — verified 2026-10-20.
 
 ### HUB-10 · 933 MB of loose video and PNG at the hub root — PARTLY CLOSED 2026-10-20
 
