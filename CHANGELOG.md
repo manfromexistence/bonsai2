@@ -13,6 +13,50 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `feat:` the chunked gated-delta recurrence, verified against the one we ship
+
+**What is new:** `tpu/multi-token-verification/` — the exact *k*-token form of the
+gated-delta recurrence that `lane-aligned-ternary-kernel` advances one token at a
+time (`gdn_core`, `kernel.py:429-433`), derived and verified.
+
+**Why it is the work that matters:** the step reads 6.37 GiB of packed weights per
+token and the measured 8k step is **134.3 ms** of which **~109 ms is the projection's
+per-element work** (`receipt-gqa-b1-f16-tc1024.json`, 7.45 tok/s) — the step is ~15x
+off its own HBM roofline of 9.0 ms, and the MXU is ~99 % idle at batch 1. That cost is
+per *weight*, and per-weight work does not shrink when more tokens ride along with
+it. A verification pass computes *k* tokens against the same unpacked weights and
+amortises it *k* ways. No other lever on this kernel does that.
+
+**What was executed:** `python tpu/multi-token-verification/kernel.py` — 48 cases
+(chunk lengths 1-32, four decay profiles: none / mild / strong / per-head; numpy
+reference and JAX implementation; outputs *and* final state), worst absolute difference
+**7.153e-07**, `PASS`. The contract is `gdn_chunked` == `gdn_recurrence` to fp32
+rounding. **This is a CPU reference, not a TPU measurement** — no TPU receipt is claimed
+here.
+
+**Three things the derivation gets wrong, kept in the README because each one produced a
+wrong answer first:** the read sees the *decayed* state, so the coupling factor is `A_t`
+and not `A_{t-1}` (identical when there is no decay, so the bug hides); the system
+couples `s < t` while the output couples `s <= t`, and one mask cannot serve both; and
+the decay ratio `A_t/A_s` is indexed `[t, s]` against Gram and `k.q` matrices indexed
+`[s, t]`. The test uses L2-normalised keys because the model does (`l2n_b`,
+`kernel.py:388`) — that is what keeps the delta rule's triangular system well
+conditioned, so it is a correctness requirement of the mechanism, not a detail.
+
+**Also filed:** `TPU-11` — fold the decode's `- 1` and `* scale` out of the per-weight
+path (the scale is per out-column and belongs on the accumulator; the `- 1` is a constant
+offset whose correction is one scalar per token). The price is a real precision change,
+so its gate is the byte-identical first token, not a tolerance.
+
+**The acceptance arithmetic, corrected:** `TODO.md` `TPU-03` claimed a 10-15 tok/s
+ceiling for this mechanism, priced off a ~200 ms pass and an assumed acceptance. The
+pass is **134.3 ms** with the kv-head expansion removed, and Inferact's open-source
+megakernel for **Qwen3.8-27B** — the same base architecture as Bonsai 2 — reports
+**3-6 accepted tokens per step** with its DFlash2 draft [sourced:
+`inferact.ai/blog/tpu-megakernels`; their hardware]. 50 tok/s therefore needs 7
+accepted tokens per pass, and 6 gives 43 tok/s: the honest ceiling is **40-50 tok/s**,
+and the lever that moves it further is the unpack, not a bigger draft.
+
 ### 2026-10-21 - `chore:` the G: recycle bin emptied, reclaiming 18.73 GB
 
 **The third authorised deletion, and the lowest risk of the three.** Recycle-bin content has
@@ -1095,4 +1139,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-21 00:00 UTC
+updated: 2026-10-21 03:55 UTC

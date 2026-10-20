@@ -32,8 +32,8 @@ it deliberately does not claim.
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
 | **P2** | 7 | hygiene and the long tail |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
-| **TPU track** | 8 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **36** | total open |
+| **TPU track** | 9 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
+| | **37** | total open |
 
 **Pass of 2026-10-20 (fifth): the total moves 35 → 33 and P2 moves 9 → 7.** Two P2 items
 left the ledger because the work was done. `HUB-08` is **closed** — the 20-byte root
@@ -526,6 +526,26 @@ needs changing, and nothing in any repository can fix it.
   chain mask. The projections are shared across the chain, and the Pallas out-tile is
   already `(B, TC)`, so batching k candidates through the existing kernel is free —
   the recurrence and the mask are the work.
+- **The recurrence is solved (2026-10-21):** the chunked (WY) form of *our* gated-delta
+  recurrence is derived and verified against the token-by-token form on CPU — **48
+  cases, chunk lengths 1-32, four decay profiles, numpy and JAX, outputs and final
+  state, worst absolute difference 7.15e-07** (`tpu/multi-token-verification/kernel.py`,
+  `test_equivalence()`; the equations and the three ways the derivation can be got
+  wrong are in `tpu/multi-token-verification/README.md`). This is a CPU reference, not a
+  TPU measurement. What is left is plumbing, not mathematics: move the JAX form into
+  `gdn_core`, give the attention layers a `k`-query mask, add the draft, verify.
+- **The draft is a download, and the acceptance arithmetic has moved (2026-10-21):**
+  Inferact ships an open-source TPU megakernel for **Qwen3.8-27B** — the same base
+  architecture as Bonsai 2 (hybrid gated-delta-net + grouped-query-attention) — with
+  fused block verification and a DFlash2 draft, and reports **3-6 accepted tokens per
+  step** [sourced: `inferact.ai/blog/tpu-megakernels`, `github.com/Inferact/tpu-megakernels`;
+  1,515 tok/s at acceptance length 6 on 4x TPU v7 — their hardware, not ours]. At the
+  measured **134.3 ms** pass (`receipt-gqa-b1-f16-tc1024.json`, not the ~200 ms this item
+  assumed), 50 tok/s needs **7** accepted tokens per pass, and 6 accepted tokens gives
+  43 tok/s. So the honest ceiling with the published acceptance range and no unpack
+  work is **40-50 tok/s** — the item's earlier "10-15 tok/s" was priced off a 200 ms
+  pass and an assumed acceptance, and both numbers have now been replaced by measured
+  ones.
 - **Done when:** a receipt records **≥ 2 tokens accepted per forward pass** and
   **≥ 15 tok/s single-stream at `max_t` 8192**, with the acceptance rate measured rather
   than assumed, and the same text as the single-token run for the accepted prefix.
@@ -636,6 +656,28 @@ needs changing, and nothing in any repository can fix it.
 - **Done when:** a receipt records a step time below 40 ms at batch 1 / `max_t` 8192
   with the first token still `271` and the text byte-identical to
   `receipt-fuse1-b1-f16-tc1024.json`.
+
+### TPU-11 · Fold the decode's `- 1` and `* scale` out of the per-weight path
+
+- **Evidence:** the shipped kernel turns the trit decode into weights with
+  `(concatenate(...) - 1).astype(bfloat16) * sc`
+  (`tpu/lane-aligned-ternary-kernel/kernel.py:202-203`) — two extra full passes over
+  the (128, TC) unpacked tile, the widest array the projection touches, on a step whose
+  projection is ~109 ms of per-element work (`tpu/projection-cost-breakdown/README.md`).
+- **Why both can leave the per-weight path:** `sc` is **per out-column**
+  (`sc_ref[...][None, :]`, one scalar per column), so it multiplies the *accumulator*
+  after the matmul instead of every weight — `acc *= sc`, a rank-1 update on a (B, TC)
+  array. The `- 1` is a constant offset, so `sum_in (level-1)*x = sum_in level*x -
+  sum_in x`, and `sum_in x` is **one scalar per token**, not one operation per weight:
+  the correction is `acc -= sc[None, :] * x.sum(-1, keepdims=True)`.
+- **The price to check, not to assume:** the folded form sums `level*x` (values 0, x,
+  2x) instead of `-x, 0, x`, so the accumulator carries roughly twice the magnitude
+  and the final subtraction cancels it. That is a real precision change. It is also
+  exactly the kind of change that shows up only in the *text*, so the gate is the
+  byte-identical first token, not a tolerance.
+- **Done when:** a receipt records a lower ms/step than `receipt-gqa-b1-f16-tc1024.json`
+  with the first token still `271` and the text byte-identical to
+  `receipt-fuse1-b1-f16-tc1024.json`, and the receipt names the fold.
 
 ## The execution track — this repo owns `tpu/`
 
@@ -770,4 +812,4 @@ number survives being added up. It does **not** mean any product is release-qual
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-21 00:00 UTC
+updated: 2026-10-21 03:55 UTC
