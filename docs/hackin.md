@@ -74,7 +74,7 @@ trait in this port so the code can be built and tested without them:
 ## Honest status
 
 **repo-managed, and it runs.** The Rust workspace compiles, `cargo test
---workspace` is green (**611 passed, 0 failed**), and `cargo clippy
+--workspace` is green (**732 passed, 0 failed**), and `cargo clippy
 --workspace --all-targets -- -D warnings` is clean. `dx-hackin` drives a real
 model through the ported engine: the request goes out, the tool calls come
 back, the tools execute in a real Kali container, and the lifecycle tool ends
@@ -87,15 +87,15 @@ turn), the **provider** (an OpenAI-compatible client with the upstream's turn
 guard, retry policy and stream deadlines), the **budget** (one shared guard,
 the graduated warnings, the 90 % reserve), the **session store** (with the
 optimistic guard), the **request log** (one bounded record per attempt, and
-never a prompt), the **tool set** (42 tools), the **sandbox** (a real Kali
-container, created before the first tool call and deleted at the end), the
-**multi-agent graph** (a child really spawns, gets its own session, and
-reports back), and the **operating doctrine** (the upstream's prompt, ported).
+never a prompt), the **75 knowledge packs**, the **tool set**, the **sandbox**
+(a real Kali container, created before the first tool call and deleted at the
+end), the **multi-agent graph** (a child really spawns, gets its own session,
+and reports back), the **MCP client**, the **web research client**, and the
+**operating doctrine** (the upstream's prompt, ported).
 
 **Not claimed.** The port is **not** feature-complete, and it is **not**
-release-qualified. The **MCP layer** is not ported, so the MCP dispatch tools
-remain stubs. The **skill packs** are not ported, so the knowledge blocks
-render empty. The **web-search client** is not ported. The **dedupe judge**
+release-qualified. The **MCP stdio transport** and the upstream's supervised
+MCP session are not ported. The **subscription sign-in**, the **dedupe judge**
 and the **pricing** are not ported. The **TUI**, the **viewer**, the **cloud
 CLI** and the **telemetry** are not ported. No `dx-hackin` binary has been
 released, and the upstream's published benchmark (96% on XBEN, measured on
