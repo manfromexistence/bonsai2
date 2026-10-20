@@ -455,10 +455,17 @@ These stay visible on purpose. A blocker that is not written down becomes a sile
 | **BLK-02** | `sshd.exe` absent, nothing on `:22` | SSH-tunnel path is written and tested but never run live | `OPEN-WORK-2026-09-19.md:29` (Q-A16) |
 | **BLK-03** | `src-tauri` cannot link (`ort-sys`) | Desktop spawn/supervise, WSL choice, OS notification host op cannot be compiled here | `OPEN-WORK-2026-09-19.md:73` |
 | **BLK-04** | No `GH_TOKEN`/`GITHUB_TOKEN` in this shell; `essence-dx` is private | Full `cargo` builds 401 on the private `check` dependency; release assets unverifiable anonymously | `DX.md:277`, `DX.md:34` |
+| **BLK-05** | The account's **GitHub Actions billing** is unsettled | Every workflow in the org is created and scheduled, then refused: *"The job was not started because recent account payments have failed or your spending limit needs to be increased."* No job executes, in any repo. | `essence-dx/dx-forkness` run `39479589995` (2026-10-21), all nine jobs created and none started; `essence-dx/bot` runs of 2026-10-17 hit the identical wall |
 
 **Un-spelling note:** `BLK-04` also blocks `DIST-01`, and `DIST-01` blocks `DIST-02`,
 `DIST-03` and `DIST-04`. Four of the five distribution items collapse into one credential
 plus one repo visibility change.
+
+**`BLK-05` note:** this one is **account-level, not repository-level**. It is not fixed
+by any change to a workflow, and it is not specific to `dx-forkness` — `essence-dx/bot`'s
+own workflows were refused the same way three days earlier. The fix is in the account's
+**Billing & plans** settings. Until it is settled, no CI result in this org can be
+claimed, and a red X on a workflow is **not** evidence that the code is broken.
 
 ---
 

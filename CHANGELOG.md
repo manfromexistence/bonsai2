@@ -13,7 +13,59 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
-### 2026-10-21 - `fix:` dx-hackin's toolbox built at all — a stub and a real tool with the same name
+### 2026-10-21 - `feat:` dx-forkness is published, and the hub has an achievement page for it
+
+**The `harness2` port left the local disk and became a real repository, and the hub
+now has a page that says what it actually is.**
+
+- **The repository exists.** `essence-dx/dx-forkness` was created as a **private**
+  repository — the same visibility as every sibling repo in the org — and `main`
+  tracks `origin/main`. The 34 commits and 202 tracked files were pushed in one
+  step. The port's own contract says a commit is not durable until it is pushed;
+  until now, none of them was.
+- **What is in it.** Five crates — the method, the model client, the two editable
+  substrates, the three benchmark adapters and the command line. **346 tests**, 0
+  failures, and **eight differentials against the live Python**: the 20 prompt
+  constants byte for byte, **245** CPython `random` pairs with 0 mismatches, and the
+  `.xlsx`/`.pptx` renderers against `openpyxl`/`python-pptx`. The clippy `pedantic`
+  group is clean with `-D warnings` and no inline allows, `cargo deny check` passes
+  after four real advisories were fixed by upgrading rather than excluding, and
+  `make ci` runs every gate and exits 0.
+- **The hub's route.** `dx` already declared `forkness = forkness`; the folder is
+  now reachable through it *and* backed by a real repository.
+- **The achievement page.** `docs/forkness.md` follows the house shape — position,
+  achievements, validation to check, and a public-positioning boundary. It states
+  plainly that the upstream's published gains (11.5 points on WorkBuddy-Bench, 4.5
+  on JobBench, 11.8 percentage points on LAB) are the **upstream project's** claims
+  and carry **no receipt** in this tree, because this tree contains no run
+  artifacts.
+- **What is still open,** with the receipts in the product's own `TODO.md`: one real
+  benchmark rollout (needs the upstream checkouts and Vertex AI credentials), a run
+  of the CI workflow on a runner, and a receipt for any figure the port goes on to
+  report.
+
+### 2026-10-21 - `fix:` the account's GitHub Actions billing is stopping every workflow in the org
+
+**A red X on a workflow here does not mean the code is broken.**
+
+- **What happened.** The `dx-forkness` workflow ran on a runner for the first time
+  on 2026-10-21. GitHub parsed it and **created all nine jobs** — `fmt`, `clippy`,
+  `test`, `doc`, `parity`, `provenance`, `demo`, `differential`, `deny` — and then
+  refused to start any of them: *"The job was not started because recent account
+  payments have failed or your spending limit needs to be increased."*
+- **It is not this repository.** `essence-dx/bot`'s own workflows were refused the
+  identical way on 2026-10-17, three days earlier. The blocker is **account-level**:
+  the `essence-dx` Actions billing state, which is a setting on the account and not
+  a change to any workflow file.
+- **What the run still proves.** The workflow's *content* is sound: a malformed
+  workflow fails to parse and creates no jobs at all, and this one created nine.
+  Every job's commands have been run locally and pass — `make ci` in the product
+  runs the whole set and exits 0.
+- **Filed as `BLK-05`** in `TODO.md`, with the run IDs as the receipt. The fix is in
+  the account's **Billing & plans** settings; nothing in any repository needs to
+  change for it.
+
+### 2026-10-21 - `fix:` dx-hackin's toolbox built at all - a stub and a real tool with the same name
 
 **A polish pass over the product found a defect that had been shipped, and
 fixed it.**

@@ -15,7 +15,7 @@ DX Forkness is a **DX tool** in the house sense: a binary driven through
 | DX repo identity | `forkness/Cargo.toml` → `repository = "https://github.com/essence-dx/dx-forkness"`, `homepage` the same |
 | Upstream it ports | `forkness/README.md` → `google-research/harness2` @ `1cfe254`, paper *Harness²: Recursive Agent Harnessing for an Open World*, arXiv `2610.14224` |
 | Licence | Apache-2.0 both sides (`forkness/Cargo.toml` → `license = "Apache-2.0"`) |
-| Workspace layout | `forkness/Cargo.toml` → members `dx-forkness-core`, `dx-forkness-substrate`, `dx-forkness-bench`, `dx-forkness-cli` |
+| Workspace layout | `forkness/Cargo.toml` → members `dx-forkness-core`, `dx-forkness-client`, `dx-forkness-substrate`, `dx-forkness-bench`, `dx-forkness-cli` |
 | Registry entry | `cli/src/update_registry.rs` → `("forkness", "essence-dx/dx-forkness", "dx-forkness", "bin/dx-forkness")` |
 | Live command | `cli/src/cli.rs` → `Forkness(DxToolchainForwardArgs)`; `cli/src/command_dispatch.rs` → `Command::Forkness(args) => run_forkness(...)` |
 | Manifest path | `dx` manifest `paths` block → `forkness = forkness` |
@@ -30,17 +30,29 @@ DX Forkness is a **DX tool** in the house sense: a binary driven through
 | Reference-preserving port | The original Python implementation is kept beside the port as the executable specification rather than being discarded. |
 | Benchmark harness | A dedicated `dx-forkness-bench` crate carries the benchmark surface separate from the core and substrate. |
 | Substrate separation | `dx-forkness-substrate` isolates the execution substrate from `dx-forkness-core`, so the method can be ported to new substrates without rewriting the harness. |
+| Differential parity | Eight tests compare the port against the **live** Python: the 20 prompt constants byte for byte (they are *generated* by `scripts/extract_prompts.py`, not transcribed), **245** CPython `random` (seed, length) pairs with 0 mismatches, and the `.xlsx`/`.pptx` renderers against `openpyxl`/`python-pptx`. |
+| The benchmark runners | A rollout is launched the way the reference launches it, with the same argument lists, environment and deadlines — LAB's `opencode/run_opencode.py`, JobBench's `jb_opencode_runner.py`, and WorkBuddy's Harbor job. The WorkBuddy job YAML was diffed against the live Python: byte for byte identical. |
+| The gate suite | `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings` under the **`pedantic`** group with no inline allows, `cargo test --workspace` (**346 tests, 0 failures**), `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps`, `cargo deny check`, two parity scripts, an asset provenance check, and the local demo with its budget identity. `make ci` runs the whole set and exits 0. |
+| Measured coverage | **70.72% of lines** and 70.34% of regions, by `cargo llvm-cov`; the thin places are named rather than hidden. |
+| The supply chain | `cargo deny check` passes. Getting there took three advisories in `zip` and one in `quick-xml`; the fix was to move off them — `zip` is 9.0.5 and `quick-xml` 0.41.0 — and the renderers still match the reference byte for byte. |
+| The two state files | `forkness/TODO.md` carries every open item with its evidence and its done-when; `forkness/CHANGELOG.md` carries what changed, dated. The two are never edited in the same direction. |
 
 ## Validation To Check
 
 | Validation | Purpose |
 | --- | --- |
-| `forkness/README.md` | Upstream mapping, port rationale, licence, and Rust version floor (edition 2021, minimum 1.75). |
+| `forkness/README.md` | Upstream mapping, port rationale, licence, and Rust version floor (edition 2021, minimum supported Rust version 1.88). |
 | `forkness/Cargo.toml` | Workspace members, package identity, and DX repository declaration. |
 | `forkness/crates/dx-forkness-cli/` | The `dx-forkness` binary and its subcommands. |
-| `forkness/crates/dx-forkness-core/` | Core method and the `Score` invariant types. |
+| `forkness/crates/dx-forkness-core/` | Core method and the `Score` invariant types. `pynrand.rs` is the CPython parity; `judge.rs` carries the "a judge failure is not a zero" invariant; `tree.rs` carries the leak tripwires. |
+| `forkness/crates/dx-forkness-client/` | The improver and selector sessions, the audit trail and the content-addressed cache. |
 | `forkness/crates/dx-forkness-substrate/` | Execution substrate boundary. |
-| `forkness/crates/dx-forkness-bench/` | Benchmark harness and its `config.rs`. |
+| `forkness/crates/dx-forkness-bench/` | Benchmark harness and its `config.rs`; `src/runner/` holds the three rollout runners. |
+| `forkness/docs/PARITY.md` | The parity matrix: every reference module, its Rust counterpart, its verdict, and the known differences. |
+| `forkness/TODO.md` | The authoritative state. Every open item with its evidence and its done-when. |
+| `cargo test --workspace` | The behaviour holds, with no network, no credentials and no benchmark. |
+| `cargo test --workspace -- --ignored` | The port still matches the **live** Python. Needs `openpyxl` and `python-pptx`. |
+| `make -C forkness ci` | Every gate the CI workflow runs, in one command. |
 
 ## Release Status — Honest
 
@@ -49,17 +61,25 @@ DX Forkness is **repository-managed and command-routed, not release-qualified**.
 | Claim | Tier | Evidence |
 | --- | --- | --- |
 | The Rust port exists, builds, and produces `dx-forkness.exe` | repo-managed | `forkness/target/debug/dx-forkness.exe` on this machine |
-| The DX repository is published | **not true** | `gh repo view essence-dx/dx-forkness` → `Could not resolve to a Repository` |
-| A release artifact exists | **not true** | no repository, therefore no release |
-| `dx tool install forkness` works | **not true** | fails closed with `API 404` on the missing repository |
+| The DX repository is published | **repo-managed** | `gh repo view essence-dx/dx-forkness` → `{"name":"dx-forkness","visibility":"PRIVATE"}`; `git ls-remote origin` lists `refs/heads/main`; `main` tracks `origin/main` with no ahead marker. Created 2026-10-21, matching every sibling repo's **private** visibility. |
+| A release artifact exists | **not true** | `gh release list --repo essence-dx/dx-forkness` → empty. The repository exists; no release has been cut. |
+| `dx tool install forkness` works | **not true** | the registry entry resolves (`cli/src/update_registry.rs:52-55`), but there is no release to fetch an asset from, so the house `dx-<tool>-<rust-target-triple>[.exe]` naming still has nothing behind it. |
+| The upstream's published gains are reproduced here | **not true** | `python/README.md:41-45` states 11.5 points on WorkBuddy-Bench, 4.5 on JobBench and 11.8 percentage points on LAB's partial pass rate. This tree contains **no run artifacts**, so those figures carry no receipt in it. |
 
-The local `forkness/` workspace has **no `origin` remote** — it is a local
-checkout only. Publishing the `essence-dx/dx-forkness` repository and a
-release under the house `dx-<tool>-<rust-target-triple>[.exe]` asset naming is
-the gate.
+The `forkness/` workspace **has an `origin` remote** — `https://github.com/essence-dx/dx-forkness.git`
+— and `main` tracks it. The gate that remains is a **release**: a tagged version whose
+assets follow the house `dx-<tool>-<rust-target-triple>[.exe]` naming, so
+`dx tool install forkness` resolves an asset.
 
 Do not write "published" or "installable" about `dx forkness` without a
-receipt.
+receipt. "Published" is earned now; **"installable" is not**.
+
+One more thing the CI receipt must not be misread for: the workflow ran on a runner
+on 2026-10-21, GitHub created all nine jobs, and it then **refused to start any of
+them** because the account's Actions billing is unsettled — the same wall that
+stopped `essence-dx/bot`'s workflows three days earlier. A red X there is an
+account setting, not a defect in the code. It is filed as `BLK-05` in the hub's
+`TODO.md`.
 
 ## Public Positioning Boundary
 
@@ -81,12 +101,16 @@ Unsafe statement today:
 
 ## Open Work
 
-- Create and push the `essence-dx/dx-forkness` repository, then publish a
-  release whose assets follow the house `dx-<tool>-<rust-target-triple>` naming
-  so `dx tool install forkness` resolves an asset. Tracked in `cli/TODO.md`
-  under "Open: New Tool Release Gaps (grimoire / forkness)".
-- The local workspace has no `origin`; decide whether it is pushed to
-  `essence-dx/dx-forkness` directly or moved into a tree that already is.
+- **Cut a release.** The repository exists and `main` tracks it; a tagged version
+  whose assets follow the house `dx-<tool>-<rust-target-triple>` naming is what
+  makes `dx tool install forkness` resolve an asset. Tracked in `cli/TODO.md` under
+  "Open: New Tool Release Gaps (grimoire / forkness)".
+- **Run the CI workflow on a runner.** The workflow is checked in and its content
+  is verified — GitHub created all nine jobs — but the account's Actions billing
+  stops them from starting. `BLK-05` in the hub's `TODO.md`.
+- **One real benchmark rollout.** The upstream checkouts and their Vertex AI
+  credentials are not on this machine, so no rollout has run and no figure the port
+  reports has a receipt. Tracked in `forkness/TODO.md` as `FK-025` and `FK-034`.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 00:00 UTC
+updated: 2026-10-21 00:00 UTC
