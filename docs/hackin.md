@@ -108,6 +108,31 @@ port. The scan was verified against a **mock** of the OpenAI API, not against
 a real model, and the sandbox could not be brought up on the machine this was
 built on because Docker is not installed there.
 
+**The CI does not run.** GitHub allocates no hosted runner to the product's
+private repository: every job of every run fails in **two seconds with zero
+steps**, so the workflow in `hackin/.github/workflows/ci.yml` is **written and
+never executed**. The cause was measured, not guessed — the identical
+one-step workflow **succeeds** in the organisation's public `browser`
+repository, so the line is **visibility**, not configuration. GitHub's own
+message, recorded for `essence-dx/forkness` and `essence-dx/bot` in the hub's
+`TODO.md` `BLK-05`, is *"The job was not started because recent account
+payments have failed or your spending limit needs to be increased."* It
+worked for `essence-dx/daemon` on **2026-08-17** and had stopped by
+**2026-10-13**. *"CI is green"* is therefore **not** a claim this product can
+make; every check the workflow performs is run by hand on the development
+machine and passes. The remedy is the **account's**, not the product's.
+`hackin/TODO.md` `HK-31` carries the item and the measurement.
+
+**The citations are checked, not asserted.** The port's central rule is that
+every ported item cites the Python `file:line` it came from.
+`hackin/scripts/check-citations.py` verifies that against the reference
+checkout: the cited path exists, the cited line range is inside the file, a
+header's "(N lines)" claim is the file's real length, the cited range covers
+the symbol it names, and the backticks around a citation balance. It found
+**24** stale citations on its first run; all are fixed. A second script,
+`check-licences.py`, proves that every one of the **234** locked crates
+carries a licence `deny.toml` allows.
+
 The authoritative, itemised state lives in `hackin/TODO.md` (what is open,
 with evidence and a done-when check) and `hackin/CHANGELOG.md` (what changed,
 dated, one record per event).
