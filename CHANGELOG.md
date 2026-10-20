@@ -13,6 +13,27 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` the `tpu/` folder is split: the live track at the root, everything else named
+
+The folder had sixteen notebook generations, seven later kernels and five GPU
+experiments sitting side by side, so "which one is the real one" was a question
+every visit had to re-answer. It is now three named groups, and nothing was
+deleted: `git mv` kept every folder's history.
+
+| group | what is in it |
+| --- | --- |
+| **the root of `tpu/`** | `14-bonsai-transposed` (the kernel: 281.01 tok/s aggregate, 7.45 tok/s single-stream at 8k), `13-cost-sweep` (the cost model), `07-pallas-fusion` (the Pallas facts and the nine proofs), `04-bonsai-tpu-forward` (the correctness proof), `pq2-decode` (the 2-bit `PQ2_0` format and its port design), `env` (the auth patch), and the three documents `README.md`, `TPU-STATUS.md`, `DO-NOT-RETEST.md` |
+| `tpu/archive/` | the superseded generations — `01`, `02`, `03`, `05`, `06`, `08`, `09`, `10`, `11`, `12`, and the `bonsai2-{kernel,fast,cached,4way,tunnel}` / `tunnel-test` set — each still carrying its own receipt, because the ladder they form *is* the track's history (29.66 -> 281.01 tok/s) |
+| `tpu/out-of-scope-gpu/` | the GPU kernels — `bonsai2-27b-t4`, `mtp-test`, `spec-draft`, `spec-draft-2gpu`, `mtp-graft` — ruled out by `AGENTS.md` section 2 rule 7 and kept only for the record |
+| `tpu/tools/` | not kernels: `dq-cli` (the `dq` CLI source) and `bin` (local build outputs) |
+
+Every path reference in the live documents was rewritten to the new locations, the
+`.gitignore` allow-list gained the two-level patterns the new depth needs, and the run
+scripts under `colab_run/` that pointed at the moved notebooks were repointed. The
+`CHANGELOG.md` entries below keep the **old** paths on purpose: they are a record of
+what was true when they were written, and this entry is the map from those paths to the
+present ones.
+
 ### 2026-10-21 - `chore:` the `forkness` repository is `essence-dx/forkness`, not `essence-dx/dx-forkness`
 
 **The last repository in the org carrying the `dx-` prefix lost it.**
