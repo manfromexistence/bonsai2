@@ -125,8 +125,11 @@ renamed lot. Nothing was deleted.**
   (153 MB), `Social.md` (3.9 MB), `small.gz`, `$o`, `db`, `db-wal`,
   `TODO-ESSENCE.md`. All of them are denied by the `/*` rule and were never
   tracked, so the hub git index is unchanged by the move.
-- **Closed `MF-03`** (the folder-spelling drift). **Partly closed `HUB-10`**
-  (the ~1 GB of video is parked; `image.png` is still at the root). Opened
+- **Closed `MF-03`** (the folder-spelling drift) and **`HUB-09`** (the
+  unreachable-name junk file, already gone from the root). **Closed `HUB-08`**
+  (the 20-byte root `package.json` stub) and **`HUB-10`** (the loose video and
+  PNG at the root) by moving their files to
+  `DEPRICATED_10-20-2026/root-junk/`, which now holds 20 files. Opened
   `MF-04` for the two parked siblings that still spell "deprecated" as
   "depricated".
 - **Reclassified the non-DX root folders** as client work rather than junk:
@@ -149,6 +152,24 @@ renamed lot. Nothing was deleted.**
   path-dependency, no `dx` route, and no `TOOL_REGISTRY` entry. It is not a git
   repository, so the parking lot is now the only copy of that source.
   Byte-identical: 177.4 MB and 552 files before and after.
+- **Parked ten more dead root files** into `DEPRICATED_10-20-2026/root-junk/`,
+  which now holds 20 files. All ten were moved, not deleted, and all are denied
+  by the `/*` rule so the hub git index is unchanged:
+  `package.json` (the 20-byte `{"dependencies": {}}` stub that made Node
+  tooling treat `G:\Dx` as a JavaScript package root — closing `HUB-08`),
+  `fx.cmd` (a launcher for `%USERPROFILE%\.local\bin\fx.exe`, which does not
+  exist, that exits 127), `runner.sh` (prints "bash runner is up" and lists
+  PATH candidates), `mc5_two.py` and `mc5_three.py` (one-off MiniCPM5
+  scripts), `dataset-metadata.json` (a Kaggle dataset snapshot for the private
+  `bonsai2-27b-ptq1`), `bonsai2-27b-t4-bench-api.ipynb`,
+  `dx-typesafe-golden-fit-probe.ipynb`, `image.png` (3.0 MB — closing
+  `HUB-10`, archived by choice; it had no real reference in the hub, only
+  mentions of itself as the outstanding item), and `gguf_prism_report.json`
+  (a receipt recording that the GGUF is absent, moved because it was listed
+  for parking, not because it is worthless — it is still a receipt).
+  Every `package.json` citation in the hub docs points at `bot/`, `cli/`,
+  `extensions/` or another product folder, never at the hub root, so nothing
+  broke. The hub root now holds no stray binary, media or stub manifest.
 - **Hub root folder count.** This session parked six root folders —
   `llama.cpp`, `ZZZ-bot-trash`, `superpowers`, `magnitude`, `treg`, `tunnel` —
   and renamed a seventh (`lms` to `ikra`). The root stood at **40 folders**

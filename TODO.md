@@ -30,10 +30,25 @@ it deliberately does not claim.
 | --- | --- | --- |
 | **P0** | 4 | durability — work that exists only on this machine, and routing that is dead |
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
-| **P2** | 9 | hygiene and the long tail |
+| **P2** | 7 | hygiene and the long tail |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
 | **TPU track** | 5 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **35** | total open |
+| | **33** | total open |
+
+**Pass of 2026-10-20 (fifth): the total moves 35 → 33 and P2 moves 9 → 7.** Two P2 items
+left the ledger because the work was done. `HUB-08` is **closed** — the 20-byte root
+`package.json` stub was moved (not deleted) to
+`DEPRICATED_10-20-2026/root-junk/`, taking the "removed with a reason" branch rather
+than the "real manifest" branch: every `package.json` citation in the hub docs points
+at `bot/`, `cli/`, `extensions/` or another product folder, never the hub root, and a
+stub manifest at a repo root makes Node tooling treat `G:\Dx` as a JavaScript package
+root. `HUB-10` is **closed** — `image.png` took the "archive by choice" branch; it had
+no real reference anywhere in the hub, only mentions of itself as the outstanding item.
+Eight other dead root files moved with them (`fx.cmd`, `runner.sh`, `mc5_two.py`,
+`mc5_three.py`, `dataset-metadata.json`, `bonsai2-27b-t4-bench-api.ipynb`,
+`dx-typesafe-golden-fit-probe.ipynb`, `gguf_prism_report.json`), so the parking lot's
+`root-junk/` folder now holds 20 files and the hub root holds no stray binary, media
+or stub manifest.
 
 **Filing of 2026-10-20 (new product `hackin`): the total moves 34 → 35 and no score
 moves.** The `strix` folder was renamed to `hackin` and became the DX product folder for
@@ -54,8 +69,7 @@ items left the ledger because the work was done, and one took their place.
 spell "deprecated" as "depricated" became the new item `MF-04`. `HUB-09` is **closed** —
 the unreachable-name junk file is no longer at the root: a byte-level listing of every
 root file, name escaped to codepoints, shows no U+F02A name and no 663-byte file.
-`HUB-10` stays open with its first half closed — the ~975 MB of video is parked in
-`DEPRICATED_10-20-2026/root-junk/`, `image.png` is still at the root.
+`HUB-10` was closed in the fifth pass, below, once `image.png` was parked too.
 
 **Pass of 2026-10-20 (fourth): the total moves 35 → 34 and no score moves.** `TPU-06`
 is **closed**: the context cost at fixed batch is measured (batch 1, `max_t` 83 / 1024 /
@@ -254,18 +268,6 @@ its entries do not resolve.
 - **Done when:** the scaffold exists with a working `dx` manifest of its own, or the
   allow-list lines are removed.
 
-### HUB-08 · The root `package.json` is a 20-byte stub
-
-- **Evidence:** `Get-Content package.json` returns exactly `{"dependencies": {}}` — no
-  `name`, no `version`, no `license`, no `private`. It is untracked (denied by `/*`) and not
-  allow-listed.
-- **Why it matters:** a `package.json` at a repo root makes Node tooling treat `G:\Dx` as a
-  JavaScript package root, so `npm install` run from here resolves against the hub instead of
-  the product folder that owns the dependency.
-- **Done when:** it is either a real manifest (`name`, `version`,
-  `license: "MIT OR Apache-2.0"`, `private: true`) or removed as a proposal with a reason.
-
-
 ### DOC-02 · One page per folder is broken in both directions
 
 - **Evidence (measured 2026-09-26):** nine folders that exist on disk have no page —
@@ -382,22 +384,6 @@ for it.
 - **Note on crates.io:** it is the only row gated by *code*, not by a store — the private
   `essence-dx/check` git dependency is what makes `cargo install` fail today (`DX.md:277`).
 - **Done when:** each row is shipped or explicitly descoped in `CHANGELOG.md`.
-
-### HUB-10 · 933 MB of loose video and PNG at the hub root — PARTLY CLOSED 2026-10-20
-
-- **Evidence (when it was open):** `Get-ChildItem -File` over 1 MB —
-  `Frieren Beyon Journey's End.mp4` 347.8 MB, `One Piece.mp4` 296.2 MB,
-  `Spiderman Into The SpiderVerse.mp4` 285.6 MB, `image.png` 3.0 MB. Total
-  **932.6 MB** on a volume with ~5.2 GB free.
-- **They are not tracked** (denied by `/*`), so this is a disk-pressure item, not a repo
-  hygiene item, and it belongs in the same proposal queue as `ENV-01`.
-- **Closed for the three videos on 2026-10-20:** they were moved (not deleted)
-  to `DEPRICATED_10-20-2026/root-junk/`, together with `big146.bin` (153 MB),
-  `Social.md` (3.9 MB), `small.gz` (2 MB), `$o`, `db`, `db-wal`, and
-  `TODO-ESSENCE.md`. The 1 GB of video no longer sits at the root.
-- **Still open:** `image.png` (3.0 MB) is still at the root.
-- **Done when:** `image.png` is in `media/` or an archive by choice, not by a build
-  failing on a full disk.
 
 ### ENV-01 · The volume is full; the sweep is a proposal, not a task
 

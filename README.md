@@ -247,7 +247,7 @@ These folders used to sit at the hub root and were moved into the parking lot
 | `ikra` | `DEPRICATED_10-20-2026\ikra` | 2026-10-20 |
 | `tunnel` | `DEPRICATED_10-20-2026\tunnel` | 2026-10-20 |
 | `ZZZ-bot-trash` | `DEPRICATED_10-20-2026\ZZZ-bot-trash` | 2026-10-20 |
-| `Frieren Beyon Journey's End.mp4`, `One Piece.mp4`, `Spiderman Into The SpiderVerse.mp4`, `big146.bin`, `Social.md`, `small.gz`, `$o`, `db`, `db-wal`, `TODO-ESSENCE.md` | `DEPRICATED_10-20-2026\root-junk\<same name>` | 2026-10-20 |
+| `Frieren Beyon Journey's End.mp4`, `One Piece.mp4`, `Spiderman Into The SpiderVerse.mp4`, `big146.bin`, `Social.md`, `small.gz`, `$o`, `db`, `db-wal`, `TODO-ESSENCE.md`, `package.json`, `fx.cmd`, `runner.sh`, `mc5_two.py`, `mc5_three.py`, `dataset-metadata.json`, `bonsai2-27b-t4-bench-api.ipynb`, `dx-typesafe-golden-fit-probe.ipynb`, `image.png`, `gguf_prism_report.json` | `DEPRICATED_10-20-2026\root-junk\<same name>` | 2026-10-20 |
 
 The parking lot was named `DEPRICATED_9-17-2026` and was renamed to
 `DEPRICATED_10-20-2026` on 2026-10-20, when the second batch was added. The

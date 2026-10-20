@@ -29,7 +29,7 @@ manifest, and the public story for a family of ~20 separate products.
 `bin/`, `docs/`, `native/`, `test/`, `zzz/`, `.workbuddy-ai/`,
 `DEPRICATED_10-20-2026/` (49 entries on 2026-10-20: 34 git repos and 15 plain
 folders, including `llama.cpp`, `superpowers`, `magnitude`, `treg`, `ikra`,
-`tunnel`, `ZZZ-bot-trash`, and a `root-junk/` folder of 10 loose root files
+`tunnel`, `ZZZ-bot-trash`, and a `root-junk/` folder of 20 loose root files
 parked on 2026-10-20 — see `docs/space-review-2026-09-23.md:57` for the
 original 22-repo measurement).
 
