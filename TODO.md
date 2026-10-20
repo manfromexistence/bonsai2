@@ -32,8 +32,17 @@ it deliberately does not claim.
 | **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
 | **P2** | 9 | hygiene and long-tail distribution |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
-| **TPU track** | 9 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **38** | total open |
+| **TPU track** | 6 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
+| | **35** | total open |
+
+**Pass of 2026-10-20 (third): the total moves 38 → 35 and no score moves.** Three items
+left the ledger because the **route** was withdrawn, not because the work was done:
+`GPU-01`, `GPU-03` and `GPU-04` were GPU-route items, and the track is now TPU-only
+(`AGENTS.md` section 2, rule 7). The decision and what it cost are in `CHANGELOG.md`; the
+facts those items produced stay in `tpu/DO-NOT-RETEST.md` (section 14: the GGUFs carry no
+MTP head, the base model does). The 50 tok/s target is re-scoped to this TPU, and its
+route is `TPU-03` (multi-token verification) plus `TPU-07` (the ternary unpack, ~9x off the
+HBM roofline).
 
 **Pass of 2026-10-20 (second): the total moves 38 → 37 and no score moves.** Two items
 left the ledger, both because the work was done, not because the ledger was tidied:
@@ -129,7 +138,7 @@ its entries do not resolve.
   `cli/trash/.cargo-home` (`docs/space-review-2026-09-23.md:35`).
 - **Choose one of three answers per path — do not leave a fourth state:**
   1. **restore** the path (re-clone from `essence-dx/<name>`, which is recoverable for the
-     21 clean pushed repos in `DEPRICATED_9-17-2026/`),
+     21 clean pushed repos in `DEPRICATED_10-20-2026/`),
   2. **repoint** to where the tree actually is (e.g. `dx_agents` → its live location),
   3. **delete** the declaration and record the removal in `CHANGELOG.md`.
 - **Done when:** a script walks every key in the manifest's `paths` block, `Test-Path`
@@ -235,7 +244,7 @@ its entries do not resolve.
   `tui`, `token`, `tree`, `decisions`, `bot`, `mobile`, `os`, `video-player`, and `daemon`
   (tracked separately as `DOC-01`). Five pages describe folders that are no longer at that
   path — `agent`, `build`, `js`, `providers`, `py`, all now parked under
-  `DEPRICATED_9-17-2026/` per `docs/space-review-2026-09-23.md:59`.
+  `DEPRICATED_10-20-2026/` per `docs/space-review-2026-09-23.md:59`.
 - **One naming trap inside this item:** `docs/flow.md` has no `flow/` folder because flow's
   code sits in `bot/` — `git -C bot remote get-url origin` resolves to
   `https://github.com/essencefromexistence/flow.git`, a **different account** from the whole
@@ -305,15 +314,16 @@ its entries do not resolve.
 - **Done when:** every product folder is either declared or listed as intentionally
   undeclared, and `MF-01`'s checker enforces both directions.
 
-### MF-03 · Two spellings of the same archive folder, both wrong
+### MF-04 · Two parked siblings still spell "deprecated" as "depricated"
 
-- **Evidence:** the root folder is `DEPRICATED_9-17-2026` (`docs/space-review-2026-09-23.md:57`)
-  while a sibling inside it is `dx-video-player-depricated-20260820-1856` — "deprecated" and
-  "depricated" in one tree, plus two date formats (`9-17-2026` vs `20260820`).
-- **Constraint:** renaming it moves 22 pushed repos and every path that points into them.
-  Per `AGENTS.md` §2.2 this stays a **proposal with evidence**, not an edit.
-- **Done when:** a written decision exists naming the target convention, or the drift is
-  accepted and documented so nobody "helpfully" renames it mid-session.
+- **Evidence:** inside `DEPRICATED_10-20-2026/` sit
+  `dx-video-player-depricated-20260820-1856` and
+  `os-depricated-20260820-1856`. The parent folder was renamed to
+  `DEPRICATED_10-20-2026` on 2026-10-20; these two were deliberately left
+  alone because renaming them is a proposal, not an edit (`AGENTS.md` §2.2).
+- **Constraint:** each holds a separate git repo. Rename, do not delete.
+- **Done when:** both are renamed to the `DEPRECATED` spelling, or the drift is
+  accepted and documented so nobody "helpfully" renames them mid-session.
 
 ### DIST-05 · The three LATER distribution rows
 
@@ -324,28 +334,38 @@ its entries do not resolve.
   `essence-dx/check` git dependency is what makes `cargo install` fail today (`DX.md:277`).
 - **Done when:** each row is shipped or explicitly descoped in `CHANGELOG.md`.
 
-### HUB-09 · A junk file with an unreachable name sits at the repo root
+### HUB-09 · A junk file with an unreachable name sat at the repo root — CLOSED 2026-10-20
 
-- **Evidence:** a 663-byte root file whose name is `` + `This` (verified by codepoint:
-  U+F02A U+F02A U+0054 U+0068 U+0069 U+0073). Its content is shell error text —
-  `lists: cannot open \`lists' (No such file or directory)` and eleven similar lines — i.e.
-  the residue of a command whose arguments were split word by word and redirected into a
-  file. It is documentation of nothing.
-- **It is also a live hazard:** `Test-Path -LiteralPath '**This'` returns **False**, so
-  agents cannot reliably reference, ignore, or clean it.
-- **Proposed remedy (approval required, `AGENTS.md` §2.2):** move it to `trash/` using a
-  byte-level rename, not a typed path, and record the move in `CHANGELOG.md`.
-- **Done when:** the root listing no longer contains it and `CHANGELOG.md` says where it went.
+- **Evidence (when it was open):** a 663-byte root file whose name was
+  `` + `This` (verified by codepoint: U+F02A U+F02A U+0054 U+0068 U+0069
+  U+0073). Its content was shell error text —
+  `lists: cannot open \`lists' (No such file or directory)` and eleven similar
+  lines — i.e. the residue of a command whose arguments were split word by word
+  and redirected into a file. It was documentation of nothing.
+- **It was also a live hazard:** `Test-Path -LiteralPath '**This'` returned
+  **False**, so agents could not reliably reference, ignore, or clean it.
+- **Closed on 2026-10-20 by evidence, not by action:** a byte-level listing of
+  every root file (name escaped to codepoints) shows **no U+F02A name and no
+  663-byte file** at the hub root. The file was already gone before the
+  2026-10-20 parking pass; this session moved `llama.cpp`, `ZZZ-bot-trash`, and
+  ten named root files, and that file was not among them.
+- **Done when:** the root listing no longer contains it — verified 2026-10-20.
 
-### HUB-10 · 933 MB of loose video and PNG at the hub root
+### HUB-10 · 933 MB of loose video and PNG at the hub root — PARTLY CLOSED 2026-10-20
 
-- **Evidence:** `Get-ChildItem -File` over 1 MB — `Frieren Beyon Journey's End.mp4`
-  347.8 MB, `One Piece.mp4` 296.2 MB, `Spiderman Into The SpiderVerse.mp4` 285.6 MB,
-  `image.png` 3.0 MB. Total **932.6 MB** on a volume with ~5.2 GB free.
+- **Evidence (when it was open):** `Get-ChildItem -File` over 1 MB —
+  `Frieren Beyon Journey's End.mp4` 347.8 MB, `One Piece.mp4` 296.2 MB,
+  `Spiderman Into The SpiderVerse.mp4` 285.6 MB, `image.png` 3.0 MB. Total
+  **932.6 MB** on a volume with ~5.2 GB free.
 - **They are not tracked** (denied by `/*`), so this is a disk-pressure item, not a repo
   hygiene item, and it belongs in the same proposal queue as `ENV-01`.
-- **Done when:** they are in `media/` or an archive by choice, not by a build failing on
-  a full disk.
+- **Closed for the three videos on 2026-10-20:** they were moved (not deleted)
+  to `DEPRICATED_10-20-2026/root-junk/`, together with `big146.bin` (153 MB),
+  `Social.md` (3.9 MB), `small.gz` (2 MB), `$o`, `db`, `db-wal`, and
+  `TODO-ESSENCE.md`. The 1 GB of video no longer sits at the root.
+- **Still open:** `image.png` (3.0 MB) is still at the root.
+- **Done when:** `image.png` is in `media/` or an archive by choice, not by a build
+  failing on a full disk.
 
 ### ENV-01 · The volume is full; the sweep is a proposal, not a task
 
@@ -371,7 +391,7 @@ its entries do not resolve.
 
 ### ENV-03 · One parked repo is mid-operation and must not be touched
 
-- **Evidence:** `DEPRICATED_9-17-2026/mobile/` (branch `dev`) has 0 unpushed commits but
+- **Evidence:** `DEPRICATED_10-20-2026/mobile/` (branch `dev`) has 0 unpushed commits but
   **15,889 files staged for deletion** plus 50 untracked entries; the review's own verdict is
   "Mid-operation, not clean. **Review before touching**" (`docs/space-review-2026-09-23.md:68`).
 - **The other 21 of 22 are clean** and recoverable by plain `git clone`.
@@ -410,73 +430,6 @@ These stay visible on purpose. A blocker that is not written down becomes a sile
 plus one repo visibility change.
 
 ---
-
-### GPU-01 · 50 tok/s per stream is a GPU route first, and it is already half-proven
-
-- **Evidence:** `tpu/mtp-test/kernel.py:3-4` records the reference measurement —
-  `--spec-type draft-mtp --spec-draft-n-max 8` gives **50.44 tok/s at 48.3 % acceptance**
-  on a reference Qwen3.8-27B GGUF; `tpu/spec-draft/kernel.py:8-9` records **25.5 tok/s**
-  for the same 27B dense model on a Kaggle T4 with no draft at all.
-- **The draft is in the model file, not in a second download:** llama.cpp's MTP path uses
-  the checkpoint's own multi-token-prediction head (`n_layer_nextn`); the extra heads are
-  about half a gigabyte (ggml-org/llama.cpp discussion #24167).
-- **Two traps to carry into any run.** The flag was renamed on 2026-05-13
-  (`--spec-type mtp` → `--spec-type draft-mtp`) and the old spelling is ignored
-  *silently*, halving throughput without an error message (neoteric.no, 2026-05-13). And
-  the MTP head is trained on pretraining text, so acceptance on chat is ~83 % against
-  ~90 % on pretraining-like text (morphllm.com) — a chat-formatted target will accept
-  less than the reference number suggests.
-- **Why this is the GPU route and not the TPU one:** on the TPU the same model costs
-  **180.6 ms/step at batch 1** (`receipt-14-b1-f16-tc1024-fused.json`) against
-  **284.7 ms/step at batch 80** (`receipt-14-b80-f16-tc1024.json`), so 80 sequences cost
-  1.58× one sequence — the step is ~85 % per-projection launch overhead over ~400
-  projections, not bandwidth. The TPU traffic floor is 6.37 GiB ÷ 709 GB/s = **9.0 ms**
-  (`tpu/13-cost-sweep/README.md:28`), so 50 tok/s (20 ms/step) is 2.2× the floor and
-  would need the fixed cost amortised over several tokens (TPU-03), not tuning.
-- **Done when:** a receipt in this repo records **≥ 50 tok/s single-stream at `-c 8192`**
-  for Bonsai 2 27B, with the acceptance rate, the exact flags and the build commit
-  recorded next to it.
-
-### GPU-03 · Stack n-gram speculation on top of MTP
-
-- **Evidence:** llama.cpp's `--spec-type engram-mod` (n-gram) stacked with MTP reached
-  **56 tok/s on a Qwen3.6 27B** locally (walkthrough, 2026) — above the target on its
-  own; vLLM exposes the same idea as `num_speculative_tokens`, `prompt_lookup_max` and
-  `prompt_lookup_min` (NVIDIA TensorRT-LLM docs).
-- **The caveat that must be carried into the receipt:** n-gram acceptance depends on
-  copying from the prompt and the recent history, so it is strong on summarization,
-  document QA and code editing and weak on open prose (vLLM blog: up to 2.8× on
-  CNN/DailyMail, ~1.1× on general chat). A 56 tok/s number on a copy-heavy prompt is
-  not a 56 tok/s number for this track.
-- **Done when:** the same prompt set that produced GPU-01's number is run with MTP and
-  with MTP + n-gram, and both acceptance rates are recorded side by side.
-
-### GPU-04 · Graft the base model's MTP head into the PTQ1_0 file
-
-- **Evidence:** Bonsai 2's three published GGUFs carry **no** MTP head (measured from
-  the headers, 2026-10-20: 851 tensors, 0 named `nextn`/`mtp`, no
-  `qwen35.nextn_block_count`), but the base model does: the HF card records
-  `base_model: Qwen/Qwen3.8-27B`, and community GGUFs of that base are published with
-  the MTP head intact (`HauhauCS/...-MTP-GGUF`, `JonathanColetti/...-GGUF` tagged
-  `mtp`). llama.cpp's MTP path reads the head from the model file's own
-  `n_layer_nextn` block, so the head has to be *inside* the target file.
-- **What the graft costs, and what is already done (2026-10-20):** the head is
-  published as a standalone GGUF, `unsloth/Qwen3.8-27B-GGUF` ->
-  `MTP/mtp-Qwen3.8-27B-Q4_0.gguf` (1.28 GB, 18 tensors, `qwen35.nextn_predict_layers: 1`),
-  of which **15** are the `blk.64.*` nextn block and three are the shared embedding
-  and output weights the target already has. A graft tool is written and
-  **self-tested** (synthetic GGUFs in, byte-exact payloads out; the test caught two
-  real bugs -- tensor offsets are relative to the data section, so they must not be
-  shifted when the header grows, and F32 is four bytes per element). It is inlined
-  in `tpu/mtp-graft/kernel.py`, which runs the grafted file on a Kaggle T4. What is
-  left is the run itself.
-- **Why it is worth it:** the reference MTP configuration is 50.44 tok/s at 48.3 %
-  acceptance, and MTP acceptance on a chat-formatted prompt is ~83 % at one draft token
-  (morphllm.com) — far above what an 0.8B draft model or n-gram matching will reach on
-  open prose.
-- **Done when:** a merged GGUF loads in the llama.cpp build this repo already uses, and
-  a receipt records the tok/s and the acceptance rate at `-c 8192` with the head in the
-  file.
 
 ### TPU-02 · Overlap the weight DMA with compute
 
@@ -603,7 +556,16 @@ facts that must not be re-measured. Neither is a ledger of open work, and neithe
 substitute for this section.
 
 The target this section is written against: **50 tok/s for a single stream on an 8k
-context window**, for this model, with a receipt.
+context window**, for this model, **on TPU**, with a receipt.
+
+**Scope (2026-10-20): this track is TPU-only.** A GPU run is not a result of this
+project and may not be filed here (`AGENTS.md` section 2, rule 7; `tpu/README.md`
+section 6). The GPU-route items that were in this section -- the 50 tok/s GPU
+route, n-gram stacking on top of MTP, and the MTP-head graft -- were withdrawn
+on that decision; the facts they produced (Bonsai 2's GGUFs carry no MTP head;
+the base model does) are kept in `tpu/DO-NOT-RETEST.md` section 14 because they
+are facts about the artifact, and the route to 50 tok/s is now `TPU-03` plus
+`TPU-07`.
 
 ---
 
@@ -674,4 +636,4 @@ number survives being added up. It does **not** mean any product is release-qual
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-20 20:10 UTC
+updated: 2026-10-20 20:45 UTC

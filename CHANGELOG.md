@@ -13,6 +13,65 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-20 — `docs:` two new DX tools, one README rewrite, one parking-lot rename
+
+**`grimoire` and `forkness` are DX tools now. `llama.cpp` and the root junk are parked
+in a renamed lot. Nothing was deleted.**
+
+- **Promoted `grimoire` to a DX tool.** `grimoire/package.json` declares
+  `"name": "dx-grimoire"` and `"mcpName": "io.github.essence-dx/grimoire"`, and
+  `git -C grimoire remote -v` shows `origin = essence-dx/grimoire` with
+  `upstream = morluto/rea`. It is the DX fork of morluto's `rea`, and it is now a
+  registered DX tool, not a vendored third-party tree.
+- **Promoted `forkness` to a DX tool.** `forkness/README.md` states the port
+  "ships one `dx-forkness` binary with subcommands"; `forkness/Cargo.toml`
+  declares `repository = "https://github.com/essence-dx/dx-forkness"`.
+- **Registered both in the CLI** (`cli/src/update_registry.rs`, `cli/src/cli.rs`,
+  `cli/src/front_door_command_flow.rs`, `cli/src/command_dispatch.rs`,
+  `cli/src/workspace_tool_router.rs`, `cli/src/config.rs`). The registry is now
+  **21 entries (20 companions)**. `dx grimoire` and `dx forkness` are live
+  commands.
+- **Honest release status, stated as such:** `essence-dx/grimoire` has **no
+  GitHub release** (`gh release view -R essence-dx/grimoire` → `release not
+  found`) and `dx-grimoire` is **not on npm** (`npm view dx-grimoire` → 404);
+  `essence-dx/dx-forkness` **does not exist on GitHub** (`gh repo view` →
+  `Could not resolve to a Repository`) and the local `forkness/` workspace has
+  no `origin`. So `dx tool install grimoire` and `dx tool install forkness` both
+  fail closed with `API 404`, and both `dx <tool>` routes fail closed with an
+  install hint until a matching release artifact exists. `cli/TODO.md` now
+  carries one open item per gap with the evidence and the done-when.
+- **Rewrote `extensions/README.md` as a DX tool README.** It previously
+  presented as the Cline project front page (Cline logo alt text, `cline.bot`
+  docs links, `npm i -g cline`, `r/cline`, "Apache 2.0 (c) 2026 Cline Bot Inc.").
+  It now presents **DX Extensions**, states plainly which surfaces are
+  DX-branded (`apps/dx-vscode` ships as **DX Command Center**, package
+  `dx-vscode`, publisher `dx-runtime`, MIT) and which still carry upstream
+  names (`@cline/cli`, binary `cline`, `@cline/sdk`), and names the fork
+  boundary instead of hiding it.
+- **Renamed the parking lot** `DEPRICATED_9-17-2026` → `DEPRICATED_10-20-2026`.
+  Moves, not deletions.
+- **Parked into it** (all moves, nothing deleted):
+  `llama.cpp` (the `PrismML-Eng` Prism fork — its working tree was already
+  gutted: 129 files on disk against 3445 tracked files showing as deleted, and
+  no `Cargo.toml` in the hub path-depends on it; the `tpu/` kernels clone their
+  own `llama.cpp` inside their Kaggle/Colab run directory,
+  `tpu/bonsai2-cached/kernel.py:220-230`); `ZZZ-bot-trash`; and ten loose root
+  files into `root-junk/`: the three videos (`Frieren Beyon Journey's End.mp4`,
+  `One Piece.mp4`, `Spiderman Into The SpiderVerse.mp4` — ~975 MB together),
+  `big146.bin` (153 MB), `Social.md` (3.9 MB), `small.gz`, `$o`, `db`,
+  `db-wal`, `TODO-ESSENCE.md`. All of them are denied by the `/*` rule and were
+  never tracked, so the hub git index is unchanged by the move.
+- **Closed `MF-03`** (the folder-spelling drift). **Partly closed `HUB-10`**
+  (the ~1 GB of video is parked; `image.png` is still at the root). Opened
+  `MF-04` for the two parked siblings that still spell "deprecated" as
+  "depricated".
+- **Reclassified the non-DX root folders** as client work rather than junk:
+  `dhakaraiment`, `esportsfire`, `ikra`, `lms`, and `bhcrd` now have a
+  "Client and adjacent projects (not DX)" table in `README.md`.
+- **Hub root went from 47 folders to 43.** Free space on `G:` was 19.15 GB
+  before the move and 20.04 GB after (`Get-PSDrive G`) — the moves are
+  same-volume metadata operations, so they cost no space.
+
 ### 2026-10-20 — `docs:` the 50 tok/s route: MTP speculation on the GPU, launch fusion on the TPU
 
 **The target is 50 tok/s for a single stream on an 8k context window. The research says
@@ -164,6 +223,34 @@ on this machine is a GPU run, not a TPU one.**
   (the step is ~20x off the slice's 9.0 ms traffic floor, and the unpack is 82 % of
   a projection). Filed as `TODO.md` `TPU-07` rather than promised.
 
+### 2026-10-20 — `docs:` the track is TPU-only; the GPU route is withdrawn and its ledger items come out
+
+- **The decision:** this project runs Bonsai 2 27B — and other good models — **on TPU
+  silicon, at maximum speed**. A GPU measurement answers a different question, does not
+  move the TPU kernel, and is not a result of this project.
+- **The rules are written where an agent meets them:** `AGENTS.md` section 2 now has
+  **rule 7** — the track is TPU-only, an agent may not start a GPU run without the
+  user's explicit go-ahead, and a GPU is otherwise allowed only as a *correctness
+  oracle* (llama.cpp's text as a cross-check), labelled as such and never as a speed
+  claim. `tpu/README.md` section 6 carries the same rule, and its directory map now
+  marks the Kaggle GPU folders (`bonsai2-27b-t4/`, `mtp-test/`, `spec-draft/`,
+  `spec-draft-2gpu/`, `mtp-graft/`) as out of scope since 2026-10-20, kept for the
+  record.
+- **What was stopped:** four Kaggle GPU kernels had been queued for this project (an
+  MTP-head test, a draft-model + n-gram run at `-c 8192`, a 2xT4 variant, and an MTP-head
+  graft). Kaggle's API has no cancel, so all four kernels were **deleted** and every
+  local watcher was killed; their source stays in this repo and no GPU quota was spent
+  on them after the decision.
+- **Withdrawn from `TODO.md`:** `GPU-01`, `GPU-03`, `GPU-04` — the 50 tok/s GPU route,
+  n-gram stacking on top of MTP, and the MTP-head graft. The 50 tok/s target is
+  re-scoped to this TPU, where its route is `TPU-03` (multi-token verification) and
+  `TPU-07` (the ternary unpack, ~9x off the slice's HBM roofline).
+- **What survives the withdrawal, because it is a fact about the artifact:** Bonsai 2's
+  three published GGUFs carry **no MTP head** — 851 tensors, none named `nextn`/`mtp`, no
+  `qwen35.nextn_block_count`, measured from the headers with 40 MB byte-range reads —
+  while the base model `Qwen/Qwen3.8-27B` does carry one. Any future TPU-side
+  speculation therefore needs its draft from somewhere else.
+
 ### 2026-09-26 — `docs:` the hub's change history is no longer a phantom file
 
 **`CHANGELOG.md` now exists.** Until today it was referenced everywhere and present
@@ -294,4 +381,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-20 20:10 UTC
+updated: 2026-10-20 20:45 UTC
