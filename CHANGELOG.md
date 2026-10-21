@@ -13,68 +13,92 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
-### 2026-10-21 - `docs:` the two code-graph checkouts in `codebase/`, compared
+### 2026-10-21 - `chore:` the codebase product is now `essence-dx/codebase`
 
-**`codebase/TECH.md` is a new hub document, and the README's vendored-workspaces
-table now lists both projects instead of one.**
+**`G:\Dx\codebase` stops being two vendored checkouts and becomes one DX product
+repository.**
 
-`G:\Dx\codebase\` holds two independent third-party checkouts, each with its own
-`.git` and `origin` remote: `DeusData/codebase-memory-mcp` (4381 commits, MIT) and
-`colbymchenry/codegraph` (1535 commits, MIT). Both were at an upstream commit
-dated 2026-10-20 when this entry was written.
+**What was done.**
 
-**The comparison, in one paragraph.** They are the same category and the same
-interface - local-first MCP servers that parse a codebase with tree-sitter into a
-symbol/edge graph in SQLite and serve it to coding agents - and they diverge
-after that. `codebase-memory-mcp` is a knowledge-graph *platform*: pure C, 162
-vendored grammars, 17 MCP tools, a read-only openCypher subset, 33 indexing
-passes, Hybrid LSP type resolution on 11 language rows, and a browser UI
-(CBM Lens). `codegraph` is a *retrieval engine*: TypeScript plus a Rust
-extraction kernel, 34 languages, and **one** MCP tool exposed on purpose, with
-seven more hidden behind `CODEGRAPH_MCP_TOOLS`. The two projects made opposite
-bets on how many tools an agent should see, and each published its reasoning.
+- The second candidate, `colbymchenry/codegraph`, was removed from
+  `G:\Dx\codebase\codegraph` under explicit user approval. It was a clean
+  checkout at `8beab37`, 1535 commits, 204.5 MB, and it is fully regenerable:
+  `git clone https://github.com/colbymchenry/codegraph` restores it. Nothing
+  unique was lost - the working tree was clean and every commit was already
+  pushed to its upstream remote. The comparison evidence it carried is preserved
+  in `codebase/TECH.md`, cited against the upstream commit.
+- `G:\Dx\codebase\codebase-memory-mcp\` was flattened: its contents, including
+  `.git`, moved up one level, so `G:\Dx\codebase` is now the repository root.
+- The repository was published as **`essence-dx/codebase`**, a real GitHub fork of
+  `DeusData/codebase-memory-mcp` (public, default branch `main`). The
+  organisation name is why the slug carries no second `dx` prefix - the repo is
+  `essence-dx/codebase`, not `essence-dx/dx-codebase`.
+- Remotes are set the standard fork way: `origin` is
+  `https://github.com/essence-dx/codebase.git`, `upstream` is
+  `https://github.com/DeusData/codebase-memory-mcp.git`.
+- The local checkout was fast-forwarded from `a2227157` to `3457b21b`. It was 74
+  commits behind; upstream landed 74 commits between 2026-10-20 06:34 and
+  2026-10-21 03:44, and upstream's own README was restructured in that window.
+- The product repo gained a DX layer of three files plus a six-line `.gitignore`
+  addition: `TECH.md` (the decision record), `TODO.md` (12 items, each with
+  evidence and a done-when check), and `CHANGELOG.md` (the DX ledger).
+  `git diff --stat upstream/main..main` shows 4 files, 501 insertions, 0
+  deletions - **no upstream source was modified**.
 
-**On "codebase memory", the answer is asymmetric.** Measured against seven
-layers - persistent index, structural graph, semantic retrieval, decision memory,
-runtime memory, cross-repo memory, visual memory - `codebase-memory-mcp` has
-five: its semantic layer is 11 algorithmic embedding signals in
-`src/semantic/semantic.h`, its decision memory is the `manage_adr` store, its
-runtime memory is `src/traces/traces.c`. `codegraph` has two: a persistent
-per-project index and the structural graph. It has no embeddings (its own source
-says "deterministic, no embeddings", `codegraph/src/mcp/tools.ts:3926`), no ADR
-storage (zero occurrences of "ADR" or "architecture decision" in `codegraph/src/`),
-and no trace or cross-repo memory. A naming trap is called out in the document:
-CBM's `src/store/graph_mem.c` is a RAM cache of the edge adjacency, not a memory
-subsystem.
+**Why the `.gitignore` change.** Upstream ignores `CHANGELOG.md` at line 61
+because it publishes release notes on GitHub instead. This fork keeps its own
+ledger at that path, so the rule is negated in a marked DX block. Without it a
+plain `git add -A` silently drops the ledger entry that the same-commit rule
+(`AGENTS.md` section 5) requires - the exact failure the hub has been caught with
+before.
+
+**The comparison that chose the base, in one paragraph.** The two candidates were
+the same category and the same interface - local-first MCP servers that parse a
+codebase with tree-sitter into a symbol/edge graph in SQLite and serve it to
+coding agents - and they diverge after that. `codebase-memory-mcp` is a
+knowledge-graph *platform*: pure C, 162 vendored grammars, 17 MCP tools, a
+read-only openCypher subset, 33 indexing passes, Hybrid LSP type resolution on 11
+language rows, and a browser UI. `codegraph` is a *retrieval engine*: TypeScript
+plus a Rust extraction kernel, 34 languages, and **one** MCP tool exposed on
+purpose, with seven more hidden. On "codebase memory" the answer was asymmetric -
+measured against eight layers (persistent index, structural graph, semantic
+retrieval, decision memory, runtime memory, cross-repo memory, visual memory,
+documentation memory) the chosen base had **six** and the other had **two**. The
+removed candidate had no embeddings (its own source says "deterministic, no
+embeddings"), no ADR storage, no trace memory and no cross-repo model. Both
+projects made opposite bets on how many tools an agent should see, and each
+published its reasoning; the chosen bet is kept, and the other is `CB-05` in the
+product's own ledger.
 
 **What was measured on this machine.** Neither project is installed: no CLI on
 `PATH`, no `.codegraph` or `.cbm` directory anywhere under `G:\Dx`, no
 `~/.cache/codebase-memory-mcp`, and no `mcp` block in this machine's opencode
-config. **Neither was built or run here** - every claim in the document is
-*repo-managed* (read out of the working tree, `file:line` named), and every
-benchmark number attributed to either project is marked upstream-claimed, not
-measured in this hub.
+config. **Neither was built or run here** - every claim in the product's
+`TECH.md` is *repo-managed* (read out of the working tree, `file:line` named),
+and every benchmark number attributed to either project is marked upstream-claimed,
+not measured here.
+
+**Hub wiring.**
+
+| File | Change |
+| --- | --- |
+| `README.md` | `codebase` added to the DX products table with the honest qualifier: a fork, not DX-authored, no `dx codebase` route and no release yet. The "Vendored third-party workspaces" table is now empty - its two rows described folders that no longer exist in that shape. |
+| `.gitignore` | The `codebase/` allow-list block is removed. `codebase/` is a child repository now, so the root `/*` rule covers it and the hub must not track it (`AGENTS.md` section 2, rule 1). |
+| `TODO.md` | `MF-06` - declare `codebase` in the `dx` manifest. `DOC-05` - add `docs/codebase.md` to the achievement register. P1 moves 12 -> 14, total 37 -> 39. |
 
 **One residue flagged, not claimed.** Eight directories at
 `%LOCALAPPDATA%\codegraph\<hex>\<hex>\` each hold a 53,248-byte `store.db` dated
 2026-07-07. Their schema does not match `codegraph` v1.6.2 (`codegraph.db`,
-`nodes(id, kind, ...)`, `files(path, content_hash, ...)` - `codegraph/src/db/schema.sql:20-77`),
-and neither `store.db` nor `xxh3` appears anywhere in that repository. They are
-residue from some other tool that used the name "codegraph", not an index of
-either project here. Left in place - 426 KB total, and the hub's rule is proposal,
-not deletion (`AGENTS.md` section 2, rule 2).
+`nodes(id, kind, ...)`, `files(path, content_hash, ...)`), and neither `store.db`
+nor `xxh3` appears anywhere in that repository. They are residue from some other
+tool that used the name "codegraph", not an index of either project here. Left in
+place - 426 KB total, and the hub's rule is proposal, not deletion (`AGENTS.md`
+section 2, rule 2).
 
-**Hub wiring.** `codebase/TECH.md` is the only thing this repository tracks under
-`codebase/`. The `.gitignore` gains `!/codebase/`, `/codebase/*`,
-`!/codebase/TECH.md`, so `git add codebase` stages exactly one file and cannot
-reach either nested repository (`AGENTS.md` section 2, rule 1). `README.md:133`
-gains the missing `codebase/codebase-memory-mcp` row; the table previously listed
-only `codebase/codegraph`, and `CHANGELOG.md:824` records that a "broken
-`codebase-memory-mcp` clone" was removed on 2026-10-20, so the folder on disk is a
-re-checkout that the README had not caught up with. Neither project is a DX
-product, has no `dx <tool>` route, and is not in the `dx` manifest's `paths`
-block; no `docs/<tool>.md` register page is owed for either.
-
+**Not claimed.** The product has no release, no `dx` route, no `TOOL_REGISTRY`
+entry and no register page. Those are `CB-01` through `CB-04` in
+`codebase/TODO.md`, and `CB-01` is blocked on the first release. Nothing in this
+entry is release-qualified.
 ### 2026-10-21 - `chore:` the F: Rust build output deleted, reclaiming 7.56 GB
 
 **The seventh authorised deletion, on F:.** The target was the Rust build output the survey

@@ -85,12 +85,8 @@ trash/
 # typesafe is its own repo (essence-dx/dx-typesafe) - do not track it here.
 /typesafe/
 
-# codebase/ holds two vendored third-party repos (codebase-memory-mcp, codegraph),
-# each with its own .git and origin remote. Track only the hub's own comparison
-# doc; keep every nested repository out of this index (AGENTS.md rule 1).
-!/codebase/
-/codebase/*
-!/codebase/TECH.md
+# codebase/ is its own repo (essence-dx/codebase) - do not track it here.
+# The root /* rule above already covers it; this line states the intent.
 
 !/JULES_BUILD_PROMPT.md
 !/CAP.md

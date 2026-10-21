@@ -29,11 +29,11 @@ it deliberately does not claim.
 | Priority | Open | What it guards |
 | --- | --- | --- |
 | **P0** | 4 | durability — work that exists only on this machine, and routing that is dead |
-| **P1** | 12 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
+| **P1** | 14 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
 | **P2** | 7 | hygiene and the long tail |
 | **BLOCKED** | 4 | held by hardware/software not present on this machine |
 | **TPU track** | 9 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **37** | total open |
+| | **39** | total open |
 
 **Pass of 2026-10-20 (fifth): the total moves 35 → 33 and P2 moves 9 → 7.** Two P2 items
 left the ledger because the work was done. `HUB-08` is **closed** — the 20-byte root
@@ -303,6 +303,29 @@ its entries do not resolve.
   `executed` or `release-qualified`, per `AGENTS.md` §4.
 - **Done when:** either the receipt exists and the wording is restored with a link to it, or
   the wording is permanently reduced to what is evidenced.
+
+### MF-06 · The `codebase` product is not declared in the `dx` manifest
+
+- **Evidence:** `G:\Dx\codebase` is a DX product as of 2026-10-21 — the repository
+  `essence-dx/codebase`, a fork of `DeusData/codebase-memory-mcp` — and the hub
+  README lists it in the DX products table (`README.md:125`). The `paths` block of
+  `G:\Dx\dx` has no `codebase` entry, so no `dx` route can resolve it. This is the
+  same class of defect as `MF-01` (declared paths that do not resolve) seen from the
+  other side: an undeclared product that cannot be routed to.
+- **Done when:** the `dx` manifest declares `codebase`, and `Test-Path` on the
+  resolved folder is `True` and points at `G:\Dx\codebase`.
+
+### DOC-05 · `codebase` has no page in the achievement register
+
+- **Evidence:** `docs/README.md` carries one row per DX product folder and has no
+  row for `codebase`. The product's own ledger lives in the product repo
+  (`codebase/TODO.md`, 12 items), which is the right place for product work, but
+  the hub's register is still the canonical answer to "what has folder X actually
+  achieved" (`AGENTS.md` §3). The product repo's own `TECH.md` is the source for
+  that page.
+- **Done when:** `docs/codebase.md` exists and `docs/README.md` carries the
+  matching row, and every number in the page has a `file:line` in
+  `G:\Dx\codebase` that points at it.
 
 ### DIST-01 · Private releases block eleven distribution channels at once
 

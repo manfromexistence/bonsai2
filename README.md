@@ -122,6 +122,13 @@ still expose a CLI route.
 | decisions | `decisions` | `essence-dx/dx-decisions` | dx decision-model system | `dx decisions` (fails closed until release) |
 | extensions | `extensions` | `essence-dx/extensions` | DX Extensions — the DX fork of the Cline agent stack; `apps/dx-vscode` ships as the DX Command Center | none |
 | website | `website` | `essence-dx/website` | dx official website | `dx site` (hidden) |
+| codebase | `codebase` | `essence-dx/codebase` | The code knowledge graph for coding agents. A **fork** of `DeusData/codebase-memory-mcp` (MIT), upstream kept as the `upstream` remote; the DX layer is the decision record in `codebase/TECH.md` and the ledger in `codebase/TODO.md` | none yet — no `dx codebase` route and no release (`codebase/TODO.md` `CB-01`, `CB-02`) |
+
+`codebase` is a **fork, not a DX-authored tool**. The indexer, the store, the
+Cypher engine, the 162 vendored grammars and CBM Lens are upstream's work under
+MIT; the `essence-dx` organisation name is why the slug carries no second `dx`
+prefix. The repository is public and forks `DeusData/codebase-memory-mcp` on
+GitHub, so "Sync fork" and upstream pull requests both work.
 
 ## Vendored third-party workspaces
 
@@ -130,15 +137,12 @@ and carry no `dx <tool>` route. Keep them out of the tool table above.
 
 | Folder | Upstream remote | What it is | DX relationship |
 | --- | --- | --- | --- |
-| `codebase/codegraph` | `colbymchenry/codegraph` | Code-graph tool, nested one level down | Vendored reference. Not DX-authored, not registered. |
-| `codebase/codebase-memory-mcp` | `DeusData/codebase-memory-mcp` | Code-graph tool, nested one level down | Vendored reference. Not DX-authored, not registered. |
 
-Both are local-first MCP servers that build a code knowledge graph for coding
-agents, and they disagree on agent interface design - one ships 17 MCP tools, the
-other ships 1 on purpose. `codebase/TECH.md` compares them, including which one
-has a "codebase memory" layer and which does not. That file is the only thing in
-`codebase/` this repository tracks; both projects are third-party checkouts and
-carry no `dx <tool>` route.
+*(No vendored checkouts remain at the time of writing. The two that were
+compared on 2026-10-21 - `colbymchenry/codegraph` and
+`DeusData/codebase-memory-mcp` - were resolved into the `codebase` product
+above: the second became the fork, the first was removed. The comparison and
+the deletion record are in `codebase/TECH.md` and `codebase/CHANGELOG.md`.)*
 
 Three root clones were parked on 2026-10-20 because DX already carries the
 same content, or because nothing referenced them:
