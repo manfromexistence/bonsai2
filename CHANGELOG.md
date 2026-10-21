@@ -13,6 +13,30 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` 122 GB of scratch build output reclaimed, with approval
+
+`G:` fell from 26 GB free to 1.3 GB during this session. The cause was
+identified, not guessed: `G:\Temp\UserTemp\opencode\target` -
+**122.55 GB in 252,232 files** - a Rust `target/debug` directory that some
+workspace built into the scratch area through `CARGO_TARGET_DIR` (there is no
+`Cargo.toml` beside it).
+
+**It was proposed before it was removed, and removed after approval**
+(`AGENTS.md` §2.2). The evidence: cargo's own `CACHEDIR.TAG` is present, so it
+is regenerable build output and not source; no source file lives under it; and
+its timestamps show it may belong to another agent sharing the scratch area,
+so deleting it costs that agent a rebuild rather than anything of value.
+
+| | |
+| --- | --- |
+| The approved target, and only it | `G:\Temp\UserTemp\opencode\target` |
+| Explicitly excluded | `base_tree`, `upclean`, `dmlvenv`, `merged*`, `binprobe`, `dxmerge*`, `colab_run`, every log, and **all** of `G:\Dx` - including `G:\Dx\harness`, whose own 43 GB `target/` is another agent's active build |
+| The result | **1.3 GB free -> 119.47 GB free** |
+
+`G:\Dx\harness` was left alone on purpose: it is a separate child repo with
+its own remote (`essence-dx/harness`), it is being worked on right now, and
+deleting another agent's build state is not a decision this session owns.
+
 ### 2026-10-21 - `feat:` the `codebase` fork is installable by the hub
 
 The fork's release assets now carry the hub's names, so `dx` can install it.
