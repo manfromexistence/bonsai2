@@ -680,6 +680,24 @@ needs changing, and nothing in any repository can fix it.
   work is **40-50 tok/s** — the item's earlier "10-15 tok/s" was priced off a 200 ms
   pass and an assumed acceptance, and both numbers have now been replaced by measured
   ones.
+- **The chunked path is exact on the real model (2026-10-21):** the kernel grew a
+  CHUNK/CHUNKCHECK pair, and the gate replays k tokens in **one chunked pass**
+  from the state before them and compares the per-position argmaxes with the
+  sequential ones. 
+eceipt-chunk4-b1-f16-tc1024.json: **3/3 agree, exact=true**,
+  the chunk's position j is the sequential position j+1 (as the derivation says it
+  must be), the text is identical to the shipped path's and the first token is still
+  271. The CPU contract in 	pu/multi-token-verification/ now covers **72 cases**,
+  including a decay profile that underflows -- which is what the model's does, and
+  what made the first chunked run a NaN: the cumulative decay has to be accumulated
+  in the **log domain**, because A_t underflows inside a chunk and A_t/A_s
+  cannot be recovered from a product that has flushed to zero.
+- **What is left on this item:** the chunk length is 4, and the draft is not built
+  yet. The next measurements are CHUNK=16 (the compile-time HLO temporaries grow
+  with the chunk) and then the acceptance rate of a real draft -- the DFlash2 draft
+  for this base architecture (1.92 B parameters, 3.58 GB) or the MTP head from the
+  community GGUF (5.87 GB lean). At 119.5 ms per pass, 6 accepted tokens per pass is
+  50.2 tok/s.
 - **Done when:** a receipt records **≥ 2 tokens accepted per forward pass** and
   **≥ 15 tok/s single-stream at `max_t` 8192**, with the acceptance rate measured rather
   than assumed, and the same text as the single-token run for the accepted prefix.
@@ -790,63 +808,6 @@ needs changing, and nothing in any repository can fix it.
 - **Done when:** a receipt records a step time below 40 ms at batch 1 / `max_t` 8192
   with the first token still `271` and the text byte-identical to
   `receipt-fuse1-b1-f16-tc1024.json`.
-
-### TPU-11 · Fold the decode's `- 1` and `* scale` out of the per-weight path
-
-- **Evidence:** the shipped kernel turns the trit decode into weights with
-  `(concatenate(...) - 1).astype(bfloat16) * sc`
-  (`tpu/lane-aligned-ternary-kernel/kernel.py:202-203`) — two extra full passes over
-  the (128, TC) unpacked tile, the widest array the projection touches, on a step whose
-  projection is ~109 ms of per-element work (`tpu/projection-cost-breakdown/README.md`).
-- **The bigger half of it, found 2026-10-21: the tile is fp32, not bf16.** The cast
-  and the multiply are in one expression, so `.astype(bfloat16) * sc` promotes **back to
-  fp32** — the MXU is fed a 4-byte-per-element tile where it needs 2. The tile is
-  "the largest single term in the projection's memory traffic" by the kernel's own
-  comment, so it is being carried at twice the width it needs. The fold leaves the
-  level in bf16 (0, 1 and 2 are exact in bf16) and moves the scale to the
-  accumulator, which halves that tile.
-- **Why both can leave the per-weight path:** `sc` is **per out-column**
-  (`sc_ref[...][None, :]`, one scalar per column), so it multiplies the *accumulator*
-  after the matmul instead of every weight — `acc *= sc`, a rank-1 update on a (B, TC)
-  array. The `- 1` is a constant offset, so `sum_in (level-1)*x = sum_in level*x -
-  sum_in x`, and `sum_in x` is **one scalar per token**, not one operation per weight:
-  the correction is `acc -= sc[None, :] * x.sum(-1, keepdims=True)`.
-- **Executed on CPU (2026-10-21):** the algebra is exact — `tpu/lane-aligned-ternary-kernel/fold_test.py`
-  reproduces the kernel's decode spelling and compares the two projections: worst
-  relative difference **2.3e-07** (fp32 rounding). The kernel change is behind a
-  `FOLD` knob, **default off**, so the shipped path is untouched until a receipt says
-  otherwise.
-- **Measured on the TPU (2026-10-21, Colab v5e-1, the real 64-layer model):**
-  `receipt-fold0-b1-f16-tc1024.json` is the control (`FOLD=0`, **134.1 ms/step**,
-  7.45 tok/s, first token 271) and `receipt-fold1-b1-f16-tc1024.json` is the fold
-  (`FOLD=1`, **119.5 ms/step**, **8.37 tok/s**, first token **271**). **The fold is
-  10.9 % faster** — 14.6 ms of the step — and the first token is unchanged. The text
-  differs in the low bits, exactly as the price section predicted: the shipped path
-  hands the MXU a bf16 rounding of `(level-1)*sc` while the fold keeps the scale in
-  fp32, and the fold's text keeps the prompt's typos visible ("a garbled/misspelled
-  query") where the shipped path silently reads them as France/India/Bangladesh.
-  **The fp32 reference forward pass is the oracle for which text is right** and is
-  the last open piece of this item.
-- **What the fold does to the 50 tok/s arithmetic:** at 119.5 ms per pass, **6
-  accepted tokens per pass is 50.2 tok/s** — the target is exactly the top of
-  Inferact's published acceptance range for this architecture, so the fold and the
-  draft are both needed, and each is now a measured number rather than an estimate.
-- **Done when:** the fp32 reference forward pass has run on the same prompt and the
-  ledger says which of the two texts it agrees with; the `FOLD=1` receipt stands as
-  the faster path either way.
-- **The price to check, not to assume:** the folded accumulator carries
-  `sum_in level*x`, about twice the magnitude, before the subtraction cancels it —
-  roughly one bit of fp32, and the correction runs inside the kernel in the fp32
-  accumulator so only the result is rounded to bf16. There is a second, larger
-  difference: the shipped path hands the MXU a bf16 rounding of `(level-1)*sc`, while
-  the fold keeps the scale in fp32 and applies it afterwards, so the fold is the
-  *more* accurate of the two and the two may not agree bit for bit. The gate is
-  therefore the first token, and if the greedy text changes, the comparison against
-  the fp32 reference forward pass decides which path is right.
-- **Done when:** a receipt records a lower ms/step than `receipt-gqa-b1-f16-tc1024.json`
-  with `FOLD=1`, the first token still `271`, and either the text byte-identical to
-  `receipt-fuse1-b1-f16-tc1024.json` or the difference quantified against the
-  `reference-forward-pass` output.
 
 ## The execution track — this repo owns `tpu/`
 
@@ -1035,4 +996,4 @@ number survives being added up. It does **not** mean any product is release-qual
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-21 13:25 UTC
+updated: 2026-10-21 14:20 UTC
