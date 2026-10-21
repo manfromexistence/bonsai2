@@ -13,6 +13,38 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - \eat:\ the decode fold -- the MXU was being fed an fp32 weight tile
+
+**What changed:** \	pu/lane-aligned-ternary-kernel/kernel.py\ grows a \FOLD\ knob
+(**default 0**, so the shipped path is untouched). With \FOLD=1\ the trit decode's
+\- 1\ and \* scale\ leave the per-weight path, and with them the tile's element
+width.
+
+**Why:** the shipped line is
+
+\\python
+w = (jnp.concatenate([t80, t40, h8], 0) - 1).astype(jnp.bfloat16) * sc
+\
+and the cast and the multiply are one expression, so \.astype(bfloat16) * scpromotes **back to fp32**. The MXU is therefore fed a **4-byte-per-element**
+weight tile where it needs 2 -- and that tile is "the largest single term in the
+projection's memory traffic" by the kernel's own comment. The \- 1\ and the
+\* sc\ are two more full passes over it, and neither belongs there: the scale
+is per out-column (so it belongs on the accumulator) and the \- 1\ is a constant
+offset (so \sum_in (level-1)*x = sum_in level*x - sum_in x\, and \sum_in x\ is
+one scalar per token). The fold leaves the level in bf16 -- 0, 1 and 2 are exact
+in bf16 -- and does the correction inside the kernel, in the fp32 accumulator,
+so the cancellation happens at full precision and only the result is rounded to
+bf16, the same rounding the shipped path ends with.
+
+**Executed on CPU:** \	pu/lane-aligned-ternary-kernel/fold_test.py\ reproduces the
+kernel's decode spelling and compares the two projections -- worst relative
+difference **2.3e-07**, fp32 rounding. **Not measured on the TPU**; the gate is
+the first token (still ¹\), and because the shipped path hands the MXU a
+bf16 rounding of \(level-1)*sc\ while the fold keeps the scale in fp32, the fold
+is the *more* accurate of the two and the two may not agree bit for bit. If the
+greedy text changes, the comparison against \	pu/reference-forward-pass/\ decides
+which is right. See \TODO.md\ \TPU-11\.
+
 ### 2026-10-21 - `feat:` the Hello Ports goal's second milestone - source coding, decoded by rank
 
 **`G-01` moves from one milestone to two. The goal stays open.**
@@ -1594,4 +1626,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-21 12:10 UTC
+updated: 2026-10-21 12:35 UTC

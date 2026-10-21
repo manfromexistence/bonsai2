@@ -766,20 +766,37 @@ needs changing, and nothing in any repository can fix it.
   (`tpu/lane-aligned-ternary-kernel/kernel.py:202-203`) — two extra full passes over
   the (128, TC) unpacked tile, the widest array the projection touches, on a step whose
   projection is ~109 ms of per-element work (`tpu/projection-cost-breakdown/README.md`).
+- **The bigger half of it, found 2026-10-21: the tile is fp32, not bf16.** The cast
+  and the multiply are in one expression, so `.astype(bfloat16) * sc` promotes **back to
+  fp32** — the MXU is fed a 4-byte-per-element tile where it needs 2. The tile is
+  "the largest single term in the projection's memory traffic" by the kernel's own
+  comment, so it is being carried at twice the width it needs. The fold leaves the
+  level in bf16 (0, 1 and 2 are exact in bf16) and moves the scale to the
+  accumulator, which halves that tile.
 - **Why both can leave the per-weight path:** `sc` is **per out-column**
   (`sc_ref[...][None, :]`, one scalar per column), so it multiplies the *accumulator*
   after the matmul instead of every weight — `acc *= sc`, a rank-1 update on a (B, TC)
   array. The `- 1` is a constant offset, so `sum_in (level-1)*x = sum_in level*x -
   sum_in x`, and `sum_in x` is **one scalar per token**, not one operation per weight:
   the correction is `acc -= sc[None, :] * x.sum(-1, keepdims=True)`.
-- **The price to check, not to assume:** the folded form sums `level*x` (values 0, x,
-  2x) instead of `-x, 0, x`, so the accumulator carries roughly twice the magnitude
-  and the final subtraction cancels it. That is a real precision change. It is also
-  exactly the kind of change that shows up only in the *text*, so the gate is the
-  byte-identical first token, not a tolerance.
+- **Executed on CPU (2026-10-21):** the algebra is exact — `tpu/lane-aligned-ternary-kernel/fold_test.py`
+  reproduces the kernel's decode spelling and compares the two projections: worst
+  relative difference **2.3e-07** (fp32 rounding). The kernel change is behind a
+  `FOLD` knob, **default off**, so the shipped path is untouched until a receipt says
+  otherwise.
+- **The price to check, not to assume:** the folded accumulator carries
+  `sum_in level*x`, about twice the magnitude, before the subtraction cancels it —
+  roughly one bit of fp32, and the correction runs inside the kernel in the fp32
+  accumulator so only the result is rounded to bf16. There is a second, larger
+  difference: the shipped path hands the MXU a bf16 rounding of `(level-1)*sc`, while
+  the fold keeps the scale in fp32 and applies it afterwards, so the fold is the
+  *more* accurate of the two and the two may not agree bit for bit. The gate is
+  therefore the first token, and if the greedy text changes, the comparison against
+  the fp32 reference forward pass decides which path is right.
 - **Done when:** a receipt records a lower ms/step than `receipt-gqa-b1-f16-tc1024.json`
-  with the first token still `271` and the text byte-identical to
-  `receipt-fuse1-b1-f16-tc1024.json`, and the receipt names the fold.
+  with `FOLD=1`, the first token still `271`, and either the text byte-identical to
+  `receipt-fuse1-b1-f16-tc1024.json` or the difference quantified against the
+  `reference-forward-pass` output.
 
 ## The execution track — this repo owns `tpu/`
 
@@ -960,4 +977,4 @@ number survives being added up. It does **not** mean any product is release-qual
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-21 12:10 UTC
+updated: 2026-10-21 12:35 UTC
