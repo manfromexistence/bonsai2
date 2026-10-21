@@ -63,7 +63,7 @@ plus a Rust extraction kernel, 34 languages, and **one** MCP tool exposed on
 purpose, with seven more hidden. On "codebase memory" the answer was asymmetric -
 measured against eight layers (persistent index, structural graph, semantic
 retrieval, decision memory, runtime memory, cross-repo memory, visual memory,
-documentation memory) the chosen base had **six** and the other had **two**. The
+documentation memory) the chosen base had **five** and the other had **two**. The
 removed candidate had no embeddings (its own source says "deterministic, no
 embeddings"), no ADR storage, no trace memory and no cross-repo model. Both
 projects made opposite bets on how many tools an agent should see, and each
