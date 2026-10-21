@@ -29,7 +29,7 @@ on 2026-10-20, the day before this document was written.
 | Question | Answer |
 | --- | --- |
 | Are they the same thing? | **Same category, same interface, different depth.** Both are local-first MCP servers that parse a codebase with tree-sitter into a symbol/edge graph in SQLite and serve it to coding agents. Past that they diverge sharply, and they even disagree on agent interface design. |
-| Do they have "codebase memory"? | **Asymmetric.** `codebase-memory-mcp` has a real, multi-layer memory story (7 layers, 5 of them present). `codegraph` has 2 of 7: a persistent derived index and a structural graph. It has no decision log, no embeddings, no trace memory, no cross-repo memory. |
+| Do they have "codebase memory"? | **Asymmetric.** `codebase-memory-mcp` has a real, multi-layer memory story (8 layers, 6 of them present). `codegraph` has 2 of 8: a persistent derived index and a structural graph. It has no decision log, no embeddings, no trace memory, no cross-repo memory, no documentation memory. |
 | Are they used here? | **Neither.** No CLI on `PATH`, no index directory anywhere under `G:\Dx`, and no MCP entry in this machine's opencode config. They are reference checkouts, not tools in service. |
 
 ---
@@ -54,7 +54,8 @@ the MCP server, the CLI, the installer, and the update agent
 | Process model | Detached daemon with IPC, admission barriers, version cohorts, and shared jobs; MCP frontends are thin clients | `src/daemon/`, `README.md:145-157` |
 | UI | "CBM Lens": React + Monaco + Three.js browser frontend - IDE-style source reader, local chat, 3D architecture map, Galaxy graph, ADR editing | `README.md:1046-1059`, `graph-ui/` |
 | Tests | 9,388 C test cases claimed by the project badge | `README.md:6` (upstream-claimed) |
-| Release posture | v0.11.0 shipped; CBM Lens Beta is on `main` only and **not in the release binary** | `README.md:26` |
+| Release posture | **v0.12.1** shipped 2026-10-16. The repo README still says "the current v0.11.0 release" and never mentions v0.12 - the upstream README is stale, so trust the release page over the README | `codebase-memory-mcp/README.md:26` (stale) |
+| v0.12.0 headlines | 231 merged PRs. (1) CBM Lens Beta, the graph for humans, shipped **in the binary**. (2) Documentation joined the graph: doc comments, Markdown, reStructuredText, AsciiDoc, PDF, ADRs, diagrams and OpenAPI specs all become nodes and edges. (3) Smart CI: the graph picks the tests. (4) Infrastructure as code: K8s, Helm, Flux, Argo CD, Compose, Dockerfiles and CI jobs | v0.12.0 release notes, 2026-10-15 |
 | Supply chain | SLSA L3, Sigstore cosign, SHA-256 sums, CodeQL, per-release VirusTotal scans | `README.md:1066-1088` |
 
 **Tool surface (17).** Indexing: `index_repository`, `list_projects`,
@@ -138,7 +139,7 @@ That is a design decision, not a technical obstacle.
 ## Do they have "codebase memory"?
 
 "Codebase memory" is ambiguous, and one of these projects is *named* after it, so
-the question deserves a definition before an answer. Seven layers, from thinnest
+the question deserves a definition before an answer. Eight layers, from thinnest
 to thickest:
 
 | # | Layer | What it means | `codebase-memory-mcp` | `codegraph` |
@@ -150,13 +151,15 @@ to thickest:
 | L5 | Runtime memory | Observed behaviour, not inferred structure | **Yes** - `ingest_traces` stores observed call paths under a run label | **No** |
 | L6 | Cross-repo memory | Knowledge spanning several repositories | **Yes** - `cross-repo-intelligence` mode, 6 `CROSS_*` edge types | **No** - one index per project, no cross-repo edge model |
 | L7 | Visual memory | A browsable, spatial model of the system | **Yes** - CBM Lens: 3D architecture map, Galaxy, IDE-style reader, ADR editing in the browser | **Partial** - the viewer exists but is unreleased and gated behind `CODEGRAPH_UI=1` |
+| L8 | Documentation memory | The prose, decisions and specs, joined to the code they describe | **Yes** (v0.12.0) - doc comments become `MENTIONS` edges in 9 languages; Markdown, reStructuredText/Sphinx, AsciiDoc/Antora and PDF sections link to the code they name; ADRs become `ADR` nodes with `SUPERSEDES` edges; Mermaid/PlantUML/Graphviz/D2/draw.io/Excalidraw diagrams and OpenAPI operations become nodes | **No** |
 
-**Verdict.** `codebase-memory-mcp` has a genuine memory stack: 5 of 7 layers, with
-L3, L4 and L5 being real, separate subsystems in the source
+**Verdict.** `codebase-memory-mcp` has a genuine memory stack: 6 of 8 layers, with
+L3, L4, L5 and L8 being real, separate subsystems in the source
 (`src/semantic/semantic.h` - 11 similarity signals; `src/store/store.c` - ADR
-storage; `src/traces/traces.c` - runtime traces). `codegraph` has L1 and L2 and
-nothing else. Its graph is a *re-derivable projection of the source tree*: wipe
-`.codegraph/` and the next `codegraph init` rebuilds an equivalent graph, and
+storage; `src/traces/traces.c` - runtime traces; `src/pipeline/pass_doclinks.c` -
+doc links; the document extractors in `src/pipeline/`). `codegraph` has L1 and L2
+and nothing else. Its graph is a *re-derivable projection of the source tree*:
+wipe `.codegraph/` and the next `codegraph init` rebuilds an equivalent graph, and
 nothing that was not in the source is recovered.
 
 **Two honest caveats.**
@@ -244,8 +247,10 @@ this file is the hub's note on them, not a DX claim.
   `codegraph init` is a separate step (`codegraph/README.md:108`). It is a
   documented consent surface - the installer asks about telemetry and defaults it
   on.
-- **CBM Lens is not in the v0.11.0 binary.** Building from `main` is required to
-  see the UI (`codebase-memory-mcp/README.md:26`).
+- **CBM Lens is in the v0.12.0 binary.** `codebase-memory-mcp --ui=true --port=9749`.
+  It listens on loopback only, keeps source files read-only, and names where every
+  fact it shows came from. The repo README still claims Lens needs a source build
+  - that note is stale (upstream README:26, last touched 2026-10-19).
 - **Disk.** The hub's `G:` is at 97% used with ~12.7 GB free. A Linux-kernel-scale
   index is not a proposition on this volume. `codegraph` is the smaller footprint
   by design (one DB per project); CBM's 33-pass pipeline on a large repo will
@@ -278,7 +283,8 @@ Every claim above resolves to one of these. Paths are relative to
 | CBM ADR + trace subsystems | `codebase-memory-mcp/src/store/store.c`, `codebase-memory-mcp/src/traces/traces.c` |
 | CBM `graph_mem` is a RAM cache, not a memory feature | `codebase-memory-mcp/src/store/graph_mem.h:1-30` |
 | CBM 33 pipeline passes | `codebase-memory-mcp/src/pipeline/pass_*.c` |
-| CBM Lens Beta not in the release binary | `codebase-memory-mcp/README.md:26` |
+| CBM Lens shipped in the v0.12.0 binary (repo README is stale) | `codebase-memory-mcp/README.md:26` (stale), v0.12.0 release notes 2026-10-15 |
+| CBM v0.12.0 headlines: Lens, docs-in-graph, Smart CI, IaC | v0.12.0 release notes, 2026-10-15 |
 | CBM Defender false positive | `codebase-memory-mcp/README.md:103-109` |
 | codegraph version 1.6.2, npm name | `codegraph/package.json:2-4` |
 | codegraph single-tool doctrine | `codegraph/README.md:582-592` |
