@@ -798,9 +798,22 @@ needs changing, and nothing in any repository can fix it.
   `receipt-ctx64-b1-f16-tc1024.json` against
   `receipt-ctx8192-b1-f16-tc1024.json`), so the floor for this kernel is the
   **unpack**, not the context.
+- **What the web says about the unpack (2026-10-22), and what it rules out:**
+  the Pallas matmul guide is explicit that *"32-bit operands ... will be rounded
+  to bfloat16 unless float32 precision is requested"*, which is why `FOLD=2`'s
+  operand is bit-identical to the shipped path's and why `FOLD=3` (the scale
+  pre-rounded to bf16, the tile never widening to fp32) is the same model at
+  `FOLD=1`'s width. The same guide's exercise list asks for **int8** matmul
+  support -- int8 and int4 MXU paths exist on TPU v5+ -- but they apply to
+  *integer* operands, and this model's weights are ternary, so **int8 is not a
+  lever here**. The `deltanet-tpu` package (Pallas kernels for Gated DeltaNet,
+  Qwen3-Next and Kimi Delta Attention) is a maintained reference for our
+  recurrence, but its decode step is **dispatch-bound** and our projection is
+  81 % of the step, so it is not where our time goes.
 - **Done when:** a receipt records a step time below 40 ms at batch 1 / `max_t` 8192
   with the first token still `271` and the text byte-identical to
-  `receipt-fuse1-b1-f16-tc1024.json`.
+  `receipt-fuse1-b1-f16-tc1024.json`; `FOLD=3` is the arm that could get
+  closest to it while keeping the text.
 
 ## The execution track — this repo owns `tpu/`
 
