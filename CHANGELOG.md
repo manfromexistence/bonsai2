@@ -322,13 +322,34 @@ upstream's `mcp` tests pin that payload three ways - a byte budget, the tool
 count, and the alwaysLoad set. The DX surface now belongs to the DX profile
 alone, so the upstream profiles' contracts are exactly as upstream wrote them.
 
-**What is not proved.** That the remaining 1002 failures predate this fork.
+**And the failures are now measured, not argued.** The base commit
+`3457b21b` **cannot compile on this toolchain** - its errors are exactly the
+two upstream defects this fork fixed. So the base tree carries the base commit
+plus only the five build-fix files and nothing else, and the 26 suites that
+failed in the fork's full run were run on both trees with the same toolchain
+and flags: **24 of the 26 have exactly the same failures on the base and on
+the fork.** The two that differ are the fork's own new DX tests and one
+memory-map test that depends on the machine's state and passes in isolation.
+**The fork introduces no new failures, and it fixes two upstream ones that
+stop the base from compiling at all.** Base, on those 26 suites: 689 passed,
+996 failed, 21 skipped.
+
+**3. Three more flaws in the surface itself, all of the same family: the tool
+answered a question the caller did not ask, or did not ask the question the
+caller did.** The budget could replace a *failure* with a size complaint, so
+the agent got *"the answer was 5120 tokens"* instead of *"the project is not
+indexed"*. And the audit line said *"the graph is the only source consulted"*
+for three of the five request types - the escape answer, the certificate and
+the commit gate - when for all three the graph was never consulted at all. The
+budget now applies to answers only, and the audit says what was actually
+consulted, per type.
+
+**What is not proved.** That the remaining 996 failures predate this fork.
 They are in files and subsystems this fork has not modified - the grammar and
-LSP probe suites fail on cross-file call resolution across the 162 grammars,
-and 44 are in Windows-platform suites - but reasoning is not a bisect.
-`codebase/TODO.md` `CB-22` records the next step: the same suite on the base
-commit `3457b21b`, same toolchain, same flags, and a diff of the two failure
-sets.
+LSP probe suites fail on cross-file call resolution across the 162 vendored
+grammars, and thirteen suites fail on Windows-platform behaviour - but
+reasoning is not a bisect. `codebase/TODO.md` `CB-22` carries the measurement
+and says what is still open.
 
 ### 2026-10-21 - `docs:` the codebase fork's DX surface, and the flaw that stopped it working
 
