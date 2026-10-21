@@ -414,17 +414,6 @@ its entries do not resolve.
 - **Done when:** either the receipt exists and the wording is restored with a link to it, or
   the wording is permanently reduced to what is evidenced.
 
-### MF-06 · The `codebase` product is not declared in the `dx` manifest
-
-- **Evidence:** `G:\Dx\codebase` is a DX product as of 2026-10-21 — the repository
-  `essence-dx/codebase`, a fork of `DeusData/codebase-memory-mcp` — and the hub
-  README lists it in the DX products table (`README.md:125`). The `paths` block of
-  `G:\Dx\dx` has no `codebase` entry, so no `dx` route can resolve it. This is the
-  same class of defect as `MF-01` (declared paths that do not resolve) seen from the
-  other side: an undeclared product that cannot be routed to.
-- **Done when:** the `dx` manifest declares `codebase`, and `Test-Path` on the
-  resolved folder is `True` and points at `G:\Dx\codebase`.
-
 ### DOC-05 · `codebase` has no page in the achievement register
 
 - **Evidence:** `docs/README.md` carries one row per DX product folder and has no

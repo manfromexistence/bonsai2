@@ -9,6 +9,7 @@ paths(
   website            = website
   forge              = forge
   check              = check
+  codebase           = codebase
   forkness           = forkness
   style              = style
   desktop            = code

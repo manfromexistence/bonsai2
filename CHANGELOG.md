@@ -13,6 +13,56 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `feat:` the `codebase` fork is installable by the hub
+
+The fork's release assets now carry the hub's names, so `dx` can install it.
+
+**Three chains, each self-consistent.** The mistake to avoid is renaming
+everything at once - the asset name, the member name and the installed name
+are different things, and only the first two are the hub's to decide:
+
+| Chain | The name |
+| --- | --- |
+| The published asset | `dx-codebase-<os>-<arch>` |
+| The archive member | `dx-codebase` |
+| The installed name | `codebase-memory-mcp` |
+
+The third is the product's own identity, in 344 places in its `src/`, and it is
+not the hub's to change.
+
+**Nothing in that pipeline publishes under upstream's names any more.** The
+npm, PyPI and MCP Registry publish steps, the legacy-alias publisher and the
+homebrew installation test are each behind `if: false` with the reason in the
+file. A fork that publishes to `codebase-memory-mcp` on npm is not a fork, it
+is a typosquat.
+
+**Three things landed, in three repos, because they belong to three repos.**
+
+| Where | What | Why |
+| --- | --- | --- |
+| `essence-dx/codebase` | the release pipeline renamed; the three chains verified | the product owns its own release |
+| `essence-dx/cli` | `TOOL_REGISTRY` gains `("codebase", "essence-dx/codebase", "dx-codebase", "bin/dx-codebase")` | the registry is the install contract, and the hub's installer reads it |
+| this repo | the `dx` manifest declares `codebase = codebase` | `MF-06`: no `dx` route could resolve an undeclared product |
+
+**The registry entry is the one that closes the loop.** Every DX tool's
+binary is `dx-<tool>` and it lands at `bin/dx-<tool>`; `essence-dx/media`
+v1.0.0 is the proof of the convention (`dx-media-x86_64-unknown-linux-gnu`,
+`dx-media-x86_64-pc-windows-msvc.exe`). The `codebase` entry matches it, so
+`dx` can now resolve, download and install the fork.
+
+**Verified.** In the product: a checker walks all three chains and asserts
+each agrees end to end and that none has crossed - **70 coupled names, all
+agreeing**; the three changed workflows parse as YAML, the eight changed shell
+scripts pass `bash -n`, the four changed Python scripts compile,
+`server.json` parses as JSON and `install.ps1` parses as PowerShell. Here:
+`Test-Path G:\Dx\codebase` is `True`.
+
+**Not verified.** `scripts/smoke-test.sh`, which needs a Linux or macOS host
+with a toolchain; the release pipeline itself, which needs GitHub Actions; and
+`cargo build` / `cargo test` in `essence-dx/cli`, whose `AGENTS.md` forbids
+full builds without explicit permission and whose machine had 4 GB free on
+`G:`. Each of those is named in `codebase/TODO.md` `CB-02` and `CB-23`.
+
 ### 2026-10-21 - `feat:` the chunked path is exact on the real model
 
 **The 50 tok/s mechanism's core is now proven on the hardware.** The kernel grew a
