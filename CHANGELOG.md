@@ -430,9 +430,11 @@ call to msvcrt's `_msize`. The defect needs exactly the combination this fork
 needs: MinGW, the `--wrap` allocator, and mimalloc.
 
 **2. The house test suite now runs to completion on this machine.** 194
-suites: **8644 passed, 1005 failed, 94 skipped**. The DX suites are clean
-inside it - `dx_surface`, `dx_governance`, `dx_memory`, **89 passed, exit 0** -
-which is the claim `codebase/TODO.md` `CB-20` was waiting on.
+suites: **8655 passed, 1023 failed, 94 skipped**, on the binary that carries
+every fix. The DX suites are clean inside it - `dx_surface`, `dx_governance`,
+`dx_memory`, **114 passed, exit 0** - and the `mcp` suite is **380 passed,
+13 skipped, 0 failed** with all nine DX profile tests among them. That is the
+claim `codebase/TODO.md` `CB-20` was waiting on.
 
 **Three of those failures were this fork's**, and are fixed: the DX tool in
 the registry changed the `tools/list` payload for every profile, and
@@ -451,6 +453,16 @@ memory-map test that depends on the machine's state and passes in isolation.
 **The fork introduces no new failures, and it fixes two upstream ones that
 stop the base from compiling at all.** Base, on those 26 suites: 689 passed,
 996 failed, 21 skipped.
+
+**One correction, because a number moved and the reason is the machine.** The
+first comparison recorded the `cli` suite as clean on both trees. It is not:
+those agent-client install tests write into a POSIX `/tmp` path, so their
+outcome depends on the environment. Run today on **both** trees, the base
+tree and the fork fail the **identical 26** assertions - `plan=1 installed=0`,
+the install planned correctly and wrote nothing - at 300 passed, 26 failed,
+11 skipped on each. What the comparison earns is unchanged and is now
+stronger: **the base and the fork fail identically.** The number moves with
+the machine; the agreement does not. `codebase/TODO.md` `CB-22` carries it.
 
 **4. Three more flaws in the surface itself, all of the same family: the tool
 answered a question the caller did not ask, or did not ask the question the
@@ -480,7 +492,7 @@ named.
 | `gcc -fanalyzer` over the DX modules and their tests | **clean** |
 | The surface the agent receives, measured on the built binary | **3,182 bytes** against upstream's 24,111 - **86.8% less schema** |
 
-**What is not proved.** That the remaining 996 failures predate this fork.
+**What is not proved.** That the remaining 1023 failures predate this fork.
 They are in files and subsystems this fork has not modified - the grammar and
 LSP probe suites fail on cross-file call resolution across the 162 vendored
 grammars, and thirteen suites fail on Windows-platform behaviour - but
