@@ -134,10 +134,22 @@ What the fork adds is a **surface**: one typed tool (`dx_codebase`) whose schema
 makes the agent draft a request type, review its own draft, and commit to it,
 with a budget that **refuses** an over-budget answer rather than truncating it.
 That layer is DX's own work and it is exercised by a built binary on this
-machine, driven over real stdio. The measured claim behind it is upstream's own
-figure: a session with MCP attached costs **+66% tokens** against the same
-session without it (`codebase/TODO.md` `CB-13`). The graph is upstream's; the
-surface is the fork's.
+machine, driven over real stdio.
+
+The measured shape of it, from the built binary's own `tools/list`:
+
+| Surface | Tools | Schema the agent receives |
+| --- | --- | --- |
+| upstream's full menu | 18 | 24,111 bytes |
+| the DX surface | 1 | 3,182 bytes |
+
+**86.8% less schema, and 2547 bytes carry the whole contract** - the four
+required fields, the thirteen request types, the budget, and the per-type
+required parameters. That is a *surface-size* measurement, not a session-level
+token cost; the session measurement is `codebase/TODO.md` `CB-13` and has not
+been run. The reason the surface exists at all is upstream's own figure: a
+session with MCP attached costs **+66% tokens** against the same session
+without it. The graph is upstream's; the surface is the fork's.
 
 ## Vendored third-party workspaces
 
