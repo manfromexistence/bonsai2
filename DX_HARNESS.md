@@ -27,11 +27,28 @@ to make legible.
 |---|---|---|---|
 | `G:\Dx\tui` | **the upstream source.** A hard fork of grok-build, 172 members, 92 `crates/codegen`. Merges upstream regularly. | `cargo check -p xai-grok-pager-bin` passed 2026-10-20 (1m59s, 0 errors) **after** a 19-hour cold build | never on this HEAD |
 | `G:\Dx\bot\crates\` | **the working copy.** Bot's vendored closure — 103 crates, plus fixes tui does not have (§2.3). | **never** — no `target/` dir has ever existed here | never |
-| `G:\Dx\harness` | **the test copy**, mirroring bot. 125 members, own git repo, 3 commits. | **green** — `dx-harness.exe` builds and runs | **yes** — resolver 9/9, corpus 13/13 offline |
+| `G:\Dx\harness` | **the test copy**, mirroring bot. 125 members, own git repo, **pushed to `essence-dx/harness`**. | **green** — the CLI builds AND the full engine links | **yes** — resolver 9/9, corpus 13/13 offline, and a **real agent turn** |
 
 **`G:\Dx\harness` is the only one that can be tested.** The other two cannot
 be tested quickly: building tui took 19 hours and died to a disk-full error,
 and bot's copy has never been compiled at all.
+
+### The real harness now runs
+
+`dx-harness turn` is not a probe around the engine — **it is the engine**:
+
+- `MvpAgent` on its own OS thread (it is `!Send`, it holds an `Rc`)
+- a real `acp::ClientSideConnection` / `AgentSideConnection` pair over
+  in-process duplex streams — the ACP wire format
+- `initialize` → `session/new` → `session/prompt`
+- the `session/update` stream collected: the assistant text and every tool call
+
+Measured 2026-10-21:
+
+| Turn | Time | Result |
+|---|---|---|
+| `Reply with exactly: HARNESS_OK` | **10.1 s** | `HARNESS_OK` |
+| `List the files in the current directory using a tool.` | **19.8 s** | **2 tool calls** (`list_dir`), real directory listing |
 
 ---
 
@@ -436,68 +453,90 @@ a cold build of this closure is tens of gigabytes, and the volume was full.
 
 ---
 
-## 7. The blocker — fixed, and what it taught
+## 7. The blockers — four of them, all fixed
 
-The harness CLI did not compile. One error, two sites:
+Getting the real engine to link took four fixes. All four are real defects,
+and **three of them are upstream in bot**, not in the harness.
 
-```
-error[E0599]: no variant, associated function, or constant named `Max`
-              found for enum `async_openai::types::responses::ReasoningEffort`
-  --> crates/codegen/xai-grok-sampling-types/src/types.rs:783:54
-  --> crates/codegen/xai-grok-sampling-types/src/types.rs:796:41
-```
+### 7.1 The C toolchain (environment, not code)
 
-**Root cause — a dropped `[patch.crates-io]`.** `G:\Dx\tui\Cargo.toml:3-4` has:
-
-```toml
-[patch.crates-io]
-async-openai = { git = "https://github.com/our-forks/async-openai.git",
-                 rev = "95b52ebdedf42143083cf3d6f0e0be7c84e9c808" }
-```
-
-The fork has `ReasoningEffort::Max`. The registry's `async-openai` 0.33.1
-does not. `scripts/gen_workspace.py` copied `[workspace.package]` and
-`[workspace.lints.clippy]` but **not** `[patch.crates-io]`, so cargo
-resolved the registry version.
-
-**The first fix was to carry the patch across.** That was also wrong — it
-treated the symptom. The right fix is bot's: **map `Max` onto `Xhigh` in
-the code** and drop the dependency on a git fork entirely. Bot had already
-done that.
-
-| Tree | `async-openai` source | Has the patch? | Needs it? |
-|---|---|---|---|
-| `G:\Dx\tui` | the git fork (`our-forks/async-openai` @ `95b52ebd`) | yes | **yes** |
-| `G:\Dx\bot\crates` | registry 0.33.1 | no | **no** — its code maps `Max` onto `Xhigh` |
-| `G:\Dx\harness` (now) | registry 0.33.1 | no | **no** — it inherits bot's fix |
-
-The generator now copies `[patch.crates-io]` **only if the source has one**,
-and the harness's manifest has none. **The real lesson:** tui's approach
-makes a fresh clone need a git fork it cannot resolve; bot's does not. The
-harness should be on bot's side of that line.
-
-> Note `bot/TODO.md` §2 records a fix for a *different* skew of the same crate
-> ("`ReasoningEffort::Max` vs `async-openai 0.33.1`"). That entry is about the
-> **registry** version; bot's own code change is the actual answer.
-
-### The second blocker — `mimalloc` and a broken C toolchain
-
-`xai-grok-shell` → `xai-codebase-graph` → `mimalloc` → `libmimalloc-sys`, a
-**C build**. It failed:
+The engine build died in `mimalloc`'s C build:
 
 ```
 c1xx: fatal error C1083: Cannot open source file: '/WX-'
 ```
 
-The cause is the environment, not the code: `INCLUDE` and `LIB` point at
-**zig**'s libc (`G:\Dev\Tools\Scoop\apps\zig\0.16.0\lib\...`) while the
-compiler is MSVC's `cl.exe`. The two disagree about what `/WX-` means.
+**Cause 1 — the environment points at zig.** The machine ships:
 
-**The fix, for now:** the full engine is behind an off-by-default `engine`
-feature. The default build links the token crates and `xai-grok-tools` — no C
-compiler needed. **The proper fix is a clean MSVC environment** (correct
-`INCLUDE`/`LIB`, or a `cc` that speaks to the right toolchain), and that is
-still open.
+```
+INCLUDE = G:\Dev\Tools\Scoop\apps\zig\0.16.0\lib\libc\include\any-windows-any
+LIB     = G:\Dev\Tools\Scoop\apps\zig\0.16.0\lib\libc\mingw\lib64
+```
+
+while the compiler is MSVC's `cl.exe`. cl.exe searches the include path in
+order and finds **zig's `stdio.h`** before MSVC's own, so every C compile dies
+with a wall of syntax errors in a header the crate never asked for. The fix is
+not a code change — it is giving the C compiler the environment it expects.
+`scripts/msvc_env.ps1` (and `.sh`) compute the real MSVC and Windows SDK
+paths and **replace** the zig entries.
+
+The SDK's library directory is a **sibling** of `Include`, not a child:
+
+```
+Include\10.0.26100.0\ucrt    (headers)
+Lib\10.0.26100.0\um\x64      (import libraries, incl. kernel32.lib)
+```
+
+Getting that wrong fails at link time with
+`LINK : fatal error LNK1104: cannot open file 'kernel32.lib'`.
+
+**Cause 2 — sccache must not wrap the C compiler.** cc-rs invokes the
+compiler through `RUSTC_WRAPPER`, so sccache was wrapping `cl.exe` and
+mangling the MSVC flags — `/WX-` ended up where cl.exe treated it as a
+*source file*. **Unset `RUSTC_WRAPPER` for the engine build.**
+
+### 7.2 `rusqlite` 0.39 removed `u64` — an upstream defect in bot
+
+```
+error[E0277]: the trait bound `u64: FromSql` is not satisfied
+error[E0277]: the trait bound `u64: ToSql` is not satisfied
+error[E0277]: the trait bound `usize: ToSql` is not satisfied
+```
+
+**34 errors in `xai-grok-memory` alone**, plus `xai-fast-worktree`,
+`xai-grok-permission-rules`, `xai-grok-session-search`,
+`xai-grok-foreign-sessions`, `xai-sqlite-journal` and `zeroclaw-config`.
+
+**rusqlite 0.39 removed the `u64` impls** — SQLite has no unsigned 64-bit
+integer. **0.37 is the last version with them**, and it is what tui pins.
+
+**The defect is upstream in bot:** bot's `Cargo.toml` asks for `0.39` while
+bot's own `Cargo.lock` resolves `0.37.0` — the manifest and the lock
+disagree — and two of bot's crates still have *"rusqlite 0.37"* in their
+comments. It looks like a find-and-replace that was never finished. Bot
+cannot compile until that is fixed there. The harness pins 0.37 and
+`scripts/pin_rusqlite.sh` + a matching override in `gen_workspace.py` keep
+it there.
+
+### 7.3 The `ReasoningEffort::Max` fix — bot has it, tui does not
+
+Already covered in §2.3. The short version: tui maps `Max` to
+`async_openai::ReasoningEffort::Max` and needs a `[patch.crates-io]` pointing
+async-openai at a **git fork** — a dependency a fresh clone cannot resolve.
+Bot maps `Max` and `Xhigh` both onto `Xhigh` **in code** and needs no patch.
+The harness uses bot's code, so it needs no patch either.
+
+### 7.4 The API shape (my own code, four times)
+
+Each of these cost a build cycle and is recorded so the next agent does not
+repeat them:
+
+| What I got wrong | The truth |
+|---|---|
+| `bootstrap_with_cancel(...).await` | it is **synchronous** — blocking I/O |
+| `config.model = Some(...)` | the model is `config.models.default` |
+| reading the updates off the raw mpsc channel | they arrive as `acp::SessionUpdate` over a **real ACP connection** — this is why the first version completed a turn but collected no text |
+| `impl acp::Client` without the attribute | the trait is `#[async_trait(?Send)]` and needs `request_permission` |
 
 ---
 
@@ -512,9 +551,11 @@ still open.
 | 4 | `bot/src-tauri/Cargo.toml:113` | `dx-harness` is not in `default`. Nothing constructs `DxHarness`. `bot/HARNESS.md` §0 says so outright. |
 | 5 | `bot/HARNESS.md` §0 | The duplicate `zeroclaw-*` crates under `crates/common/agent/` are labelled 1.0.0 but are an **older, trimmed** snapshot of the 0.8.5 copies. They coexist only because `dx-harness` is off; enabling it links two incompatible `zeroclaw-config` types. |
 | 6 | `bot/TODO.md:86-89` | *"Use **Bash**, not PowerShell — PowerShell's ConPTY sandbox is broken on this machine."* True on 2026-10-11; **not true on 2026-10-21** — `pwsh` 7.6.2 runs fine and `just --list` resolves. Needs re-measuring before it is trusted as a constraint. |
-| 7 | the machine's environment | `INCLUDE` and `LIB` point at **zig**'s libc while the compiler is MSVC's `cl.exe`. Any C build in the graph breaks with `c1xx: fatal error C1083: Cannot open source file: '/WX-'`. This is what blocks `mimalloc`, and therefore the full engine. |
-| 8 | `xai-grok-tools/src/tolerant.rs` | The substring fallback resolves `send_feedback` when the model asked for `send_email`. **3 of 13 corpus entries were silent-wrong because of this.** The fix belongs upstream. |
+| 7 | the machine's environment | `INCLUDE` and `LIB` point at **zig's** libc while the compiler is MSVC's `cl.exe`. Any C build in the graph breaks. **FIXED** in the harness by `scripts/msvc_env.ps1`; **still broken for bot**, which has no such script. |
+| 8 | `xai-grok-tools/src/tolerant.rs` | The substring fallback resolves `send_feedback` when the model asked for `send_email`. **3 of 13 corpus entries were silent-wrong because of this.** The fix belongs upstream - in **bot** now, since that is the source the harness mirrors. |
 | 9 | `tui` | tui lacks bot's 9 Windows-portability fixes and bot's `ReasoningEffort::Max` fix. **Tui is the weaker tree for this machine.** Those fixes should be ported back into tui, or tui should be re-synced from bot. |
+| 10 | `bot/crates/Cargo.toml` + 6 crate manifests | **`rusqlite` 0.39 removed the `u64` impls.** Bot asks for 0.39; bot's own lock resolves 0.37.0; two of bot's crates still say *"rusqlite 0.37"* in their comments. **Bot cannot compile until this is fixed there.** 34 errors in `xai-grok-memory` alone. |
+| 11 | `bot` (no script) | Bot has no MSVC environment script, so its C builds hit the same zig `INCLUDE` problem the harness had. `harness/scripts/msvc_env.ps1` is the fix; it should be ported. |
 
 ---
 
@@ -579,18 +620,17 @@ native Rust targets first (bot, tui, code), then WASM as a separate track.
    substring fallback needs a stronger uniqueness test, or a "the model
    asked for something outside the catalog" signal that refuses rather than
    guesses. **This is the §0a work, and it is not done.**
-2. **Fix `bot/crates/Cargo.toml`** — add the same `[patch.crates-io]` the
-   harness now carries. It is the identical bug, and bot cannot compile
-   without it.
-3. **Build `bot/crates`** once, properly, and record the receipt. It has
+2. **Fix `bot`'s `rusqlite` pin** (0.39 -> 0.37, in the workspace
+   manifest and 6 crate manifests). Bot cannot compile until that is done;
+   the harness's fix is only a local override.
+3. **Port `msvc_env.ps1` into bot**, so bot's C builds work.
+4. **Build `bot/crates`** once, properly, and record the receipt. It has
    never been compiled.
-4. **Fix the C toolchain** — `INCLUDE`/`LIB` point at zig while the compiler
-   is MSVC. Until that is sorted, the full engine cannot link, and
-   `--features engine` stays off.
-5. **Write real tests** for `tool-router`, `prefix-cache`, `token-budget` and
-   `core` — the four with zero.
-6. **Commit and push the harness repo.** It has **2 commits and no remote**.
-7. **Copy the finished work back** into `tui`, then into `bot`.
+5. **A/B `lld-link` against `link.exe`** - the config is in place, the
+   measurement is not. `harness/docs/BUILD-SPEED.md` says so plainly.
+6. **Write real tests** for `tool-router`, `prefix-cache`, `token-budget`
+   and `core` - the four with zero.
+7. **Copy the finished work back** into `tui`, and into bot.
 
 ### The fastest loop, right now
 
@@ -604,9 +644,11 @@ cd G:/Dx/harness && ./target/release/dx-harness.exe model "Reply with exactly: H
 
 # no build at all
 cd G:/Dx/harness && bash scripts/model.sh "Reply with exactly: HARNESS_OK"
-```
 
-Rebuilding after an edit: **7.5 s**.
+# the REAL harness, one full agent turn
+cd G:/Dx/harness && ./target/release/dx-harness.exe turn "List the files here" --cwd G:/Dx/harness
+
+Rebuilding after an edit: **~10 s**.
 
 ---
 
