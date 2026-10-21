@@ -13,6 +13,68 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `docs:` the two code-graph checkouts in `codebase/`, compared
+
+**`codebase/TECH.md` is a new hub document, and the README's vendored-workspaces
+table now lists both projects instead of one.**
+
+`G:\Dx\codebase\` holds two independent third-party checkouts, each with its own
+`.git` and `origin` remote: `DeusData/codebase-memory-mcp` (4381 commits, MIT) and
+`colbymchenry/codegraph` (1535 commits, MIT). Both were at an upstream commit
+dated 2026-10-20 when this entry was written.
+
+**The comparison, in one paragraph.** They are the same category and the same
+interface - local-first MCP servers that parse a codebase with tree-sitter into a
+symbol/edge graph in SQLite and serve it to coding agents - and they diverge
+after that. `codebase-memory-mcp` is a knowledge-graph *platform*: pure C, 162
+vendored grammars, 17 MCP tools, a read-only openCypher subset, 33 indexing
+passes, Hybrid LSP type resolution on 11 language rows, and a browser UI
+(CBM Lens). `codegraph` is a *retrieval engine*: TypeScript plus a Rust
+extraction kernel, 34 languages, and **one** MCP tool exposed on purpose, with
+seven more hidden behind `CODEGRAPH_MCP_TOOLS`. The two projects made opposite
+bets on how many tools an agent should see, and each published its reasoning.
+
+**On "codebase memory", the answer is asymmetric.** Measured against seven
+layers - persistent index, structural graph, semantic retrieval, decision memory,
+runtime memory, cross-repo memory, visual memory - `codebase-memory-mcp` has
+five: its semantic layer is 11 algorithmic embedding signals in
+`src/semantic/semantic.h`, its decision memory is the `manage_adr` store, its
+runtime memory is `src/traces/traces.c`. `codegraph` has two: a persistent
+per-project index and the structural graph. It has no embeddings (its own source
+says "deterministic, no embeddings", `codegraph/src/mcp/tools.ts:3926`), no ADR
+storage (zero occurrences of "ADR" or "architecture decision" in `codegraph/src/`),
+and no trace or cross-repo memory. A naming trap is called out in the document:
+CBM's `src/store/graph_mem.c` is a RAM cache of the edge adjacency, not a memory
+subsystem.
+
+**What was measured on this machine.** Neither project is installed: no CLI on
+`PATH`, no `.codegraph` or `.cbm` directory anywhere under `G:\Dx`, no
+`~/.cache/codebase-memory-mcp`, and no `mcp` block in this machine's opencode
+config. **Neither was built or run here** - every claim in the document is
+*repo-managed* (read out of the working tree, `file:line` named), and every
+benchmark number attributed to either project is marked upstream-claimed, not
+measured in this hub.
+
+**One residue flagged, not claimed.** Eight directories at
+`%LOCALAPPDATA%\codegraph\<hex>\<hex>\` each hold a 53,248-byte `store.db` dated
+2026-07-07. Their schema does not match `codegraph` v1.6.2 (`codegraph.db`,
+`nodes(id, kind, ...)`, `files(path, content_hash, ...)` - `codegraph/src/db/schema.sql:20-77`),
+and neither `store.db` nor `xxh3` appears anywhere in that repository. They are
+residue from some other tool that used the name "codegraph", not an index of
+either project here. Left in place - 426 KB total, and the hub's rule is proposal,
+not deletion (`AGENTS.md` section 2, rule 2).
+
+**Hub wiring.** `codebase/TECH.md` is the only thing this repository tracks under
+`codebase/`. The `.gitignore` gains `!/codebase/`, `/codebase/*`,
+`!/codebase/TECH.md`, so `git add codebase` stages exactly one file and cannot
+reach either nested repository (`AGENTS.md` section 2, rule 1). `README.md:133`
+gains the missing `codebase/codebase-memory-mcp` row; the table previously listed
+only `codebase/codegraph`, and `CHANGELOG.md:824` records that a "broken
+`codebase-memory-mcp` clone" was removed on 2026-10-20, so the folder on disk is a
+re-checkout that the README had not caught up with. Neither project is a DX
+product, has no `dx <tool>` route, and is not in the `dx` manifest's `paths`
+block; no `docs/<tool>.md` register page is owed for either.
+
 ### 2026-10-21 - `chore:` the F: Rust build output deleted, reclaiming 7.56 GB
 
 **The seventh authorised deletion, on F:.** The target was the Rust build output the survey

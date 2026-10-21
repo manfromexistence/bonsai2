@@ -131,6 +131,14 @@ and carry no `dx <tool>` route. Keep them out of the tool table above.
 | Folder | Upstream remote | What it is | DX relationship |
 | --- | --- | --- | --- |
 | `codebase/codegraph` | `colbymchenry/codegraph` | Code-graph tool, nested one level down | Vendored reference. Not DX-authored, not registered. |
+| `codebase/codebase-memory-mcp` | `DeusData/codebase-memory-mcp` | Code-graph tool, nested one level down | Vendored reference. Not DX-authored, not registered. |
+
+Both are local-first MCP servers that build a code knowledge graph for coding
+agents, and they disagree on agent interface design - one ships 17 MCP tools, the
+other ships 1 on purpose. `codebase/TECH.md` compares them, including which one
+has a "codebase memory" layer and which does not. That file is the only thing in
+`codebase/` this repository tracks; both projects are third-party checkouts and
+carry no `dx <tool>` route.
 
 Three root clones were parked on 2026-10-20 because DX already carries the
 same content, or because nothing referenced them:
