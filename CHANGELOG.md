@@ -13,6 +13,48 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `feat:` the chunked path is exact on the real model
+
+**The 50 tok/s mechanism's core is now proven on the hardware.** The kernel grew a
+`CHUNK`/`CHUNKCHECK` pair: k tokens are replayed in **one chunked pass** from the
+state before them, and the per-position argmaxes are compared with the ones the
+sequential path produced for the same tokens.
+
+| receipt | what |
+| --- | --- |
+| `receipt-chunk4-b1-f16-tc1024.json` | 133.9 ms/step, 7.47 tok/s, first token 271, text identical to the shipped path |
+| its `chunk_check` | **3/3 argmaxes agree, `exact=true`, first disagreement: None** |
+
+The chunk's position j is the sequential path's position j+1 -- exactly what the
+derivation says it must be, since the chunk's output after token j is the sequential
+state after token j. The chunked gated-delta recurrence, the chunked attention and
+the conv window across a chunk boundary are all in
+`tpu/multi-token-verification/`, whose CPU contract now covers **72 cases**.
+
+**Three bugs the model taught, all traps worth naming.** The decay was passed as a
+factor where the recurrence wanted its log (the shipped path multiplies the state
+by `exp(gate)`; the chunked form accumulates the factors) -- that made the whole
+model output token 0. The causal mask was expanded to four axes against a
+**five**-axis score tensor, so it broadcast against the group axis instead of the
+query axis. And the chunked path was compared against a broken reference: the
+reference loop fed the hidden state into the next step, while the model always feeds
+the **embedding** of the previous token -- so both sides were wrong and the check
+"agreed" on zeros.
+
+**One numerical requirement the CPU test had to learn:** the cumulative decay
+**underflows** inside a chunk when the model's decay is strong -- which it is --
+and after that `A_t/A_s` cannot be recovered, the upper triangle overflows, and
+`0 * inf = NaN` lands in the output. The fix is the log domain: accumulate the log
+decay and take the ratio as `exp(cum_t - cum_s)`, which is `<= 1` for `s <= t` and
+never underflows. The CPU contract now carries a decay profile that underflows on
+purpose.
+
+**What is left:** the chunk length is 4, and there is no draft yet. Next:
+`CHUNK=16` (the compile-time HLO temporaries grow with the chunk) and then a real
+draft's acceptance rate -- DFlash2 for this base architecture (1.92 B parameters,
+3.58 GB) or the MTP head from the community GGUF (5.87 GB lean). At 119.5 ms per
+pass, 6 accepted tokens per pass is 50.2 tok/s.
+
 ### 2026-10-21 - \eat:\ the decode fold, measured: 10.9 % faster, first token unchanged
 
 **Measured on Colab TPU v5e-1, the real 64-layer model, both arms in one session.**
@@ -1741,4 +1783,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-21 13:25 UTC
+updated: 2026-10-21 14:20 UTC
