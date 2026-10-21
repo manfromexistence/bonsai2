@@ -55,7 +55,7 @@ draft's acceptance rate -- DFlash2 for this base architecture (1.92 B parameters
 3.58 GB) or the MTP head from the community GGUF (5.87 GB lean). At 119.5 ms per
 pass, 6 accepted tokens per pass is 50.2 tok/s.
 
-### 2026-10-21 - \eat:\ the decode fold, measured: 10.9 % faster, first token unchanged
+### 2026-10-21 - eat: the decode fold, measured: 10.9 % faster, first token unchanged
 
 **Measured on Colab TPU v5e-1, the real 64-layer model, both arms in one session.**
 
@@ -149,7 +149,7 @@ by hardware and an amateur licence, and it is filed as blocked in the product's
 own ledger (`hello/MEMORY.md` §9). Milestones 3 and 4 are not started, and
 `G-01`'s done-when (*a room holds a call with the network cable pulled*) is
 still open.
-### 2026-10-21 - \eat:\ the decode fold -- the MXU was being fed an fp32 weight tile
+### 2026-10-21 - eat: the decode fold -- the MXU was being fed an fp32 weight tile
 
 **What changed:** \	pu/lane-aligned-ternary-kernel/kernel.py\ grows a \FOLD\ knob
 (**default 0**, so the shipped path is untouched). With \FOLD=1\ the trit decode's
