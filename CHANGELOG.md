@@ -13,6 +13,41 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - \eat:\ the decode fold, measured: 10.9 % faster, first token unchanged
+
+**Measured on Colab TPU v5e-1, the real 64-layer model, both arms in one session.**
+
+| arm | ms/step | tok/s | first token | receipt |
+| --- | --- | --- | --- | --- |
+| \FOLD=0\ (the shipped decode) | 134.1 | 7.45 | 271 | eceipt-fold0-b1-f16-tc1024.json\ |
+| \FOLD=1\ (the fold) | **119.5** | **8.37** | **271** | eceipt-fold1-b1-f16-tc1024.json\ |
+
+Same prompt, same window, same everything else: \what is the capital of franch,
+india and bangaldesh and give me tps\, 17 prompt tokens, \max_t\ 8192, state
+float16, \TC\ 1024, fusion on, \GQA=1\. **14.6 ms of the step, 10.9 % faster**,
+and the first token is still ¹\.
+
+**Why it works.** The shipped decode line is
+\(concat(...) - 1).astype(bfloat16) * sc\, and the cast and the multiply are one
+expression, so it promotes **back to fp32**: the MXU was being fed a
+4-byte-per-element weight tile where it needs 2 -- and that tile is "the largest
+single term in the projection's memory traffic" by the kernel's own comment. The
+fold leaves the level in bf16 (0, 1 and 2 are exact), moves the per-out-column scale
+onto the fp32 accumulator, and folds the \- 1\ into one per-token correction
+(\sum_in (level-1)*x = sum_in level*x - sum_in x\), inside the kernel, so the
+cancellation happens at full precision and only the result is rounded to bf16.
+
+**The text differs, and that is the price line being honoured.** The shipped path
+hands the MXU a bf16 rounding of \(level-1)*sc\; the fold keeps the scale in fp32.
+The fold's text keeps the prompt's typos visible ("a garbled/misspelled query")
+where the shipped path reads them as France/India/Bangladesh. The fp32 reference
+forward pass is the oracle for which is right, and it is running.
+
+**What it does to the 50 tok/s arithmetic.** At 119.5 ms per pass, **6 accepted
+tokens per pass is 50.2 tok/s** -- the top of the published acceptance range for
+this architecture. The draft and the fold are both needed, and both are now
+measured numbers instead of estimates. See \TODO.md\ \TPU-11\.
+
 ### 2026-10-21 - `chore:` the `hello` product gets a remote, and its work becomes durable
 
 The `hello` repo had no remote: `git -C hello remote -v` returned nothing, and
@@ -1685,4 +1720,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-21 12:35 UTC
+updated: 2026-10-21 13:25 UTC

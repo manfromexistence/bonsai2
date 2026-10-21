@@ -816,6 +816,24 @@ needs changing, and nothing in any repository can fix it.
   relative difference **2.3e-07** (fp32 rounding). The kernel change is behind a
   `FOLD` knob, **default off**, so the shipped path is untouched until a receipt says
   otherwise.
+- **Measured on the TPU (2026-10-21, Colab v5e-1, the real 64-layer model):**
+  `receipt-fold0-b1-f16-tc1024.json` is the control (`FOLD=0`, **134.1 ms/step**,
+  7.45 tok/s, first token 271) and `receipt-fold1-b1-f16-tc1024.json` is the fold
+  (`FOLD=1`, **119.5 ms/step**, **8.37 tok/s**, first token **271**). **The fold is
+  10.9 % faster** — 14.6 ms of the step — and the first token is unchanged. The text
+  differs in the low bits, exactly as the price section predicted: the shipped path
+  hands the MXU a bf16 rounding of `(level-1)*sc` while the fold keeps the scale in
+  fp32, and the fold's text keeps the prompt's typos visible ("a garbled/misspelled
+  query") where the shipped path silently reads them as France/India/Bangladesh.
+  **The fp32 reference forward pass is the oracle for which text is right** and is
+  the last open piece of this item.
+- **What the fold does to the 50 tok/s arithmetic:** at 119.5 ms per pass, **6
+  accepted tokens per pass is 50.2 tok/s** — the target is exactly the top of
+  Inferact's published acceptance range for this architecture, so the fold and the
+  draft are both needed, and each is now a measured number rather than an estimate.
+- **Done when:** the fp32 reference forward pass has run on the same prompt and the
+  ledger says which of the two texts it agrees with; the `FOLD=1` receipt stands as
+  the faster path either way.
 - **The price to check, not to assume:** the folded accumulator carries
   `sum_in level*x`, about twice the magnitude, before the subtraction cancels it —
   roughly one bit of fp32, and the correction runs inside the kernel in the fp32
@@ -1017,4 +1035,4 @@ number survives being added up. It does **not** mean any product is release-qual
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-21 12:35 UTC
+updated: 2026-10-21 13:25 UTC
