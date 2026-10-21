@@ -13,6 +13,53 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `feat:` the Mercury carrier adapter - a third carrier for the port
+
+**`G-01`'s milestone 2, part one. The goal stays open, and the radio half is
+filed as blocked rather than skipped.**
+
+`hello/crates/hello-port` has a third carrier: `adapters::mercury`, which
+speaks **Mercury's TCP interface**. The session is two connections. The
+**control port** carries Mercury's line protocol - `MYCALL <callsign>` answered
+`OK`, `BW<token>` answered `OK`, `CONNECT <mine> <theirs>` answered `OK` and
+then the asynchronous `CONNECTED <source> <dest> <bandwidth>` - and the
+**data port** carries the records. Mercury's own words for the data port are
+that it *"carries raw application payload"* and that *"no framing is needed"*,
+because Mercury segments it; the port's records are already length-framed, so a
+record boundary survives that segmentation. The lines end with a carriage return
+and nothing else, so they are read up to the `\r` - a newline never comes.
+
+**Checked at source on 2026-10-21**, against `Rhizomatica/mercury`:
+`mercury.ini.example` for the port table (*"ARQ TCP base port (control =
+base_port, data = base_port + 1) (default: 8300)"* - the ARQ **data** socket
+is 8301 and 8300 is the control socket) and `docs/TNC.md` for the commands,
+the answers, the async notification and the data port's contract.
+
+**One acceptance rule, two carriers.** The verification and the store moved
+into `adapters::accept_records`, so the file ferry and the Mercury adapter
+cannot disagree about the order: the manifest is verified before a payload
+byte is written, and the receipt is made after the write.
+
+**The acceptance ladder, as tests** (`hello/crates/hello-port/tests/mercury.rs`):
+a session is established over the control port; an object crosses the adapter
+and arrives intact; an audio payload crosses it and the rate is measured; an
+interrupted contact leaves the destination with **no** half-accepted object and
+the next contact completes it; and the file ferry and the adapter produce the
+same bytes for the same object.
+
+**Checked here:** `cargo test --workspace` in `G:\Dx\hello` - **273 passed, 0
+failed**; `cargo clippy --workspace --all-targets -- -D warnings` clean.
+
+**What is not claimed.** The measured rate - 320,060 bytes in 0.029 s - is a
+**TCP loopback** rate and nothing else; it must never be quoted as a radio
+rate. No Mercury and no radio were on this machine, so the peer in the test is
+a **test double** that speaks the same control protocol over a real socket:
+interoperability with a real Mercury over a real radio is **not** a measured
+claim. The authorised radio test - milestone 2's second half - is **BLOCKED**
+by hardware and an amateur licence, and it is filed as blocked in the product's
+own ledger (`hello/MEMORY.md` §9). Milestones 3 and 4 are not started, and
+`G-01`'s done-when (*a room holds a call with the network cable pulled*) is
+still open.
 ### 2026-10-21 - \eat:\ the decode fold -- the MXU was being fed an fp32 weight tile
 
 **What changed:** \	pu/lane-aligned-ternary-kernel/kernel.py\ grows a \FOLD\ knob

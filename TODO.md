@@ -36,6 +36,28 @@ it deliberately does not claim.
 | **Goals** | 1 | the direction the corpus is taking: a call that survives the internet |
 | | **40** | total open |
 
+**Pass of 2026-10-21 (ninth): the counts hold at P0 4, P1 13, P2 8, BLOCKED 5, TPU 9,
+Goals 1 - 40 open - and the goal's third milestone lands, half of it.**
+`G-01`'s milestone **2, part one** is built: `hello-port` has a third carrier that
+speaks **Mercury's TCP interface** - the control port at `8300` (`MYCALL`, `BW`,
+`CONNECT`, and the asynchronous `CONNECTED`) establishes the session, and the data
+port at `8301` carries the records, which survive Mercury's own segmentation
+because they are already length-framed. The port table and the protocol were
+checked at source on 2026-10-21 against `mercury.ini.example` and `docs/TNC.md`:
+the ARQ **data** socket is `8301` and `8300` is the control socket. The
+verification and the store moved into one place, so the file ferry and the
+Mercury adapter cannot disagree about the order - the manifest is verified before
+a payload byte is written, and the receipt is made after the write.
+
+**What the milestone did and did not do.** It did **not** put anything on the
+air. No Mercury, no radio, no sound-card modem and no amateur licence exist on
+this machine, so the authorised radio test - the second half of milestone 2 - is
+**BLOCKED** by hardware and a licence, and it is filed as such in the product's
+own ledger rather than quietly skipped. The measured rate is a **TCP loopback**
+rate (320,060 bytes in 0.029 s over a socket on this machine) and the receipt
+says so in the same sentence as the number; it must never be quoted as a radio
+rate. Milestones 3 and 4 are not started, and `G-01` stays open.
+
 **Pass of 2026-10-21 (eighth): the counts hold at P0 4, P1 13, P2 8, BLOCKED 5, TPU 9,
 Goals 1 - 40 open - and the goal's second milestone lands.** `G-01`'s milestone
 **1B** is built: `hello-port` can carry an object as coded symbols and recovers it
@@ -890,17 +912,25 @@ its done-when is met, not when a session ends.
   **not** imply independence. The building blocks exist: `bp7` 0.12.0 — bundle
   encode/decode only, by its own README — the DTN research engine at
   `hello/social/engine`, and the zero-decode relay the product already ships.
-- **What is built:** milestones **1A and 1B**. The `hello-port` crate holds objects in a
-  durable store, signs every manifest, and moves them between ports with a receipt
-  chain; the acceptance test runs the two ports with no network between them. The
-  source-coding layer carries an object as coded symbols and recovers it **by
-  rank**, not by counting the symbols that arrived, with each symbol sealed under
-  its own nonce and its coding descriptor bound by the manifest's commitment
-  (`hello/MEMORY.md` §9, `hello/crates/hello-port`).
-- **What is not built:** milestone 2 — the Mercury carrier adapter over the
-  documented `8300` control / `8301` data split — and everything after it. There is
-  no radio in the loop, no mobile gateway, and no live integration. The review is a
-  design; this goal is the build, and two of its five milestones are now built.
+- **What is built:** milestones **1A, 1B** and **2 (part one)**. The `hello-port` crate
+  holds objects in a durable store, signs every manifest, and moves them between
+  ports with a receipt chain; the acceptance test runs the two ports with no
+  network between them. The source-coding layer carries an object as coded
+  symbols and recovers it **by rank**, not by counting the symbols that
+  arrived, with each symbol sealed under its own nonce and its coding descriptor
+  bound by the manifest's commitment. The third carrier speaks **Mercury's TCP
+  interface**: the control port at `8300` (`MYCALL`, `BW`, `CONNECT`, and the
+  asynchronous `CONNECTED`) establishes the session and the data port at
+  `8301` carries the records - the port table and the protocol were checked at
+  source on 2026-10-21 (`hello/MEMORY.md` §9, `hello/crates/hello-port`,
+  `hello/docs/receipts/mercury-adapter-2026-10-21.txt`).
+- **What is not built:** milestone 2's second half - **the authorised radio
+  test** - and everything after it. No Mercury, no radio, no sound-card modem
+  and no amateur licence exist on this machine, so that half is **BLOCKED** by
+  hardware and a licence, not by code. Milestones 3 (the mobile gateway) and 4
+  (the live integration) are not started. The measured rate is a **TCP loopback**
+  rate and is not a radio rate. The goal's done-when - *a room holds a call with
+  the network cable pulled* - is still open. `G-01` stays open.
 - **Done when:** a `hello-port` crate exists with a durable store, a receipt
   protocol and one carrier adapter, and a room holds a call with the network
   cable pulled. The acceptance ladder is the review's own milestone table:
@@ -917,7 +947,7 @@ re-verify them, and none of them may be quoted as hub status.
 | Ledger | Recorded state | Receipt |
 | --- | --- | --- |
 | `bot/` (flow) | 3 waves, **25 open items**; Wave Q 31 of 46 closed (67 %), AI Harness War 3 open, Wave R 8 of 15 (53 %). "**Nothing is certified for release.**" | `OPEN-WORK-2026-09-19.md:6` |
-| `hello/` (user-hosted calls) | 268 tests pass on this machine. Per-peer playback volume, a listen-only role, uplink headroom, host migration and upstream fan-out are built and loopback-verified; the wire format is v10. An inter-frame camera codec is built and measured and **loses** to the tile path (12,875 B/frame against 2,395 at 640x360), so it is opt-in. A portable package installs, runs a room and uninstalls cleanly. The offline stack has two of five milestones built (`G-01`: 1A the durable ferry, 1B source coding decoded by rank). **Open:** make the codec win, two-real-NAT verification, and the offline stack's remaining milestones (`G-01`). | `hello/MEMORY.md` §9, `hello/STATUS.md` §12, `hello/docs/receipts/` |
+| `hello/` (user-hosted calls) | 273 tests pass on this machine. Per-peer playback volume, a listen-only role, uplink headroom, host migration and upstream fan-out are built and loopback-verified; the wire format is v10. An inter-frame camera codec is built and measured and **loses** to the tile path (12,875 B/frame against 2,395 at 640x360), so it is opt-in. A portable package installs, runs a room and uninstalls cleanly. The offline stack has three of five milestones built (`G-01`: 1A the durable ferry, 1B source coding decoded by rank, 2 part one the Mercury carrier adapter). **Open:** make the codec win, two-real-NAT verification, and the offline stack's remaining milestones (`G-01`: the authorised radio test, which is **BLOCKED** by hardware and a licence). | `hello/MEMORY.md` §9, `hello/STATUS.md` §12, `hello/docs/receipts/` |
 | Distribution matrix | 8 of 14 channels READY, 3 TODO, 3 LATER | `DX.md:287` |
 | `daemon` | Advertised "all 11 targets shipping, cloud-offloaded visual memory live" — **no page, no receipt in `docs/`** | `README.md:95`, `DOC-01` |
 | Kaggle Qwen run | `COMPLETE`, ~10.15 tok/s mean on P100 — **runtime/hosted claim**, source files not in this repo | `README.md:144`, `DOC-04` |
