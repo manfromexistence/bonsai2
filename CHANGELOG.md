@@ -13,6 +13,58 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` the F: Rust build output deleted, reclaiming 7.56 GB
+
+**The seventh authorised deletion, on F:.** The target was the Rust build output the survey
+flagged as low risk, named explicitly and approved.
+
+**Approved targets:**
+
+| Path | Size |
+| --- | --- |
+| `F:\t3code-android-target` | 3.87 GB |
+| `F:\DxGrokTarget` | 3.66 GB |
+| `F:\Zen\engine\obj-x86_64-pc-windows-msvc\dist` | 0.77 GB |
+| `F:\JavaScript\runtime\target` | 0.16 GB |
+| `F:\Zen\tools\ffprefs\target` | 0.07 GB |
+
+The survey also listed `F:\DxGrokTarget\release\build` and
+`F:\t3code-android-target\release\build` at 0.54 GB each. Both sit **inside** the two
+parent folders above, so deleting the parents covers them; they were not listed
+separately.
+
+**Why it was safe.**
+
+- **No build was writing to any of them.** A cargo build *was* running
+  (`cargo build -p dx-harness-cli --release --features engine`), but its
+  `rustc --out-dir` is `G:\Dx\harness\target\release\deps`, **not** `F:`. Zero files in
+  `F:\DxGrokTarget` or `F:\t3code-android-target` had been modified in the last 30
+  minutes.
+- **Zero reparse points** in all five, so no junction could carry the delete outside the
+  target.
+- **No git-tracked file inside any of them.** `F:\t3code-android-target` and
+  `F:\DxGrokTarget` are standalone Cargo target directories, not repositories. The three
+  paths that do sit inside repositories (`F:\Zen` twice, `F:\JavaScript` once) each
+  returned zero tracked files from `git ls-files`.
+- **Verified afterwards:** `F:\Zen` still has its 39 top-level entries, and its only git
+  changes are the pre-existing `M surfer.json` and `?? mozconfig.lowmem`, neither of
+  which this change touched.
+
+**Method:** `cmd rd /s /q` on each of the five paths.
+
+**Receipt:** `F:` free space went from **6.64 GB to 14.21 GB**, a reclaim of
+**7.56 GB**.
+
+**Why the reclaim is smaller than the 8.53 GB measured.** The two standalone Cargo
+target directories hold content partly **hardlinked** into the shared Cargo registry cache,
+so deleting them returns less than their logical size — the same effect the `smolvm`
+deletion showed.
+
+**Not touched:** `G:\Dx` and every product repo in it, and every other folder on `F:` —
+`F:\.codex` (47.17 GB of live Codex agent state), `F:\Zen` itself, `F:\hexed`, `F:\Alter`,
+`F:\flow`, `F:\cursed`, `F:\AndroidAvd`, `F:\DX_TRASH`, `F:\$RECYCLE.BIN` and the three
+stale migration backups all remain.
+
 ### 2026-10-21 - `chore:` the smolvm VM and the WorkBuddy data folder deleted on C:, reclaiming 9.89 GB
 
 **The fifth and sixth authorised deletions, both on C:.** The two targets were named
