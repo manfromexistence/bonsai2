@@ -13,6 +13,50 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `docs:` the codebase fork's DX surface, and the flaw that stopped it working
+
+**The product's own ledger carries the detail; this is the hub-side record.**
+
+`essence-dx/codebase` now **builds on this machine** and its DX surface - the
+one typed tool, `dx_codebase` - is **exercised by the built binary over real
+stdio**. The hub README now says what the fork adds, in the terms the claim
+tiers allow: the graph is upstream's, the surface is the fork's.
+
+**What was found, and it was not a small thing.** The DX profile **could not
+start the server at all**. `codebase-memory-mcp --tool-profile=dx` exited with
+code 1 and the message "daemon session context was rejected", and answered
+**zero** JSON-RPC requests. The profile's enum value was 3 while the daemon's
+context handshake bounded the profile at 2, so the handshake rejected it and
+the server refused to serve. Every DX feature built so far was unreachable in
+the product, while every unit test passed: 79 green tests and a product that
+would not start. The bound is now written against a name that means what it
+says, and the enum's shape is pinned by compile-time assertions.
+
+**Two more, found by driving the built server and reading its own answer.**
+
+- The DX schema never said what a request needs. The DX surface is the only
+  schema the agent sees, so "the base tool's own parameters, forwarded
+  verbatim" described something the agent could not look up. The layer now
+  carries the requirement, checks the request against it, and refuses with the
+  missing field named.
+- Every base tool requires a `project` and the base has no implicit fallback,
+  so every DX request had to carry a project name the agent cannot know. The
+  session's project now fills the gap.
+
+**Executed.**
+
+| Check | Result |
+| --- | --- |
+| `make -f Makefile.cbm cbm` in `G:\Dx\codebase` | **links**, exit 0 (was: 3 format errors) |
+| `codebase-memory-mcp --tool-profile=dx` over real stdio | **before**: exit 1, 0 responses; **after**: exit 0, 4 responses, exactly one tool |
+| The DX contract tests in the product | **89 passed** across three suites (surface, governance, memory) |
+| `gcc -fanalyzer` over the DX modules and their tests | **clean** |
+
+**Still open at the hub level.** `MF-06` (the `dx` manifest does not declare
+`codebase`, so no route resolves) and `DOC-05` (no page in the achievement
+register) are unchanged, and `codebase/TODO.md` `CB-01`/`CB-02` still block
+the first release and therefore the `dx` route and the registry entry.
+
 ### 2026-10-21 - `chore:` the codebase product is now `essence-dx/codebase`
 
 **`G:\Dx\codebase` stops being two vendored checkouts and becomes one DX product

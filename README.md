@@ -130,6 +130,15 @@ MIT; the `essence-dx` organisation name is why the slug carries no second `dx`
 prefix. The repository is public and forks `DeusData/codebase-memory-mcp` on
 GitHub, so "Sync fork" and upstream pull requests both work.
 
+What the fork adds is a **surface**: one typed tool (`dx_codebase`) whose schema
+makes the agent draft a request type, review its own draft, and commit to it,
+with a budget that **refuses** an over-budget answer rather than truncating it.
+That layer is DX's own work and it is exercised by a built binary on this
+machine, driven over real stdio. The measured claim behind it is upstream's own
+figure: a session with MCP attached costs **+66% tokens** against the same
+session without it (`codebase/TODO.md` `CB-13`). The graph is upstream's; the
+surface is the fork's.
+
 ## Vendored third-party workspaces
 
 These are real checkouts of other people's projects. They are **not** DX tools
