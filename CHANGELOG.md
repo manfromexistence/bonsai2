@@ -96,7 +96,7 @@ sequential path produced for the same tokens.
 
 | receipt | what |
 | --- | --- |
-| `receipt-chunk4-b1-f16-tc1024.json` | 133.9 ms/step, 7.47 tok/s, first token 271, text identical to the shipped path |
+| `rreceipt-chunk4-b1-f16-tc1024.json` | 133.9 ms/step, 7.47 tok/s, first token 271, text identical to the shipped path |
 | its `chunk_check` | **3/3 argmaxes agree, `exact=true`, first disagreement: None** |
 
 The chunk's position j is the sequential path's position j+1 -- exactly what the
@@ -129,32 +129,32 @@ draft's acceptance rate -- DFlash2 for this base architecture (1.92 B parameters
 3.58 GB) or the MTP head from the community GGUF (5.87 GB lean). At 119.5 ms per
 pass, 6 accepted tokens per pass is 50.2 tok/s.
 
-### 2026-10-21 - ### 2026-10-21 - \### 2026-10-21 - `feat:` the decode fold, measured: 10.9 % faster, first token unchanged
+### 2026-10-21 - `feat:` the decode fold, measured: 10.9 % faster, first token unchanged
 
 **Measured on Colab TPU v5e-1, the real 64-layer model, both arms in one session.**
 
 | arm | ms/step | tok/s | first token | receipt |
 | --- | --- | --- | --- | --- |
-| \FOLD=0\ (the shipped decode) | 134.1 | 7.45 | 271 | eceipt-fold0-b1-f16-tc1024.json\ |
-| \FOLD=1\ (the fold) | **119.5** | **8.37** | **271** | eceipt-fold1-b1-f16-tc1024.json\ |
+| `FOLD=0` (the shipped decode) | 134.1 | 7.45 | 271 | `receipt-fold0-b1-f16-tc1024.json` |
+| `FOLD=1` (the fold) | **119.5** | **8.37** | **271** | `receipt-fold1-b1-f16-tc1024.json` |
 
-Same prompt, same window, same everything else: \what is the capital of franch,
-india and bangaldesh and give me tps\, 17 prompt tokens, \max_t\ 8192, state
-float16, \TC\ 1024, fusion on, \GQA=1\. **14.6 ms of the step, 10.9 % faster**,
-and the first token is still ¹\.
+Same prompt, same window, same everything else: `what is the capital of franch,
+india and bangaldesh and give me tps`, 17 prompt tokens, `max_t` 8192, state
+float16, `TC` 1024, fusion on, `GQA=1`. **14.6 ms of the step, 10.9 % faster**,
+and the first token is still `271`.
 
 **Why it works.** The shipped decode line is
-\(concat(...) - 1).astype(bfloat16) * sc\, and the cast and the multiply are one
+`(concat(...) - 1).astype(bfloat16) * sc`, and the cast and the multiply are one
 expression, so it promotes **back to fp32**: the MXU was being fed a
 4-byte-per-element weight tile where it needs 2 -- and that tile is "the largest
 single term in the projection's memory traffic" by the kernel's own comment. The
 fold leaves the level in bf16 (0, 1 and 2 are exact), moves the per-out-column scale
-onto the fp32 accumulator, and folds the \- 1\ into one per-token correction
-(\sum_in (level-1)*x = sum_in level*x - sum_in x\), inside the kernel, so the
+onto the fp32 accumulator, and folds the `- 1` into one per-token correction
+(`sum_in (level-1)*x = sum_in level*x - sum_in x`), inside the kernel, so the
 cancellation happens at full precision and only the result is rounded to bf16.
 
 **The text differs, and that is the price line being honoured.** The shipped path
-hands the MXU a bf16 rounding of \(level-1)*sc\; the fold keeps the scale in fp32.
+hands the MXU a bf16 rounding of `(level-1)*sc`; the fold keeps the scale in fp32.
 The fold's text keeps the prompt's typos visible ("a garbled/misspelled query")
 where the shipped path reads them as France/India/Bangladesh. The fp32 reference
 forward pass is the oracle for which is right, and it is running.
@@ -162,7 +162,7 @@ forward pass is the oracle for which is right, and it is running.
 **What it does to the 50 tok/s arithmetic.** At 119.5 ms per pass, **6 accepted
 tokens per pass is 50.2 tok/s** -- the top of the published acceptance range for
 this architecture. The draft and the fold are both needed, and both are now
-measured numbers instead of estimates. See \TODO.md\ \TPU-11\.
+measured numbers instead of estimates. See `TODO.md` `TPU-11`.
 
 ### 2026-10-21 - `chore:` the `hello` product gets a remote, and its work becomes durable
 
@@ -223,37 +223,39 @@ by hardware and an amateur licence, and it is filed as blocked in the product's
 own ledger (`hello/MEMORY.md` §9). Milestones 3 and 4 are not started, and
 `G-01`'s done-when (*a room holds a call with the network cable pulled*) is
 still open.
-### 2026-10-21 - eat: the decode fold -- the MXU was being fed an fp32 weight tile
+### 2026-10-21 - `feat:` the decode fold -- the MXU was being fed an fp32 weight tile
 
-**What changed:** \	pu/lane-aligned-ternary-kernel/kernel.py\ grows a \FOLD\ knob
-(**default 0**, so the shipped path is untouched). With \FOLD=1\ the trit decode's
-\- 1\ and \* scale\ leave the per-weight path, and with them the tile's element
+**What changed:** `tpu/lane-aligned-ternary-kernel/kernel.py` grows a `FOLD` knob
+(**default 0**, so the shipped path is untouched). With `FOLD=1` the trit decode's
+`- 1` and `* scale` leave the per-weight path, and with them the tile's element
 width.
 
 **Why:** the shipped line is
 
-\\python
+```python
 w = (jnp.concatenate([t80, t40, h8], 0) - 1).astype(jnp.bfloat16) * sc
-\
-and the cast and the multiply are one expression, so \.astype(bfloat16) * scpromotes **back to fp32**. The MXU is therefore fed a **4-byte-per-element**
+```
+
+and the cast and the multiply are one expression, so `.astype(bfloat16) * sc`
+promotes **back to fp32**. The MXU is therefore fed a **4-byte-per-element**
 weight tile where it needs 2 -- and that tile is "the largest single term in the
-projection's memory traffic" by the kernel's own comment. The \- 1\ and the
-\* sc\ are two more full passes over it, and neither belongs there: the scale
-is per out-column (so it belongs on the accumulator) and the \- 1\ is a constant
-offset (so \sum_in (level-1)*x = sum_in level*x - sum_in x\, and \sum_in x\ is
+projection's memory traffic" by the kernel's own comment. The `- 1` and the
+`* sc` are two more full passes over it, and neither belongs there: the scale
+is per out-column (so it belongs on the accumulator) and the `- 1` is a constant
+offset (so `sum_in (level-1)*x = sum_in level*x - sum_in x`, and `sum_in x` is
 one scalar per token). The fold leaves the level in bf16 -- 0, 1 and 2 are exact
 in bf16 -- and does the correction inside the kernel, in the fp32 accumulator,
 so the cancellation happens at full precision and only the result is rounded to
 bf16, the same rounding the shipped path ends with.
 
-**Executed on CPU:** \	pu/lane-aligned-ternary-kernel/fold_test.py\ reproduces the
+**Executed on CPU:** `tpu/lane-aligned-ternary-kernel/fold_test.py` reproduces the
 kernel's decode spelling and compares the two projections -- worst relative
 difference **2.3e-07**, fp32 rounding. **Not measured on the TPU**; the gate is
-the first token (still ¹\), and because the shipped path hands the MXU a
-bf16 rounding of \(level-1)*sc\ while the fold keeps the scale in fp32, the fold
+the first token (still `271`), and because the shipped path hands the MXU a
+bf16 rounding of `(level-1)*sc` while the fold keeps the scale in fp32, the fold
 is the *more* accurate of the two and the two may not agree bit for bit. If the
-greedy text changes, the comparison against \	pu/reference-forward-pass/\ decides
-which is right. See \TODO.md\ \TPU-11\.
+greedy text changes, the comparison against `tpu/reference-forward-pass/` decides
+which is right. See `TODO.md` `TPU-11`.
 
 ### 2026-10-21 - `feat:` the Hello Ports goal's second milestone - source coding, decoded by rank
 
@@ -757,7 +759,7 @@ time (`gdn_core`, `kernel.py:429-433`), derived and verified.
 
 **Why it is the work that matters:** the step reads 6.37 GiB of packed weights per
 token and the measured 8k step is **134.3 ms** of which **~109 ms is the projection's
-per-element work** (`receipt-gqa-b1-f16-tc1024.json`, 7.45 tok/s) — the step is ~15x
+per-element work** (`rreceipt-gqa-b1-f16-tc1024.json`, 7.45 tok/s) — the step is ~15x
 off its own HBM roofline of 9.0 ms, and the MXU is ~99 % idle at batch 1. That cost is
 per *weight*, and per-weight work does not shrink when more tokens ride along with
 it. A verification pass computes *k* tokens against the same unpacked weights and
@@ -953,7 +955,7 @@ receipt is now named for what it is.
 | `archive/10-fused-ternary-matmul` | `archive/fused-ternary-matmul` |
 | `archive/11-fully-fused-64-layer-model` | `archive/fully-fused-64-layer-model` |
 | `archive/12-windowed-dma-in-blocks` | `archive/windowed-dma-in-blocks` |
-| `receipt-14-*.json` | `receipt-*.json` |
+| `rreceipt-14-*.json` | `rreceipt-*.json` |
 
 `git mv` throughout, so every folder and every receipt keeps its history, and the
 kernel now writes the un-numbered receipt name itself. The work order is not lost:
@@ -1436,9 +1438,9 @@ the mechanism is multi-token-prediction speculation, and that the cheapest proof
 on this machine is a GPU run, not a TPU one.**
 
 - **The measurement that reframes the problem:** **180.6 ms/step at batch 1**
-  (`tpu/14-bonsai-transposed/receipt-14-b1-f16-tc1024-fused.json`) against
+  (`tpu/14-bonsai-transposed/rreceipt-14-b1-f16-tc1024-fused.json`) against
   **284.7 ms/step at batch 80**
-  (`tpu/14-bonsai-transposed/receipt-14-b80-f16-tc1024.json`). Eighty sequences cost
+  (`tpu/14-bonsai-transposed/rreceipt-14-b80-f16-tc1024.json`). Eighty sequences cost
   1.58× one sequence: on this track the step is ~85 % per-projection launch overhead
   across ~400 projections, not bandwidth. The traffic floor is 6.37 GiB ÷ 709 GB/s =
   **9.0 ms** (`tpu/13-cost-sweep/README.md:28`), so 50 tok/s (20 ms/step) is 2.2× the
@@ -1469,8 +1471,8 @@ on this machine is a GPU run, not a TPU one.**
 - **Measured, same prompt, same window, same batch** (`max_t` 8192, batch 1, 64
   generated, prompt *"what is the capital of franch, india and bangaldesh and give me
   tps"*): **4.62 → 5.54 tok/s, 216.3 → 180.6 ms/step**, decode 13.85 s → 11.56 s.
-  Receipts: `receipt-14-b1-f16-tc1024-franch.json` (before) and
-  `receipt-14-b1-f16-tc1024-fused.json` (after). The first token is `271` in both and
+  Receipts: `rreceipt-14-b1-f16-tc1024-franch.json` (before) and
+  `rreceipt-14-b1-f16-tc1024-fused.json` (after). The first token is `271` in both and
   the 64 generated tokens are byte-identical, so the fusion changed the speed and not
   the model.
 - **The trap that cost 2 h 12 m:** closing over the weight tiles made JAX capture
@@ -1481,7 +1483,7 @@ on this machine is a GPU run, not a TPU one.**
   was **4.6 s**.
 - **The gate, for the record:** the fused smoke run (prompt `Hello`) returned first
   token `11` `','` — notebook 08's expected value *for that prompt* —
-  (`receipt-14-b1-f16-tc1024-fused-smoke.json`). An automated check that expected `271`
+  (`rreceipt-14-b1-f16-tc1024-fused-smoke.json`). An automated check that expected `271`
   for every prompt aborted that run as a false alarm: the gate value is
   prompt-dependent, and the check was wrong, not the kernel.
 
@@ -1489,11 +1491,11 @@ on this machine is a GPU run, not a TPU one.**
 
 - **Measured** (Colab TPU v5e-1, batch 1, fp32 KV): `max_t` 45056 runs at
   **2.86 tok/s, 350.1 ms/step, peak 14.01 GiB**
-  (`tpu/14-bonsai-transposed/receipt-14-b1-f16-tc1024-45056.json`); `max_t` 49152 dies
+  (`tpu/14-bonsai-transposed/rreceipt-14-b1-f16-tc1024-45056.json`); `max_t` 49152 dies
   with `RESOURCE_EXHAUSTED … 'jit_attn_step': Attempting to reserve 2.44G … There are
   2.30G free` — **140 MB short**; `max_t` 65536 dies the same way wanting 3.26 G with
   **184.53 MB free**. All three are recorded together in
-  `tpu/14-bonsai-transposed/receipt-14-mem-ceiling.json`.
+  `tpu/14-bonsai-transposed/rreceipt-14-mem-ceiling.json`.
 - **Why:** fp32 KV is 128 KiB/token/sequence, so 64k is 8 GiB of KV on a 15.75 GiB
   budget that already holds 6.37 GiB of weights. q4 KV would make 64k 1 GiB and the
   window would fit at ~11.3 GiB — but the kernel has no q4 KV path and no blocked or
@@ -1519,7 +1521,7 @@ on this machine is a GPU run, not a TPU one.**
   generated): **FUSE=0 → 5.49 tok/s, 182.3 ms/step, 400 launches**;
   **FUSE=1 → 5.52 tok/s, 181.3 ms/step, 256 launches**. First token `271` in both and
   the 64 generated tokens are byte-identical, so the fusion is numerically exact.
-  Receipts: `receipt-14-fuse0-b1-f16-tc1024.json`, `receipt-14-fuse1-b1-f16-tc1024.json`.
+  Receipts: `rreceipt-14-fuse0-b1-f16-tc1024.json`, `rreceipt-14-fuse1-b1-f16-tc1024.json`.
 - **The refutation, which is the point:** removing **36 % of the kernel launches moved
   the step time by 0.5 %.** The per-step cost is therefore *not* launch overhead, and
   the plan built on that assumption (`TODO.md` `TPU-01`, "≤ 100 ms/step at 256
@@ -1571,7 +1573,7 @@ on this machine is a GPU run, not a TPU one.**
 - **`PREFETCH=1` does not compile** with this kernel's grid: Pallas reports a pytree
   arity mismatch, because `num_scalar_prefetch` wants the prefetched dimension to be
   a scalar dim and the grid is `(TOUT, 1, BPC)` with the parallel dim first. The
-  `PREFETCH=0` control is `tpu/14-bonsai-transposed/receipt-14-pf0-b1-f16-tc1024.json`
+  `PREFETCH=0` control is `tpu/14-bonsai-transposed/rreceipt-14-pf0-b1-f16-tc1024.json`
   (5.52 tok/s, 181.3 ms/step). The lever's ceiling was 7.6 % anyway.
 - **The TPU ceiling is now priced honestly.** A multi-token verification pass costs
   ~200 ms, so 50 tok/s needs 9-10 accepted tokens per pass -- an MTP head gives 2-3
@@ -1613,8 +1615,8 @@ on this machine is a GPU run, not a TPU one.**
 - **The curve that had never been measured, now measured** (batch 1, the fused
   64-layer step, the same 17-token prompt throughout): `max_t` 83 → **152.3 ms/step
   (6.57 tok/s)**, `max_t` 1024 → 153.6 ms (6.51 tok/s), `max_t` 8192 → **180.9 ms
-  (5.53 tok/s)**. Receipts: `tpu/14-bonsai-transposed/receipt-14-ctx64-b1-f16-tc1024.json`,
-  `receipt-14-ctx1024-b1-f16-tc1024.json`, `receipt-14-ctx8192-b1-f16-tc1024.json`.
+  (5.53 tok/s)**. Receipts: `tpu/14-bonsai-transposed/rreceipt-14-ctx64-b1-f16-tc1024.json`,
+  `rreceipt-14-ctx1024-b1-f16-tc1024.json`, `rreceipt-14-ctx8192-b1-f16-tc1024.json`.
 - **So the entire 8k window costs 19 %** at batch 1, and the best single-stream number
   on this track is **6.57 tok/s** at a short window. The earlier 638/662 ms step times
   were a *batch x context* interaction, not context: they were measured at batches 48
@@ -1673,7 +1675,7 @@ on this machine is a GPU run, not a TPU one.**
   times. Off by default; the shipped path is unchanged.
 - **Both new paths are priced together** as a 2x2 matrix against the shipped path
   (NOCONCAT x GQA) on one TPU session, receipts as
-  `tpu/14-bonsai-transposed/receipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`. No speed
+  `tpu/14-bonsai-transposed/rreceipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`. No speed
   claim is made until those receipts exist.
 
 ### 2026-10-20 — `docs:` the two formats that decide the next build: `PQ2_0` and a community MTP head
@@ -1718,7 +1720,7 @@ numerically exact (first token `271`, identical text):**
 | **`GQA=1`** (contract the 24 query heads against the 4 kv heads directly) | **134.3** | **7.45** | **−16 %** |
 | both | 163.9 | 6.10 | +2.6 % |
 
-Receipts: `tpu/14-bonsai-transposed/receipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`.
+Receipts: `tpu/14-bonsai-transposed/rreceipt-14-{base,nc,gqa,both}-b1-f16-tc1024.json`.
 
 - **`GQA` is the win, and it is exact.** The shipped path materialises
   `K[:, :, _KIDX, :]` and `V[:, :, _KIDX, :]` -- a (B, T, 24, 256) expansion of the
@@ -1875,4 +1877,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-21 14:20 UTC
+updated: 2026-10-22 00:20 UTC
