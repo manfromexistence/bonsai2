@@ -332,3 +332,6 @@ The useful product promise remains:
 That is consistent with the capabilities BPv7 was designed to support. Worldwide reach still depends on a deployed sequence of contacts before expiry; software cannot substitute for a missing physical route. 
 
 For a repository-specific patch, the necessary starting files are the workspace `Cargo.toml`, the `dxs-ecc` encode/decode API, Hello’s existing transport interface, and its current identity/encryption boundary.
+
+MIT OR Apache-2.0
+updated: 2026-10-21 00:00 UTC

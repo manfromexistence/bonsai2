@@ -13,6 +13,46 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `feat:` the Hello Ports goal's second milestone - source coding, decoded by rank
+
+**`G-01` moves from one milestone to two. The goal stays open.**
+
+`hello/crates/hello-port` can now carry an object as **coded symbols** and
+recover it **by rank**. The distinction is the whole point: two symbols can be
+scalar multiples of each other and give one equation between them, so "K
+symbols arrived" is not a reason to believe an object is recoverable. The
+decoder asks the linear algebra, and when the rows do not have rank K it says
+the object is not recoverable yet rather than guessing
+(`hello/crates/hello-port/src/coding.rs`).
+
+**What a carrier holds.** Sealed symbols it cannot read, each sealed under its
+own nonce so the pieces of one object never repeat a nonce, each carrying its
+own coding descriptor in the clear - a receiver needs that to decode, and the
+signed manifest binds a **commitment over the descriptor**, so a carrier that
+rewrites a descriptor changes the commitment and the object stops verifying.
+The GF(2^8) arithmetic and the coder come from the research crate `dxs-ecc` in
+`hello/social/engine`, now a path dependency of `hello-port`; making it a
+dependency put it under the workspace's clippy, so its three lints are fixed
+too, with no behaviour change.
+
+**The acceptance ladder, as tests** (`hello/crates/hello-port/tests/coding.rs`):
+a coded object arrives and rebuilds the payload; a symbol with a rewritten
+descriptor is refused; a symbol with rewritten bytes does not open; the rank
+decides recoverability; duplicates change nothing and a symbol from another
+generation is refused rather than silently mixed in; a bundle without a
+manifest is refused and stores nothing.
+
+**Checked here:** `cargo test --workspace` in `G:\Dx\hello` - **268 passed, 0
+failed**; `cargo clippy --workspace --all-targets -- -D warnings` clean;
+`cargo fmt --all` applied. Commits `f7053cc` (the feature) and `26d4a51` (the
+product ledger).
+
+**What it did not do.** It did not make a call survive. There is still no
+carrier adapter, no radio in the loop and no mobile gateway: milestone **2** -
+the Mercury adapter over the documented `8300` control / `8301` data split - is
+next, and `G-01`'s done-when (*a room holds a call with the network cable
+pulled*) is still open.
+
 ### 2026-10-21 - `docs:` the `hello` product gets a page, a manifest path, and a home for its design review
 
 **Two ledger items close, and the product the hub did not know about becomes

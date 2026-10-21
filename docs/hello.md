@@ -34,7 +34,7 @@ the way it knows every other folder: by what it has actually achieved.
 | Host migration | The room survives its host leaving: a roster every heartbeat, a deterministic election, a promotion notice, and epoch-scoped group keys |
 | Product surface | Per-peer volume, a listen-only role, a listen-only CLI command, a portable package with install and uninstall scripts, and a Tauri shell with device and camera pickers |
 | An inter-frame camera codec | Written, measured and **opt-in**: it is a real motion-compensated codec, and the receipt says plainly that it does not yet beat the tile path (12,875 B/frame against 2,395 at 640x360) |
-| The offline path, started | `hello-port`: signed manifests, a durable store, receipted delivery, a contact scheduler, and two adapters. Milestone 1A of **Hello Ports** - a call that keeps working when the internet does not |
+| The offline path, started | `hello-port`: signed manifests, a durable store, receipted delivery, a contact scheduler, two adapters, and source coding decoded **by rank**. Milestones 1A and 1B of **Hello Ports** - a call that keeps working when the internet does not |
 
 ## Validation To Check
 
@@ -57,6 +57,10 @@ the way it knows every other folder: by what it has actually achieved.
   second of black picture, so the camera path is verified as a pipeline and
   not as a picture.
 - **The inter-frame codec does not yet beat JPEG**, and the docs say so.
-- **The offline stack is a design and a first milestone, not a product.** The
+- **The offline stack is a design and two milestones, not a product.** The
   `hello-port` crate carries a message between two ports with the network
-  down; there is no radio, no satellite link and no call that survives.
+  down, and can carry it as coded symbols recovered by rank; there is no radio,
+  no satellite link and no call that survives.
+
+MIT OR Apache-2.0
+updated: 2026-10-21 00:00 UTC
