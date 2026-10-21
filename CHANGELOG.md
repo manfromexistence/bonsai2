@@ -13,6 +13,57 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `feat:` the `hello` product gains volume, a listen-only role, uplink headroom, host migration and upstream fan-out
+
+**The `hello` product moved further in one session than in the previous three, and the
+hub's own register did not notice: `hello` is on disk and in nothing here.** Seven
+features landed, the wire format moved **v6 → v10**, and the review of the offline
+design (`hello/OFFLINE.md`) was checked line by line against primary sources.
+
+| What landed | Where | Tier |
+| --- | --- | --- |
+| Per-peer playback volume: a gain per sender, `hello join --peer-volume ID=0.5`, a stdin fader (`volume <id> <gain>`) during the call, and a slider plus mute toggle per voice in the desktop shell | `hello/crates/hello-core/src/mixer.rs`, `hello/crates/hello-net/tests/loopback.rs` | executed (loopback) |
+| A listen-only role: one join-flags byte in the handshake, `hello listen`, a desktop checkbox; a listener captures nothing, sends nothing, and is never chosen to forward | `hello/crates/hello-core/src/secure.rs`, `hello/crates/hello-net/tests/loopback.rs` | executed (loopback) |
+| Uplink headroom: a peer declares a relay budget (`--uplink-kbps`) and reports its measured egress in every Ping; the host skips a peer whose budget is spent | `hello/crates/hello-net/src/host.rs` | executed (loopback) |
+| Host migration: the room survives its host leaving - a roster every heartbeat, a deterministic election, a promotion notice, and epoch-scoped group keys | `hello/crates/hello-net/src/client.rs` | executed (loopback: the room is back under 2.5 s with media flowing) |
+| Upstream fan-out: a peer whose own path to the host is unhealthy hands its upstream media to a carrier, which forwards it **unchanged** - the media is sealed for the host, so the trust model does not move | `hello/crates/hello-net/src/host.rs` | executed (loopback) |
+| An inter-frame camera codec behind `FrameProducer` (motion compensation, signed residual, quantised DCT, zigzag, run-length coder), with `hello codec-bench` to measure it | `hello/crates/hello-video/src/inter.rs` | executed - and it **loses**: 12,875 B/frame against the tile path's 2,395 at 640x360, so it is opt-in |
+| A portable package: both binaries, the media library, and install and uninstall scripts | `hello/scripts/package.ps1` | executed on this machine: the package installs, the installed CLI hosts a room a client joins, and the uninstall removes exactly the three files it placed |
+
+**The wire format moved four versions** in this session: v7 carries the join-flags
+byte, v8 the 28-byte header with epoch and layer tags plus the new control kinds
+(landed from the 2026-10-19 session and committed with the headroom work, because
+the two cannot be separated without leaving a tree that does not compile), v9 the
+roster and promotion kinds, v10 the tree's upstream relay.
+
+**The offline design review was verified against every source it cited.** The
+Mercury's own `mercury.ini.example` confirms the port table the review corrects
+(control 8300, **ARQ data 8301**, broadcast 8100) and `main.c` confirms
+GPL-3.0-or-later; `docs/BROADCAST-FILE.md` confirms the RaptorQ fountain carousel
+and "at DATAC3 - the default mode - 1 kB takes about half a minute"; Google's own
+`api_diff/36.1` page confirms `PROPERTY_SATELLITE_DATA_OPTIMIZED` landed in API
+**36.1**, and the manifest value is the app's **package name**, not `true`; Apple's
+DocC confirms both `carrier-constrained` entitlements (including the
+`light-social-8008` "social apps with limited bandwidth" category) and the
+eight-hour Live Activity limit; crates.io confirms **bp7 0.12.0 (2026-10-17)**, its
+validation/FFI-safety/RFC 9171 notes, and its own scope line: *"This library only
+handles encoding and decoding of bundles, not transmission or other processing of
+the data."* RFC 8032 confirms the 64-byte Ed25519 signature, and the review's
+capacity arithmetic is exact to the byte. Two claims could not be read at source
+from this machine (the Bao and Walrus pages serve no text; one Android page times
+out) and are recorded as unverified rather than as agreed.
+
+**What is not claimed.** The inter-frame codec does not yet beat the tile path, so
+it is opt-in. Migration has no path for a member behind the public relay. The
+offline design is a **review**, not an implementation: there is no `hello-port`
+crate, no durable store and no carrier adapter.
+
+**And the hub's own governance has a gap this exposed.** `hello` is on disk, is
+absent from the `dx` manifest's `paths` block, has no page in `docs/achievements/`
+and no row in the register - so a product that shipped seven features this week
+is invisible to the hub's memory. Filed as `MF-07` and `DOC-06`, with `hello`'s
+state and its open work added to *Owned elsewhere*.
+
 ### 2026-10-21 - `fix:` a Windows heap corruption in the base, and the house suite running
 
 **Two findings that change what this product can claim.**
@@ -1447,4 +1498,4 @@ archived per-wave ledgers inside the `bot` product repo. Entries above start whe
 `file:line` receipt starts.
 
 MIT OR Apache-2.0
-updated: 2026-10-21 03:55 UTC
+updated: 2026-10-21 12:10 UTC

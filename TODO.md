@@ -29,11 +29,49 @@ it deliberately does not claim.
 | Priority | Open | What it guards |
 | --- | --- | --- |
 | **P0** | 4 | durability — work that exists only on this machine, and routing that is dead |
-| **P1** | 14 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
-| **P2** | 7 | hygiene and the long tail |
-| **BLOCKED** | 4 | held by hardware/software not present on this machine |
+| **P1** | 15 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
+| **P2** | 8 | hygiene and the long tail |
+| **BLOCKED** | 5 | held by hardware/software not present on this machine |
 | **TPU track** | 9 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
-| | **39** | total open |
+| **Goals** | 1 | the direction the corpus is taking: a call that survives the internet |
+| | **42** | total open |
+
+**Pass of 2026-10-21 (sixth): the total moves 39 → 42, P1 moves 13 → 15, and one goal
+is filed.** The `hello` product shipped seven features in one session - per-peer
+volume, a listen-only role, uplink headroom, host migration, upstream fan-out, an
+inter-frame camera codec and a portable package - and the wire format moved v6 → v10
+(`CHANGELOG.md`, 2026-10-21). **The hub's register did not notice any of it**, because
+`hello` is on disk and in nothing here: it is absent from the `dx` manifest's
+`paths` block, it has no page in `docs/achievements/`, and it has no row in
+`docs/README.md`. That is `MF-02` and `DOC-02` happening again in a new instance, so
+`MF-02`'s evidence list gains `hello`, and two items are filed: `MF-07` (the
+manifest does not declare it) and `DOC-06` (it has no page and no register row, and
+the offline design review `hello/OFFLINE.md` needs a home: it is a review of a
+design that is not in this repository, and it does not belong in a product tree).
+`hello`'s state and its open work are added to *Owned elsewhere*, because the
+product's own ledger owns the steps (`hello/MEMORY.md` §9).
+
+**The scoreboard's own arithmetic was wrong before this pass, in three places, and
+is corrected here.** It claimed P1 = 14, P2 = 7 and BLOCKED = 4; the file held **13**
+P1 items, **8** P2 items and **5** `BLK-` rows (the `BLK-` items are a table, not
+headings, which is why the count had drifted), and its rows summed to 38 against a
+printed total of 39. The counts above are now taken from the file itself: P0 4 + P1
+15 + P2 8 + BLOCKED 5 + TPU track 9 + Goals 1 = **42**. This is the failure mode the
+2026-09-26 note in this file describes - a hand-added number that does not match
+the tree - and the fix is the same one that note gives: read the file, do not trust
+the table.
+
+**One goal is filed, and it is the corpus's first with a negative cost structure.**
+`G-01` is *Hello Ports*: a call that keeps working when the internet does not,
+because the participants are the servers. It is filed as a goal and not as a task
+because the steps belong to the product repo and the hub's job is to keep the
+direction visible and honest. The design review was verified against every source
+it cites (`CHANGELOG.md`, 2026-10-21) and **no published prior art ships the whole
+combination** - the four ingredients are each proven by a different world that has
+never met the others (space agencies, amateur radio, mesh operators, phone vendors).
+**None of it is built**: there is no `hello-port` crate, no durable store, no
+carrier adapter and no receipt protocol. The goal is filed so that the build
+starts from a verified design instead of a remembered one.
 
 **Pass of 2026-10-20 (fifth): the total moves 35 → 33 and P2 moves 9 → 7.** Two P2 items
 left the ledger because the work was done. `HUB-08` is **closed** — the 20-byte root
@@ -327,6 +365,44 @@ its entries do not resolve.
   matching row, and every number in the page has a `file:line` in
   `G:\Dx\codebase` that points at it.
 
+### MF-07 · The `hello` product is not declared in the `dx` manifest
+
+- **Evidence:** `G:\Dx\hello` is a product folder — a Rust workspace
+  (`hello/Cargo.toml`, `hello/crates/`, `hello/apps/hello-desktop/`) with its own
+  local history (tip `7bbcec3`, 2026-10-21) and 217 passing tests. The `paths`
+  block of `G:\Dx\dx` has no `hello` entry: `Select-String -Path dx -Pattern
+  'hello'` returns nothing. It is the same class of defect as `MF-06` seen from
+  the other side — an undeclared product that no route can resolve.
+- **Why it matters:** a product that shipped seven features in one session
+  (per-peer volume, a listen-only role, uplink headroom, host migration, upstream
+  fan-out, an inter-frame codec, a portable package) is invisible to every tool
+  that resolves products through the manifest. `MF-05` is the mirror defect for
+  `hackin`, and the CLI's typed `PathsConfig` is what actually stops a route
+  working — so declaring the path is necessary and not sufficient.
+- **Done when:** the `dx` manifest declares `hello`, `Test-Path` on the resolved
+  folder is `True` and points at `G:\Dx\hello`, and the `cli` repo's
+  `PathsConfig` has the matching field so `dx hello` routes (that last step is
+  the `cli` repo's work — `AGENTS.md` §2 rule 4).
+
+### DOC-06 · `hello` has no page in the achievement register
+
+- **Evidence:** `docs/README.md` carries one row per product folder and has no
+  row for `hello`; `Get-ChildItem docs\achievements` has no `hello.md`. The
+  product's own ledger is the right place for product work (`hello/MEMORY.md`
+  §9, `hello/STATUS.md` §12), but the hub's register is still the canonical
+  answer to "what has folder X actually achieved" (`AGENTS.md` §3).
+- **Also unindexed:** the offline design review sits in the product tree at
+  `hello/OFFLINE.md` (16 KB) and is linked from nowhere. It is a **review of a
+  design that is not in this repository** — its own line 5 records that it
+  could not inspect or modify `G:\Dx\hello` — and every source it cites was
+  checked at source on 2026-10-21 (`CHANGELOG.md`, that date). A hub-level
+  design document that happens to sit in a product tree is the same shape of
+  loss `DOC-02` describes for `docs/space-review-2026-09-23.md`.
+- **Done when:** `docs/achievements/hello.md` exists and `docs/README.md` carries
+  the matching row, with every number in the page pointing at a `file:line` in
+  `G:\Dx\hello`; and the offline design review is reachable from the hub's
+  `docs/` (moved, or linked from the `hello` page), indexed in `docs/README.md`.
+
 ### DIST-01 · Private releases block eleven distribution channels at once
 
 - **Evidence:** `DX.md:313` — "most stores refuse private-repo URLs. Flipping
@@ -367,7 +443,8 @@ its entries do not resolve.
 
 - **Evidence:** present in `Get-ChildItem -Directory` but absent from the `paths` block of
   `dx`: `daemon`, `bot`, `token`, `tree`, `decisions`, `native`, `os`, `mobile`,
-  `video-player`, `extensions`, `test`, `zzz`, `tools/bin`.
+  `video-player`, `extensions`, `test`, `zzz`, `tools/bin`, and — as of 2026-10-21 —
+  `hello`.
 - **Why it matters:** `daemon` is the flagship (`README.md:95`) and is unrouted, so any tool
   that resolves products through the manifest cannot see the most important one.
 - **Done when:** every product folder is either declared or listed as intentionally
@@ -768,6 +845,43 @@ are facts about the artifact, and the route to 50 tok/s is now `TPU-03` plus
 
 ---
 
+## Goals — the directions the corpus is taking
+
+A goal is not a task. The steps belong to the product repo that owns them; the
+hub's job is to keep the direction visible, named and honest. A goal closes when
+its done-when is met, not when a session ends.
+
+### G-01 · Hello Ports — a call that survives the internet
+
+- **The goal:** a Hello room keeps talking when the internet does not, because the
+  participants are the servers. A message that cannot be delivered now waits —
+  signed, receipted, durable — and goes out when a path appears: carried by a
+  person, a radio, a LoRa node or a satellite.
+- **Why this one:** it is the corpus's first direction with a **negative cost
+  structure**. Every other product here pays for its users' media; this one is
+  paid for by the users' own routers, so the marginal cost of the hundredth
+  participant is a lamp. It also inverts the outage case into the best case:
+  when the internet is cut, every hosted product is exactly as dead as the
+  internet, and this one is the only thing left running.
+- **The design:** `hello/OFFLINE.md` is the review that produced it, and every
+  claim it cites was checked at source on 2026-10-21 (`CHANGELOG.md`, that
+  date). The review's own corrections stand: the Mercury's ARQ data socket is
+  **8301** (not 8300), Android's satellite manifest value is the **package
+  name** (and the constant landed in API **36.1**), and distinct RLNC symbols do
+  **not** imply independence. The building blocks exist: `bp7` 0.12.0 — bundle
+  encode/decode only, by its own README — the DTN research engine at
+  `hello/social/engine`, and the zero-decode relay the product already ships.
+- **What is not built:** everything. There is no `hello-port` crate, no durable
+  store, no receipt protocol, no carrier adapter, and no radio in the loop. The
+  review is a design; this goal is the build.
+- **Done when:** a `hello-port` crate exists with a durable store, a receipt
+  protocol and one carrier adapter, and a room holds a call with the network
+  cable pulled. The acceptance ladder is the review's own milestone table:
+  1A durable ferry with the internet off, 1B source coding decoded by rank, 2
+  the authorised radio test, 3 the mobile gateway, 4 the live integration.
+
+---
+
 ## Owned elsewhere — what the hub knows but must not claim
 
 The hub records these numbers because they have receipts on this machine. It does **not**
@@ -776,6 +890,7 @@ re-verify them, and none of them may be quoted as hub status.
 | Ledger | Recorded state | Receipt |
 | --- | --- | --- |
 | `bot/` (flow) | 3 waves, **25 open items**; Wave Q 31 of 46 closed (67 %), AI Harness War 3 open, Wave R 8 of 15 (53 %). "**Nothing is certified for release.**" | `OPEN-WORK-2026-09-19.md:6` |
+| `hello/` (user-hosted calls) | 217 tests pass on this machine. Per-peer playback volume, a listen-only role, uplink headroom, host migration and upstream fan-out are built and loopback-verified; the wire format is v10. An inter-frame camera codec is built and measured and **loses** to the tile path (12,875 B/frame against 2,395 at 640x360), so it is opt-in. A portable package installs, runs a room and uninstalls cleanly. **Open:** make the codec win, two-real-NAT verification, and the offline stack (`G-01`). | `hello/MEMORY.md` §9, `hello/STATUS.md` §12, `hello/docs/receipts/` |
 | Distribution matrix | 8 of 14 channels READY, 3 TODO, 3 LATER | `DX.md:287` |
 | `daemon` | Advertised "all 11 targets shipping, cloud-offloaded visual memory live" — **no page, no receipt in `docs/`** | `README.md:95`, `DOC-01` |
 | Kaggle Qwen run | `COMPLETE`, ~10.15 tok/s mean on P100 — **runtime/hosted claim**, source files not in this repo | `README.md:144`, `DOC-04` |
@@ -835,4 +950,4 @@ number survives being added up. It does **not** mean any product is release-qual
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-21 03:55 UTC
+updated: 2026-10-21 12:10 UTC
