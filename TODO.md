@@ -665,10 +665,11 @@ needs changing, and nothing in any repository can fix it.
   fused block verification and a DFlash2 draft, and reports **3-6 accepted tokens per
   step** [sourced: `inferact.ai/blog/tpu-megakernels`, `github.com/Inferact/tpu-megakernels`;
   1,515 tok/s at acceptance length 6 on 4x TPU v7 — their hardware, not ours]. At the
-  measured **134.3 ms** pass (`rreceipt-gqa-b1-f16-tc1024.json`, not the ~200 ms this item
+  measured **134.3 ms** pass (`receipt-gqa-b1-f16-tc1024.json`, not the ~200 ms this item
   assumed), 50 tok/s needs **7** accepted tokens per pass, and 6 accepted tokens gives
-  43 tok/s. So the honest ceiling with the published acceptance range and no unpack
-  work is **40-50 tok/s** — the item's earlier "10-15 tok/s" was priced off a 200 ms
+  43 tok/s. With `FOLD=2` — the same model, 129.9 ms — 6 accepted tokens gives 46.2
+  tok/s and 7 gives 53.9. So the honest ceiling with the published acceptance range
+  and no unpack work is **40-50 tok/s** — the item's earlier "10-15 tok/s" was priced off a 200 ms
   pass and an assumed acceptance, and both numbers have now been replaced by measured
   ones.
 - **The chunked path is exact on the real model (2026-10-21):** the kernel grew a
