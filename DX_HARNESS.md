@@ -421,14 +421,22 @@ synthetic catalog.
 | **The resolver heals near-misses** | **executed** | 9/9 in `dx-harness resolver`; 13/13 in `corpus-offline` |
 | **The corpus measured the live model** | **executed** | 13 entries, `minimax-m3.1-flash-free`, 3 silent-wrongs |
 | **Tool routing saves 70% of schema tokens** | **executed** | 5000 → 1500 tokens over a 50-tool catalog |
+| **The tool router is a scoring router, with 14 tests** | **executed** | `cargo test -p tool-router --profile dev-fast` → 14 passed |
+| **54 tests across the six token crates** | **executed** | `cargo test -p tool-router -p prefix-cache -p prompt-compress -p token-budget -p compaction -p dx-token-core --profile dev-fast` → 54 passed, 0 failed. **Was 9.** |
+| **The system prompt is under 1,000 tokens** | **executed** | 985 (`cl100k_base`, `dx-token --ai`); a test in `xai-grok-agent` holds it there |
+| **The git harness crate exists, with 11 tests** | **executed** | `cargo test -p xai-grok-git-harness --profile dev-fast` → 11 passed |
+| **The harness drives other agents over ACP** | **executed** | `dx-harness acp run codex-acp "..."` → *"Hello from Codex."*; `opencode` → *"Hello from Muse"* |
+| **39 of the 43 ACP adapters handshake** | **executed** | `dx-harness acp sweep` → 34 ready, 5 blocked **on credentials**; the log is `harness/.acp-cache-sweep.log` |
+| **Five more ACP session methods are wired** | **executed** | `cargo test -p xai-acp-lib --profile dev-fast` → 22 passed |
 | The 5 DX features are in bot's copy, byte-identical | **repo-managed** | SHA-256 on every file |
 | 35 of 2,590 shared `.rs` files differ, none §0 work | **repo-managed** | file-by-file hash diff |
 | 46 of 47 token crates absent from bot | **repo-managed** | directory listing |
-| 6 token crates have **0 tests** | **repo-managed** | `#[test]` count per file |
+| ~~6 token crates have **0 tests**~~ | **superseded** | **54 tests now, and CI runs them** — `harness/.github/workflows/gates.yml` |
 | No golden corpus exists in tui or bot | **repo-managed** | it exists only in `G:\Dx\harness` |
 | `bot/crates` has never been compiled | **repo-managed** | no `target/` dir exists |
 | **The full engine links** | **not yet claimed** | `mimalloc`'s C build fails on this machine's MSVC env |
-| The §0a silent-wrong rate is acceptable | **not yet claimed** | **3/13 — it is not** |
+| **The §0a silent-wrong rate is acceptable** | **not yet claimed** | **3/13 — it is not** |
+| **`session/elicitation`** — the agent asking the user a question | **not yet claimed** | the schema 0.11.4 has it; the protocol crate 0.10.4 does not. It needs the v2 upgrade |
 | WASM for the website / VS Code extension | **not yet claimed** | §9 |
 
 ---
@@ -447,6 +455,22 @@ a cold build of this closure is tens of gigabytes, and the volume was full.
 | `G:` free during the harness build (worst) | **7.3 GB** — `forkness` +4.24 GB and `hackin` +2.51 GB grew *while the build ran* |
 | `G:` free now | **78.2 GB** |
 | `G:\Dx\harness\target` | **deleted externally** during the build; the source tree is intact at 0.07 GB |
+| `G:\Dx\harness\target` on 2026-10-22 | **43.36 GB** — `dev-fast/incremental` 22.42 GB, `dev-fast/deps` 16.73 GB, `dev-fast/build` 1.10 GB, `debug` 3.04 GB |
+| `G:` free on 2026-10-22 | **2.74 GB** — the harness build consumed it |
+
+**The 2026-10-22 state, and it is a proposal, not an action.** `G:` is
+at **2.74 GB free**, and 43.36 GB of it is `G:\Dx\harness\target` — every
+byte of it regenerable. **Nothing has been deleted.** The proposal, with
+the measured sizes, the options, the costs and the exclusions, is in
+`G:\Dx\harness\TODO.md` §0a. The recommendation is `target/debug` first
+(3.04 GB, and it is the artifact of a `cargo test` run without
+`--profile dev-fast` by mistake) and `target/dev-fast/incremental` second
+(22.42 GB, entirely regenerable).
+
+**The ACP adapter cache was MOVED, not deleted.** The registry, the npm
+installs and the downloaded binaries are 1.46 GB, and the standard Windows
+cache dir is on `C:`. They were moved to
+`%LOCALAPPDATA%\dx\acp`, and `DX_ACP_HOME` chooses where they live.
 
 **Standing rule:** never delete `target/` to make room — report it
 (`G:\Dx\AGENTS.md` §2.2). And check free space before any heavy build.
