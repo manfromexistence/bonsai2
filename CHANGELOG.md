@@ -55,7 +55,7 @@ draft's acceptance rate -- DFlash2 for this base architecture (1.92 B parameters
 3.58 GB) or the MTP head from the community GGUF (5.87 GB lean). At 119.5 ms per
 pass, 6 accepted tokens per pass is 50.2 tok/s.
 
-### 2026-10-21 - ### 2026-10-21 - \eat:\ the decode fold, measured: 10.9 % faster, first token unchanged
+### 2026-10-21 - ### 2026-10-21 - \### 2026-10-21 - `feat:` the decode fold, measured: 10.9 % faster, first token unchanged
 
 **Measured on Colab TPU v5e-1, the real 64-layer model, both arms in one session.**
 
