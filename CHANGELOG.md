@@ -13,6 +13,62 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `docs:` the `hello` product gets a page, a manifest path, and a home for its design review
+
+**Two ledger items close, and the product the hub did not know about becomes
+visible.**
+
+`MF-07` is **closed**: the `dx` manifest declares `hello = hello` and
+`cli/src/config.rs` carries the matching `PathsConfig` field, so the path
+resolves against the workspace root like every sibling product. The remaining
+piece - a `dx hello` route - belongs to the product's own command surface and
+is filed in `cli/TODO.md`, with the CLI's own `CHANGELOG.md` and `DX.md`
+updated. The CLI repo was mid-operation while this was done (a duplicate
+toolchain sweep in flight), so only the six touched source files and the three
+documents were committed, and the check was the targeted config test
+(`cargo test -p dx-cli --lib loads_extensionless_dx_with_g_drive_paths`, 1
+passed) - the repo does not run full builds without permission. One
+pre-existing failure in that repo is **not** from this change and was left
+alone: `invalid_extensionless_dx_without_serializer_tables_still_errors`
+fails with and without the manifest change.
+
+`DOC-06` is **closed**: `docs/hello.md` exists and the register carries the
+row. The page states what the product is (a call whose server is one of its
+participants), what it has achieved (sealed rooms, a zero-decode relay, a
+downlink tree, host migration, an upstream fan-out that does not move the
+trust model, a per-peer volume, a listen-only role, a portable package, and
+the first milestone of the offline path), and **what is not claimed**: every
+measurement is loopback on one machine, the camera pipeline is verified but
+the picture is not, the inter-frame codec is opt-in because it does not yet
+beat the tile path, and the offline stack is a design and one milestone rather
+than a product.
+
+**The offline design review moved to the hub.** It was an unindexed file in a
+product tree, and it reviews a design that is not in this repository - its own
+line 5 records that it could not read the code. It now lives at
+`docs/hello-ports-review.md`, indexed in `docs/README.md` and referenced from
+`docs/hello.md`, with a header that records **the primary source every claim
+in it was checked against** on 2026-10-21: the Mercury's own
+`mercury.ini.example` for the port table (control 8300, **ARQ data 8301**,
+broadcast 8100), its `main.c` header for GPL-3.0-or-later, its
+`BROADCAST-FILE.md` for the RaptorQ fountain carousel and the half-minute for
+1 kB at DATAC3, Google's own `api_diff/36.1` page for the satellite constant's
+API level, Apple's DocC for both `carrier-constrained` entitlements and the
+eight-hour Live Activity limit, crates.io and the release body for `bp7` 0.12.0
+(2026-10-17), and RFC 8032 for the 64-byte Ed25519 signature. The review's
+capacity arithmetic was recomputed and is exact to the byte. **Two claims
+could not be read at source from this machine** - the Bao range-proof format
+and the Walrus reconstruction procedure, whose pages serve no text to a plain
+fetch - and they are recorded as unverified rather than as agreed.
+
+**And the goal has started.** `hello/crates/hello-port` is milestone 1A of
+Hello Ports: signed manifests, a durable store, receipted delivery, a contact
+scheduler, and two adapters. The acceptance ladder passes - a message arrives
+with a four-step receipt chain and the two ports never talk to each other, a
+photo arrives in resumable chunks across two contacts, a restart loses no
+accepted data, and a carrier that rewrites the manifest is refused before
+anything is written. The product's own ledger carries milestones 1B and 2.
+
 ### 2026-10-21 - `feat:` the `hello` product gains volume, a listen-only role, uplink headroom, host migration and upstream fan-out
 
 **The `hello` product moved further in one session than in the previous three, and the

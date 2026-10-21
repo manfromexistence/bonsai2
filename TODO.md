@@ -29,12 +29,32 @@ it deliberately does not claim.
 | Priority | Open | What it guards |
 | --- | --- | --- |
 | **P0** | 4 | durability — work that exists only on this machine, and routing that is dead |
-| **P1** | 15 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
+| **P1** | 13 | correctness of the hub's own claims: dangling citations, broken rules, blocked channels |
 | **P2** | 8 | hygiene and the long tail |
 | **BLOCKED** | 5 | held by hardware/software not present on this machine |
 | **TPU track** | 9 | 50 tok/s for one stream on an 8k window, and the context ceiling that bounds it |
 | **Goals** | 1 | the direction the corpus is taking: a call that survives the internet |
-| | **42** | total open |
+| | **40** | total open |
+
+**Pass of 2026-10-21 (seventh): the total moves 42 → 40, P1 moves 15 → 13, and two
+items close.** `MF-07` is **closed** - the `dx` manifest declares `hello = hello`
+and `cli/src/config.rs` carries the matching `PathsConfig` field, so the path
+resolves (`cli`'s own `TODO.md` carries the remaining piece, a `dx hello`
+route, because the command surface belongs to the product's own CLI). `DOC-06`
+is **closed** - `docs/hello.md` exists with a register row, and the offline
+design review now lives at `docs/hello-ports-review.md`, indexed, with a header
+recording the primary source every claim in it was checked against. The
+`hello` repo keeps a pointer where the review used to sit.
+
+**The Hello Ports goal has started.** `hello/crates/hello-port` is milestone 1A:
+signed manifests, a durable store, receipted delivery, a contact scheduler and
+two adapters, with the acceptance ladder passing - a message arrives with a
+four-step receipt chain and the two ports never talk to each other, a photo
+arrives in resumable chunks across two contacts, a restart loses no accepted
+data, and a carrier that rewrites the manifest is refused before anything is
+written. Milestones 1B (source coding, decoded by rank) and 2 (the Mercury
+adapter over the documented `8300`/`8301` split) are filed in the product's
+own ledger with their done-when.
 
 **Pass of 2026-10-21 (sixth): the total moves 39 → 42, P1 moves 13 → 15, and one goal
 is filed.** The `hello` product shipped seven features in one session - per-peer
@@ -364,44 +384,6 @@ its entries do not resolve.
 - **Done when:** `docs/codebase.md` exists and `docs/README.md` carries the
   matching row, and every number in the page has a `file:line` in
   `G:\Dx\codebase` that points at it.
-
-### MF-07 · The `hello` product is not declared in the `dx` manifest
-
-- **Evidence:** `G:\Dx\hello` is a product folder — a Rust workspace
-  (`hello/Cargo.toml`, `hello/crates/`, `hello/apps/hello-desktop/`) with its own
-  local history (tip `7bbcec3`, 2026-10-21) and 217 passing tests. The `paths`
-  block of `G:\Dx\dx` has no `hello` entry: `Select-String -Path dx -Pattern
-  'hello'` returns nothing. It is the same class of defect as `MF-06` seen from
-  the other side — an undeclared product that no route can resolve.
-- **Why it matters:** a product that shipped seven features in one session
-  (per-peer volume, a listen-only role, uplink headroom, host migration, upstream
-  fan-out, an inter-frame codec, a portable package) is invisible to every tool
-  that resolves products through the manifest. `MF-05` is the mirror defect for
-  `hackin`, and the CLI's typed `PathsConfig` is what actually stops a route
-  working — so declaring the path is necessary and not sufficient.
-- **Done when:** the `dx` manifest declares `hello`, `Test-Path` on the resolved
-  folder is `True` and points at `G:\Dx\hello`, and the `cli` repo's
-  `PathsConfig` has the matching field so `dx hello` routes (that last step is
-  the `cli` repo's work — `AGENTS.md` §2 rule 4).
-
-### DOC-06 · `hello` has no page in the achievement register
-
-- **Evidence:** `docs/README.md` carries one row per product folder and has no
-  row for `hello`; `Get-ChildItem docs\achievements` has no `hello.md`. The
-  product's own ledger is the right place for product work (`hello/MEMORY.md`
-  §9, `hello/STATUS.md` §12), but the hub's register is still the canonical
-  answer to "what has folder X actually achieved" (`AGENTS.md` §3).
-- **Also unindexed:** the offline design review sits in the product tree at
-  `hello/OFFLINE.md` (16 KB) and is linked from nowhere. It is a **review of a
-  design that is not in this repository** — its own line 5 records that it
-  could not inspect or modify `G:\Dx\hello` — and every source it cites was
-  checked at source on 2026-10-21 (`CHANGELOG.md`, that date). A hub-level
-  design document that happens to sit in a product tree is the same shape of
-  loss `DOC-02` describes for `docs/space-review-2026-09-23.md`.
-- **Done when:** `docs/achievements/hello.md` exists and `docs/README.md` carries
-  the matching row, with every number in the page pointing at a `file:line` in
-  `G:\Dx\hello`; and the offline design review is reachable from the hub's
-  `docs/` (moved, or linked from the `hello` page), indexed in `docs/README.md`.
 
 ### DIST-01 · Private releases block eleven distribution channels at once
 
