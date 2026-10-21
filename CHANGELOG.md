@@ -376,7 +376,7 @@ memory-map test that depends on the machine's state and passes in isolation.
 stop the base from compiling at all.** Base, on those 26 suites: 689 passed,
 996 failed, 21 skipped.
 
-**3. Three more flaws in the surface itself, all of the same family: the tool
+**4. Three more flaws in the surface itself, all of the same family: the tool
 answered a question the caller did not ask, or did not ask the question the
 caller did.** The budget could replace a *failure* with a size complaint, so
 the agent got *"the answer was 5120 tokens"* instead of *"the project is not
@@ -385,6 +385,24 @@ for three of the five request types - the escape answer, the certificate and
 the commit gate - when for all three the graph was never consulted at all. The
 budget now applies to answers only, and the audit says what was actually
 consulted, per type.
+
+**5. And three found by an adversarial probe rather than by reading.** The DX
+policy modules are **pure** on purpose - no store, no graph, no server - so
+malformed input can be thrown at them and the answers checked in seconds. It
+found that a required field of three spaces satisfied the *length* check, that
+a malformed `source` was silently dropped so the policy stayed at the default,
+and that a fractional budget was silently truncated to a tighter one. All
+three were silent downgrades, and all three are now refused with the reason
+named.
+
+**The receipt, in the project's own harness:**
+
+| | |
+| --- | --- |
+| The three DX contract suites, in the house runner | **114 passed, exit 0** (74 surface, 28 governance, 12 memory) |
+| The `mcp` suite in the house runner | **380 passed, 13 skipped, 0 failed** - including all nine DX profile tests |
+| `gcc -fanalyzer` over the DX modules and their tests | **clean** |
+| The surface the agent receives, measured on the built binary | **3,182 bytes** against upstream's 24,111 - **86.8% less schema** |
 
 **What is not proved.** That the remaining 996 failures predate this fork.
 They are in files and subsystems this fork has not modified - the grammar and
