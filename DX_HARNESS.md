@@ -431,7 +431,7 @@ synthetic catalog.
 | The 5 DX features are in bot's copy, byte-identical | **repo-managed** | SHA-256 on every file |
 | 35 of 2,590 shared `.rs` files differ, none §0 work | **repo-managed** | file-by-file hash diff |
 | 46 of 47 token crates absent from bot | **repo-managed** | directory listing |
-| ~~6 token crates have **0 tests**~~ | **superseded** | **54 tests now, and CI runs them** — `harness/.github/workflows/gates.yml` |
+| ~~6 token crates have **0 tests**~~ | **superseded** | **54 tests now** (112 across nine crates), run locally with scripts/dev.sh. **CI is not a goal of this project.** |
 | No golden corpus exists in tui or bot | **repo-managed** | it exists only in `G:\Dx\harness` |
 | `bot/crates` has never been compiled | **repo-managed** | no `target/` dir exists |
 | **The full engine links** | **not yet claimed** | `mimalloc`'s C build fails on this machine's MSVC env |
