@@ -191,7 +191,7 @@ gated-delta-rule form). Both are in `HELP.md` section 4a with the exact formats.
 is **closed**: the context cost at fixed batch is measured (batch 1, `max_t` 83 / 1024 /
 8192 → 152.3 / 153.6 / 180.9 ms per step), so the whole 8k window costs 19 % and the
 context is not the blocker -- the unpack is. The receipts are
-`tpu/lane-aligned-ternary-kernel/rreceipt-ctx64|1024|8192-b1-f16-tc1024.json`.
+`tpu/lane-aligned-ternary-kernel/receipt-ctx64|1024|8192-b1-f16-tc1024.json`.
 
 **Pass of 2026-10-20 (third): the total moves 38 → 35 and no score moves.** Three items
 left the ledger because the **route** was withdrawn, not because the work was done:
@@ -621,7 +621,7 @@ needs changing, and nothing in any repository can fix it.
   Pallas reports *"Pytree for `in_specs` and `inputs` do not match"*, because the
   prefetch mechanism wants the prefetched dimension to be a *scalar* dim and this
   kernel's grid is `(TOUT, 1, BPC)` with the parallel dim first. The `PREFETCH=0`
-  control is `rreceipt-pf0-b1-f16-tc1024.json` (5.52 tok/s, 181.3 ms/step). The
+  control is `receipt-pf0-b1-f16-tc1024.json` (5.52 tok/s, 181.3 ms/step). The
   item stays open only for a grid that satisfies the mechanism, and its 7.6 % ceiling
   says it is not worth one.
 - **Done when:** a receipt records a lower ms/step than TPU-01's run with the output
@@ -630,8 +630,8 @@ needs changing, and nothing in any repository can fix it.
 ### TPU-03 · Multi-token verification: the only route to 50 tok/s on the TPU
 
 - **Why it is the only route (measured 2026-10-20):** cutting 36 % of the kernel
-  launches moved the step time by 0.5 % (`rreceipt-fuse0-b1-f16-tc1024.json` against
-  `rreceipt-fuse1-b1-f16-tc1024.json`: 182.3 ms against 181.3 ms). The step pays for
+  launches moved the step time by 0.5 % (`receipt-fuse0-b1-f16-tc1024.json` against
+  `receipt-fuse1-b1-f16-tc1024.json`: 182.3 ms against 181.3 ms). The step pays for
   the per-weight-byte VPU work — the ternary unpack — which does not shrink with batch
   (180.6 ms/step at batch 1, 284.7 ms/step at batch 80). A verification pass computes
   k tokens against the *same* unpacked weights, so it amortises that cost k ways; no
@@ -697,10 +697,10 @@ needs changing, and nothing in any repository can fix it.
 
 ### TPU-04 · 64k context needs a q4 KV cache that does not exist yet
 
-- **Evidence:** `tpu/lane-aligned-ternary-kernel/rreceipt-mem-ceiling.json` — at `max_t`
+- **Evidence:** `tpu/lane-aligned-ternary-kernel/receipt-mem-ceiling.json` — at `max_t`
   65536 the attention step cannot even be loaded (`jit_attn_step` wants 3.26 G, 184.53 M
   free) and at 49152 it is 140 MB short; 45056 fits and runs at 2.86 tok/s
-  (`rreceipt-b1-f16-tc1024-45056.json`). fp32 KV is 128 KiB/token/sequence, so 64k is
+  (`receipt-b1-f16-tc1024-45056.json`). fp32 KV is 128 KiB/token/sequence, so 64k is
   8 GiB of KV on a 15.75 GiB budget that already holds 6.37 GiB of weights.
 - **The fused step costs compile-time memory:** with `FUSE=1` the 45k window no longer
   compiles at all -- *"CompileTimeHbmOom: ... the total memory required for HLO
@@ -748,7 +748,7 @@ needs changing, and nothing in any repository can fix it.
 - **What it costs:** the **281.01 tok/s aggregate configuration no longer runs on the
   shipped kernel**. The per-layer-jit version that produced it is in this
   repository's history (commit `22e94a1` and earlier) and its receipt
-  (`14-lane-aligned-ternary-kernel/rreceipt-b80-f16-tc1024.json`) is still valid -- but the
+  (`14-lane-aligned-ternary-kernel/receipt-b80-f16-tc1024.json`) is still valid -- but the
   two numbers belong to two different kernels and must never be quoted as one
   configuration.
 - **Why it matters beyond tidiness:** the grouped attention (`GQA=1`) saves 25 ms per
@@ -783,11 +783,11 @@ needs changing, and nothing in any repository can fix it.
   (one multiply, one mask, one shift per element) against a per-(byte, power)
   lookup table, which would be a gather.
 - **What the 2x2 matrix settled (2026-10-20):** the step at an 8k window is 134.3 ms
-  with the kv-head expansion removed (`rreceipt-gqa-b1-f16-tc1024.json`, 7.45 tok/s)
+  with the kv-head expansion removed (`receipt-gqa-b1-f16-tc1024.json`, 7.45 tok/s)
   -- about 25 ms of attention and about **109 ms of the projection's own per-element
   work**, the ternary decode and the int16->bf16 cast. And the traffic model is
   **refuted**: removing both group concatenations made the step **18.5 % slower**
-  (`rreceipt-nc-b1-f16-tc1024.json`), because the MXU pads each 16/8/2-row group
+  (`receipt-nc-b1-f16-tc1024.json`), because the MXU pads each 16/8/2-row group
   to K=128, so the concatenation is what buys a clean matmul. The lever is therefore
   the *decode arithmetic and the output width*, not the movement of the unpacked
   weights -- which is exactly what `TPU-08` changes, and why its basis permutation is
@@ -795,12 +795,12 @@ needs changing, and nothing in any repository can fix it.
   K-padding penalty.
 - **The measurement that frames it:** at batch 1 the *entire* 8k window costs 19 %
   (152.3 ms/step at `max_t` 83 against 180.9 ms at `max_t` 8192 --
-  `rreceipt-ctx64-b1-f16-tc1024.json` against
-  `rreceipt-ctx8192-b1-f16-tc1024.json`), so the floor for this kernel is the
+  `receipt-ctx64-b1-f16-tc1024.json` against
+  `receipt-ctx8192-b1-f16-tc1024.json`), so the floor for this kernel is the
   **unpack**, not the context.
 - **Done when:** a receipt records a step time below 40 ms at batch 1 / `max_t` 8192
   with the first token still `271` and the text byte-identical to
-  `rreceipt-fuse1-b1-f16-tc1024.json`.
+  `receipt-fuse1-b1-f16-tc1024.json`.
 
 ## The execution track — this repo owns `tpu/`
 
