@@ -13,6 +13,18 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `chore:` the `hello` product gets a remote, and its work becomes durable
+
+The `hello` repo had no remote: `git -C hello remote -v` returned nothing, and
+every commit of this session - the seven product features, the `hello-port`
+crate, the source coding and the Mercury adapter - existed only on this
+machine. `AGENTS.md` §2 rule 5 says a commit is not durable until it is pushed.
+
+It now lives at `essence-dx/hello`, **private**, like its eighteen siblings
+(`git -C hello remote get-url origin` -> `https://github.com/essence-dx/hello.git`),
+and `main` tracks `origin/main`.
+
+No claim changed. What changed is that a stranger can clone the product.
 ### 2026-10-21 - `feat:` the Mercury carrier adapter - a third carrier for the port
 
 **`G-01`'s milestone 2, part one. The goal stays open, and the radio half is

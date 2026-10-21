@@ -36,6 +36,16 @@ it deliberately does not claim.
 | **Goals** | 1 | the direction the corpus is taking: a call that survives the internet |
 | | **40** | total open |
 
+**Pass of 2026-10-21 (tenth): the counts hold at P0 4, P1 13, P2 8, BLOCKED 5, TPU 9,
+Goals 1 - 40 open - and the `hello` product's work becomes durable.** The `hello`
+repo had **no remote at all**: `git -C hello remote -v` returned nothing, so
+every commit of this session - the seven features, the port crate, the source
+coding and the Mercury adapter - existed only on this machine, which is exactly
+what `AGENTS.md` §2 rule 5 forbids ("a commit is not durable until it is pushed").
+It now lives at `essence-dx/hello`, **private**, like its eighteen siblings, and
+`main` tracks `origin/main`. Nothing about the product's claims changed; what
+changed is that a stranger can now clone it.
+
 **Pass of 2026-10-21 (ninth): the counts hold at P0 4, P1 13, P2 8, BLOCKED 5, TPU 9,
 Goals 1 - 40 open - and the goal's third milestone lands, half of it.**
 `G-01`'s milestone **2, part one** is built: `hello-port` has a third carrier that
