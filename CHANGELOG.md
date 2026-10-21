@@ -13,6 +13,50 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-21 - `fix:` a Windows heap corruption in the base, and the house suite running
+
+**Two findings that change what this product can claim.**
+
+**1. The base has a Windows-only heap corruption, and it is fixed here.**
+Building the house test suite on this machine died with
+`STATUS_HEAP_CORRUPTION` in the arena suite's first test. The cause is
+upstream's: on Windows `src/foundation/mem_core.c` asks msvcrt's `_msize` for
+a block's usable size, and msvcrt's `_msize` is only defined for a pointer
+that came from msvcrt's own malloc - but on Windows every block the memory
+classes hand out came from **mimalloc**. So `_msize` read mimalloc's metadata
+as if it were the CRT's header, returned a bogus size, and the CRT's heap
+accounting went with it.
+
+The linker could not save it: the build defines `__wrap__msize` and the wrap
+is in the link line, and it is **never reached** - on 64-bit Windows the call
+is indirect through the import thunk, so the object references `__imp__msize`,
+not `_msize`, and `--wrap` redirects the symbol, not the thunk. The fix asks
+mimalloc when the block is one of its.
+
+It survived upstream because upstream's Windows releases are **MSVC** builds,
+and MSVC has no `--wrap`, so upstream never puts a mimalloc block behind a
+call to msvcrt's `_msize`. The defect needs exactly the combination this fork
+needs: MinGW, the `--wrap` allocator, and mimalloc.
+
+**2. The house test suite now runs to completion on this machine.** 194
+suites: **8644 passed, 1005 failed, 94 skipped**. The DX suites are clean
+inside it - `dx_surface`, `dx_governance`, `dx_memory`, **89 passed, exit 0** -
+which is the claim `codebase/TODO.md` `CB-20` was waiting on.
+
+**Three of those failures were this fork's**, and are fixed: the DX tool in
+the registry changed the `tools/list` payload for every profile, and
+upstream's `mcp` tests pin that payload three ways - a byte budget, the tool
+count, and the alwaysLoad set. The DX surface now belongs to the DX profile
+alone, so the upstream profiles' contracts are exactly as upstream wrote them.
+
+**What is not proved.** That the remaining 1002 failures predate this fork.
+They are in files and subsystems this fork has not modified - the grammar and
+LSP probe suites fail on cross-file call resolution across the 162 grammars,
+and 44 are in Windows-platform suites - but reasoning is not a bisect.
+`codebase/TODO.md` `CB-22` records the next step: the same suite on the base
+commit `3457b21b`, same toolchain, same flags, and a diff of the two failure
+sets.
+
 ### 2026-10-21 - `docs:` the codebase fork's DX surface, and the flaw that stopped it working
 
 **The product's own ledger carries the detail; this is the hub-side record.**
