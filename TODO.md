@@ -672,6 +672,31 @@ needs changing, and nothing in any repository can fix it.
   and no unpack work is **40-50 tok/s** — the item's earlier "10-15 tok/s" was priced off a 200 ms
   pass and an assumed acceptance, and both numbers have now been replaced by measured
   ones.
+- **The acceptance rate is now a published number, not a hope (2026-10-22):** the
+  DFlash2 draft card for this exact base architecture publishes its acceptance
+  length (completed tokens per verification step) against the alternatives, all
+  proposing seven draft tokens per step: **DFlash 2 4.10-5.46** (GSM8K 5.46, MATH-500
+  5.28, MBPP 4.79, HumanEval 4.39, MT-Bench 4.10), MTP 3.74-5.02, DSpark 3.01-4.36
+  [sourced: `huggingface.co/z-lab/Qwen3.8-27B-DFlash2`; measured by them on an H200
+  against the bf16 Qwen3.8-27B, not against our ternary model]. The draft is only
+  **five layers** (hidden 5120, the same vocab as our target, sliding window 2048),
+  reading the target's hidden states at layers 5/19/33/47/61, with a block-diffusion
+  selector and two-tap dynamic convolutions.
+- **What that does to the arithmetic (2026-10-22):** a chunked pass costs about the
+  same as one sequential step -- the weights are unpacked once for the whole chunk --
+  so 8 verified tokens per 135 ms is 59 tok/s if every token were accepted, and the
+  published acceptance turns that into **30.6-40.7 tok/s** on the shipped path's
+  134.1 ms, and **34.3-45.7 tok/s** with \`FOLD=3\`'s 119.5 ms. So 50 tok/s needs the
+  acceptance at the *top* of the published range **and** a pass at 109 ms or less:
+  \`FOLD=3\` gets to 45.7, and the last ~10 % is the unpack itself -- which is
+  \`TPU-08\`'s 2-bit \`PQ2_0\` port. The honest range for the parts we have is
+  **30-46 tok/s**, with 50 reachable but not yet reached.
+- **The draft is a port, not a guess (2026-10-22):** \`Inferact/tpu-megakernels\` is
+  **Apache-2.0** and ships \`qwen/dflash.py\` (66 KB of JAX/Pallas: the DFlash2
+  reference equations and the fused draft and speculation kernels) beside
+  \`qwen/decode_megakernel.py\` (80 KB) and \`qwen/load.py\` (21 KB). Porting the draft
+  is a bounded piece of work against a published reference, and our target's hidden
+  states at layers 5/19/33/47/61 are the one thing the kernel does not yet expose.
 - **The chunked path is exact on the real model (2026-10-21):** the kernel grew a
   CHUNK/CHUNKCHECK pair, and the gate replays k tokens in **one chunked pass**
   from the state before them and compares the per-position argmaxes with the
