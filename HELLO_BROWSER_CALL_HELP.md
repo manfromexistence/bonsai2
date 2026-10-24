@@ -124,6 +124,23 @@ It means no public repository describes it in those words on that date.
 - A QUIC datagram is ~1.2 KB while a room datagram is 1.4 KB. Any tunnel
   needs its own splitting (implemented).
 
+### 5.5 What E1 and E3 measured (2026-10-24)
+
+Two experiments were run to separate the brainstorm from the facts.
+
+| Experiment | Result | Consequence |
+| --- | --- | --- |
+| **E1**: a negotiated, unreliable `RTCDataChannel` transferred into a Dedicated Worker, forwarding through a **hidden** tab for 400 s at 50 fps | **20,000 / 20,000 messages**, p50 1 ms, p95 1 ms, one 428 ms gap; no AudioWorklet, no Web Lock, no timer in the forwarding path | the worker-relay premise is **real**; the "silent audio + Web Lock keeps it alive" claim was unnecessary |
+| **E3**: WebCodecs `scalabilityMode` for VP8/VP9/AV1, 66 configurations | temporal `L1T1`/`L1T2`/`L1T3` accepted; **every spatial mode (`L2*`, `S*`) rejected**, headless and headed | "one encode, drop spatial layers" is **not available** on this build; use two explicit encoders or temporal-only + tile-delta JPEG |
+| E3 hardware encode | not reported to the page in any run | no claim about hardware acceleration either way |
+
+Raw receipt: `hello/docs/receipts/browser-e1-e3-2026-10-24.txt`
+(commit `94091fb`). The harness was a temp CDP page pair, not part of the repo.
+
+Still open: E2 (a helper with no room key relays and provably cannot decrypt),
+E4 (two symmetric-NAT peers with no third tab), and the hidden-tab heartbeat
+clock (E1 sent from the visible tab).
+
 ---
 
 ## 6. The six candidate breakthroughs (already shortlisted)
