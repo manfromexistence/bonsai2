@@ -169,10 +169,36 @@ What this settles: E5 is done - real Opus crossed a keyless helper tab. A
 browser tab can host a room, so the product no longer needs a native process
 to start one.
 
-What is still missing: **cross-machine signaling** (today it is the browser's
-`BroadcastChannel`, so same-origin tabs on one machine), **host migration**
-when the host tab closes (E6), **real NATs** (E7, blocked on hardware), the
-downlink tree (the tab host is star mode), and video in the p2p test.
+What is still missing: **automatic signaling across machines** (the manual
+invite works), **host migration** when the host tab closes (E6), **real NATs**
+(E7, blocked on hardware), the downlink tree (the tab host is star mode), and
+video in the p2p test.
+
+### 5.7 Manual invite, measured across two isolated browsers (2026-10-24)
+
+`invite.html` is the no-server signaling path: the host creates one data
+channel, waits for ICE gathering to complete, deflates the SDP and shows a
+single code; the guest returns one code.
+
+| Measurement | Value |
+| --- | --- |
+| host invite code | **651 characters** |
+| guest reply code | **538 characters** |
+| browsers | **two separate Edge processes**, separate profiles, no BroadcastChannel |
+| result | guest `live`, host `members=1` |
+
+Command: `pwsh scripts/test-invite.ps1`. Receipt:
+`hello/docs/receipts/browser-invite-2026-10-24.txt`.
+
+What it means: **cross-machine calling does not need a server**; it needs one
+pasted code (or a QR image). What it is not: automatic. A single link that
+joins with no paste needs a rendezvous, and every rendezvous is a third party
+or a server: public MQTT, a signed Nostr event, or a tiny relay. The
+60-line Nostr snippet floating around does not work as written (relays reject
+unsigned events; `#d` is not an ephemeral tag), so that path needs a real
+secp256k1 signer.
+
+Still open: automatic signaling, E6 migration, E7 real NATs, tree/video.
 
 ---
 
