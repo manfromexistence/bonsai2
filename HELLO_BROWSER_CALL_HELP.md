@@ -251,6 +251,23 @@ the gate is green, the measurements exist, and the uncovered rows are named
 instead of hidden. The house rule applies - no bare "production-ready" until
 those rows have receipts.
 
+### 5.10 Professional packaging: Rust and TypeScript (2026-10-24)
+
+| Area | What changed |
+| --- | --- |
+| Browser source | `hello-browser`, `hello-rtc-host`, `hello-signal` are **TypeScript** with `strict`, `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax`; `hello_web.d.ts` is the typed contract of the wasm exports |
+| Build | `tsc` emits the `.js` the page loads; `npm run typecheck` / `build:web`; hand-written `.js` sources removed |
+| Gate | `scripts/check.ps1` now runs `tsc --noEmit` too: 331 Rust tests, 3 TS modules, 9 JS files |
+| Rust metadata | `repository`, `rust-version`, `readme`, `keywords`, `categories` on `hello-web` and `hello-tunnel`; crate READMEs |
+| Toolchain | `rust-toolchain.toml` pins 1.99.0 with rustfmt, clippy and the wasm target |
+| CI | `.github/workflows/ci.yml` runs fmt, clippy, tests, the wasm build and `tsc` on Windows for `hello-core`, `hello-web`, `hello-tunnel` (no CMake/Zig needed) |
+| Project docs | `SECURITY.md` (threat model, reporting, known limits) and `CONTRIBUTING.md` (gate, TS rules, claim tiers) |
+
+What this does **not** change: the eight product gaps in `QUALITY.md`
+(iPhone, two real networks, migration, tree, real screen, malicious helper,
+broker, load). The codebase is professionally packaged; the product is not
+fully proven.
+
 ---
 
 ## 6. The six candidate breakthroughs (already shortlisted)
