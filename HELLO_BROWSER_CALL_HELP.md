@@ -230,6 +230,27 @@ the downlink tree.
 Remaining, in order: iPhone Safari run (HTTPS + tap-resume), host migration
 (E6), two real networks (E7), the downlink tree in `RoomHost`.
 
+### 5.9 The quality gate, and the honest score (2026-10-24)
+
+`scripts/check.ps1` runs:
+
+| Check | Result |
+| --- | --- |
+| `cargo fmt --all -- --check` | clean |
+| `cargo clippy --workspace --all-targets -- -D warnings` | clean |
+| `cargo test --workspace` | **331 passed, 0 failed** (31 suites) |
+| `node --check` on every JS file outside build output | **12 files, 0 failures** |
+| browser suites (`-WithBrowser`) | p2p, helper, invite, mqtt: all pass |
+
+`hello/QUALITY.md` records the result and the eight gaps that have no receipt:
+iPhone Safari, two real networks, host migration, the tree, real screen
+capture, a malicious helper, the third-party broker, and load/soak.
+
+So the repository is **clean and fully gated**, not **100/100 production**:
+the gate is green, the measurements exist, and the uncovered rows are named
+instead of hidden. The house rule applies - no bare "production-ready" until
+those rows have receipts.
+
 ---
 
 ## 6. The six candidate breakthroughs (already shortlisted)
