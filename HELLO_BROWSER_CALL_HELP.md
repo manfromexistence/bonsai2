@@ -398,9 +398,38 @@ more than a feature list.
 | The native product's claims and receipts | `hello/README.md`, `hello/docs/receipts/` |
 | The offline design | `docs/hello-ports-review.md`, `hello/OFFLINE.md` |
 | The tunnel | `hello/crates/hello-tunnel/src/main.rs` |
-| The browser peer | `hello/crates/hello-web/web/hello-browser.js` |
+| The browser peer | `hello/crates/hello-web/web/hello-browser.ts` |
 | The room protocol | `hello/crates/hello-core/src/protocol.rs` |
 | One command to see it run | `hello/scripts/run-web.ps1` |
+
+---
+
+## 11. First real implementation: embedded in EsportsFire (2026-10-24)
+
+Hello is now the call in another product, not just in its own page.
+`G:\Dx\esportsfire` vendors the browser bundle into `public/hello/` (with
+`PROVENANCE.json`) and runs it behind `features/calls/`.
+
+| Piece | Where | State |
+| --- | --- | --- |
+| Vendor + sync | `esportsfire/scripts/hello-sync.mjs` | 8 files, 697,894 bytes from `hello@63bb875` |
+| Controller | `esportsfire/features/calls/call-controller.ts` | tsc + biome clean |
+| Host-as-participant | `esportsfire/features/calls/loopback.ts` | new; unmeasured |
+| Native lane | `esportsfire/src-tauri/src/hello_room.rs` | `cargo check --features hello-native` passes |
+| Directory | `esportsfire/lib/calls/rooms.ts` + Turso | `db:drift` green |
+
+**Two additions to `hello-web` came out of it**, and both are in this repo:
+
+1. `HelloBrowserPeer` accepts **`workletUrl`**. `AudioWorklet.addModule`
+   resolves against the document, not the module, so an embedding page that
+   serves the bundle from `/hello/` cannot use the hard-coded
+   `./hello-worklet.js`.
+2. `HelloBrowserPeer` exposes **`senderId()`**, plus `onLevel`/`onMicLevel`.
+   `onVideoFrame` reports a sender, and a UI that wants to name that sender has
+   to join the room's id to its own presence id - they are different numbers.
+
+`umbrella: what is still open` - `esportsfire/TODO.md` HELLO-1..HELLO-11. The
+first of them is the honest one: **no call in EsportsFire has a receipt yet.**
 
 ---
 

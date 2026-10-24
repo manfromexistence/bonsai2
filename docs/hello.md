@@ -36,6 +36,32 @@ the way it knows every other folder: by what it has actually achieved.
 | An inter-frame camera codec | Written, measured and **opt-in**: it is a real motion-compensated codec, and the receipt says plainly that it does not yet beat the tile path (12,875 B/frame against 2,395 at 640x360) |
 | The offline path, started | `hello-port`: signed manifests, a durable store, receipted delivery, a contact scheduler, two adapters, and source coding decoded **by rank**. Milestones 1A and 1B of **Hello Ports** - a call that keeps working when the internet does not |
 
+## First Real Implementation: EsportsFire
+
+`G:\Dx\esportsfire` is the first product to ship Hello as **its** call, and the
+first place a browser call is a product surface rather than a test page.
+
+| What | Where | Status |
+| --- | --- | --- |
+| The browser peer, vendored with provenance | `esportsfire/public/hello/`, `scripts/hello-sync.mjs` | repo-managed: 8 files, 697,895 bytes from `hello@36154c9` |
+| The call controller: host, guest, presence, video | `esportsfire/features/calls/call-controller.ts` | repo-managed; tsc + biome clean |
+| A hosting tab that can also talk (slot 0 over an in-tab channel) | `esportsfire/features/calls/loopback.ts` | repo-managed, **unmeasured** |
+| The native engine inside Tauri (UDP, CPAL, screen/webcam, `hello-port`) | `esportsfire/src-tauri/src/hello_room.rs` | **executed to compile**: `cargo check --features hello-native` → `Finished dev profile` |
+| A Turso directory that holds no key | `esportsfire/lib/calls/rooms.ts`, `db/schema.sql` | executed: `bun run db:drift` → "no drift" |
+
+Two things this implementation added to Hello's browser package, and both are in
+`hello` now rather than in the product: `HelloBrowserPeer` takes a `workletUrl`
+(the worklet resolves against the *document*, so an embedding page has to say
+where it put the file), and it exposes `senderId()`, which is what lets a caller
+attribute a decoded frame or a level to the person who sent it - the signaling
+bus id and the room sender id are different numbers.
+
+**What is not claimed:** no call has been made in EsportsFire with a receipt yet
+(`esportsfire/TODO.md` HELLO-1), the native engine has never run on a device
+(HELLO-3), Android has no native build receipt (HELLO-4), iOS has no build at all
+(HELLO-5), and a native room cannot meet a browser room without
+`hello-tunnel` (HELLO-7).
+
 ## Validation To Check
 
 | Validation | Purpose |
@@ -63,4 +89,4 @@ the way it knows every other folder: by what it has actually achieved.
   no satellite link and no call that survives.
 
 MIT OR Apache-2.0
-updated: 2026-10-21 00:00 UTC
+updated: 2026-10-24 00:00 UTC
