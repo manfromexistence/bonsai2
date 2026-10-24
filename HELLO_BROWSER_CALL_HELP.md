@@ -26,7 +26,7 @@ opens from a link, free and unlimited, with no install and no server.**
 | Surface | Voice | Video / screen | Hosting | Offline | Verdict |
 | --- | --- | --- | --- | --- | --- |
 | **Native (Windows, Tauri CLI)** | works | works (screen, synthetic camera, real webcam path) | `hello host`, public relay, fan-out tree | designed; first milestones built, not a finished feature | working product path, measured on loopback |
-| **Browser (WASM)** | works | receiving works; sending written, not measured with a real display | **no** - needs a native host plus a tunnel process | **no** | demo, not a product |
+| **Browser (WASM)** | works | receiving works; sending written, not measured with a real display | **yes - a host tab, measured** (star relay) | **no** | a working tab-only room; signaling is same-machine only |
 
 The browser row is the problem this file is about.
 
@@ -62,16 +62,18 @@ tunnel next to it. Nobody will install that to join a call.
 
 ## 4. The actual problem
 
-> **A browser tab cannot be the room's server, and we cannot ask a user to run
-> one.**
+> **The room can now be a tab. What is missing is finding each other without
+> a server.**
 
-Everything else follows:
+That changed on 2026-10-24: `RoomHost` lets a browser tab host the room with
+the real handshake (section 5.6). What remains:
 
-- A browser has no UDP socket, so it cannot be `hello host`.
 - WebRTC gives a browser a peer-to-peer pipe, but only after **signaling**
-  (a few KB exchanged through something) and only if **ICE** finds a path.
+  (a few KB exchanged through something). Today that something is the
+  browser's `BroadcastChannel`, which works only across tabs of one origin on
+  one machine.
 - A few NAT pairs (roughly one in five) cannot connect directly and need a
-  relay. That is the only place a bill can appear.
+  relay. A helper tab can be that relay (E2/E4), but only if it is online.
 - The room must stay free, unlimited, account-free, install-free, and it must
   feel like a product, not a science project.
 
@@ -144,6 +146,33 @@ Still open: the hidden-tab heartbeat clock (E1 sent from the visible tab),
 real symmetric NAT (E4 removes the direct path by policy, not by a real
 CGNAT), helper discovery without a server, a malicious helper, and video on
 the relay path.
+
+### 5.6 The tab host, and E5 (2026-10-24)
+
+The browser is no longer a client only. `RoomHost` in `hello-web` is the real
+`HostHandshake` and `Session` compiled to WASM; a page hands it one slot per
+data channel, and it answers `Hello`, checks `Auth`, opens media and re-seals
+each datagram per member. `room.html` + `hello-rtc-host.js` are the page and
+its JS half.
+
+| Measurement | Result |
+| --- | --- |
+| host tab + two guest tabs, direct data channels | 100 frames sent by each; A played 109, B 107; **host members 2, relayed exactly 200** |
+| guest A through a helper tab opened **without the room key** (E5) | A played 109, B 109; host relayed 200; **helper forwarded 214** datagrams, no key |
+| native processes in the room | **none** - no `hello host`, no `hello-tunnel`, no TURN |
+
+Commands: `pwsh scripts/run-p2p.ps1`, `pwsh scripts/test-browser-p2p.ps1`,
+`pwsh scripts/test-browser-p2p.ps1 -Helper`. Receipt:
+`hello/docs/receipts/browser-p2p-2026-10-24.txt` (commit `372e233`).
+
+What this settles: E5 is done - real Opus crossed a keyless helper tab. A
+browser tab can host a room, so the product no longer needs a native process
+to start one.
+
+What is still missing: **cross-machine signaling** (today it is the browser's
+`BroadcastChannel`, so same-origin tabs on one machine), **host migration**
+when the host tab closes (E6), **real NATs** (E7, blocked on hardware), the
+downlink tree (the tab host is star mode), and video in the p2p test.
 
 ---
 
