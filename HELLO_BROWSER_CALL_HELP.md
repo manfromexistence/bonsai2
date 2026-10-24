@@ -132,14 +132,18 @@ Two experiments were run to separate the brainstorm from the facts.
 | --- | --- | --- |
 | **E1**: a negotiated, unreliable `RTCDataChannel` transferred into a Dedicated Worker, forwarding through a **hidden** tab for 400 s at 50 fps | **20,000 / 20,000 messages**, p50 1 ms, p95 1 ms, one 428 ms gap; no AudioWorklet, no Web Lock, no timer in the forwarding path | the worker-relay premise is **real**; the "silent audio + Web Lock keeps it alive" claim was unnecessary |
 | **E3**: WebCodecs `scalabilityMode` for VP8/VP9/AV1, 66 configurations | temporal `L1T1`/`L1T2`/`L1T3` accepted; **every spatial mode (`L2*`, `S*`) rejected**, headless and headed | "one encode, drop spatial layers" is **not available** on this build; use two explicit encoders or temporal-only + tile-delta JPEG |
-| E3 hardware encode | not reported to the page in any run | no claim about hardware acceleration either way |
+| **E3** hardware encode | not reported to the page in any run | no claim about hardware acceleration either way |
+| **E2**: a separate helper tab with **no room key** forwards sealed datagrams to B | **100 / 100 opened**, 0 mismatches, p95 1 ms; helper's wrong-key open: `packet failed authentication`; `typeof SECRET === "undefined"` in the helper | the relay can be trusted with ciphertext it cannot read |
+| **E4**: direct pair with `iceTransportPolicy: "relay"` and no TURN, plus a helper path | direct pair stayed `new` after 12 s (`gathering: complete`); helper path carried all 100 | a pair with no direct path still talks through a third tab - no TURN, no native process |
 
-Raw receipt: `hello/docs/receipts/browser-e1-e3-2026-10-24.txt`
-(commit `94091fb`). The harness was a temp CDP page pair, not part of the repo.
+Raw receipts: `hello/docs/receipts/browser-e1-e3-2026-10-24.txt` and
+`hello/docs/receipts/browser-e2-e4-2026-10-24.txt` (commits `94091fb`,
+`43658cf`). The harness was a temp CDP page set, not part of the repo.
 
-Still open: E2 (a helper with no room key relays and provably cannot decrypt),
-E4 (two symmetric-NAT peers with no third tab), and the hidden-tab heartbeat
-clock (E1 sent from the visible tab).
+Still open: the hidden-tab heartbeat clock (E1 sent from the visible tab),
+real symmetric NAT (E4 removes the direct path by policy, not by a real
+CGNAT), helper discovery without a server, a malicious helper, and video on
+the relay path.
 
 ---
 
