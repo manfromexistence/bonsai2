@@ -200,6 +200,36 @@ secp256k1 signer.
 
 Still open: automatic signaling, E6 migration, E7 real NATs, tree/video.
 
+### 5.8 One link, no paste, and video (2026-10-24)
+
+`hello-signal.js` adds an MQTT-over-WSS carrier under the same signaling bus:
+`BroadcastChannel` for tabs on one machine, a public anonymous broker
+(`broker.hivemq.com:8884`) for different machines. SDP is AES-GCM sealed under
+a key derived from the room secret, so the broker sees a topic hash and
+ciphertext, never an IP address.
+
+| Measurement | Result |
+| --- | --- |
+| browsers | **3 separate Edge processes**, separate profiles, no BroadcastChannel |
+| signaling | `mqtt: connected` at the host; no code pasted |
+| audio | 100 Opus frames sent; 103 / 110 played; host relayed exactly 200 |
+| video | A sent 5 canvas JPEGs; the tab host relayed them as `Kind::Video`; B drew all 5 |
+| native processes in the room | none |
+
+Commands: `pwsh scripts/test-mqtt.ps1`, and `pwsh scripts/test-browser-p2p.ps1`
+for the same room over local signaling. Receipts:
+`hello/docs/receipts/browser-mqtt-2026-10-24.txt`,
+`browser-p2p-2026-10-24.txt` (commit `9ed8e6a`).
+
+What this settles: the single-link, no-paste path exists and is measured, and
+video crosses the tab host. What it does not settle: the browsers are on one
+machine and one NAT; the broker is third-party metadata infrastructure; no
+iPhone; closing the host tab still ends the room; the host is star mode, not
+the downlink tree.
+
+Remaining, in order: iPhone Safari run (HTTPS + tap-resume), host migration
+(E6), two real networks (E7), the downlink tree in `RoomHost`.
+
 ---
 
 ## 6. The six candidate breakthroughs (already shortlisted)
