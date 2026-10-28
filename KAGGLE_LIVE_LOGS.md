@@ -176,6 +176,7 @@ Kaggle.**
 | Kernel id slugified | `lfm3-1.7b-...` -> `lfm3-1-7b-...`; the dotted id makes a 2nd kernel | pull the live metadata |
 | `--accelerator` unvalidated | forwarded verbatim to `machine_shape` | confirm `device_count` in the log |
 | Silent subprocess | log freezes with no error | stream the child (section 5) |
+| `-f` drops the connection | the stream prints `Log stream connection lost, reconnecting...` and replays from the start | dedupe by line number; do not treat repeats as kernel output |
 | Session cap | GPU sessions die at the platform limit, not at your timeout | follow, do not assume |
 | Output quota | `/kaggle/working` ~20 GiB; dying at save = nothing measured | scratch in `/kaggle/temp` |
 
@@ -205,6 +206,9 @@ Kaggle.**
 | `--accelerator` skips validation | `kaggle_api_extended.py`: `request.machine_shape = acc` |
 | 2 GPUs were actually granted | run log: `device_count: 2`, `fanout=True` |
 | A live clip exists | fenced line below, taken mid-build |
+| The live channel is SSE, not a polled file | `kaggle_api_extended.py:6871-6891` |
+| `-f` reconnects and replays | observed `Log stream connection lost, reconnecting...` in a 50 s follower capture |
+| Cancel is unreachable from the API | `kernels_api_service.py:139` needs `kernel_session_id`; status returns none |
 
 The CLI definition, quoted verbatim (installed package path shortened):
 
@@ -220,6 +224,49 @@ A live-stream clip, captured before the step it names had returned:
 ```text
 [   17.8s] RUN cmake --build /kaggle/temp/ternary/llama.cpp/build -j 4
 ```
+
+## 9. Cancelling a run (the CLI cannot, the UI can)
+
+A run that is wasting quota is not stoppable from the CLI in 2.2.4: the `kernels`
+subcommands are `list files init push pull output status logs delete topics`. `delete`
+removes the whole kernel including the versions you want to keep.
+
+The API *does* have the endpoint, but nothing returns the id it needs:
+
+```text
+POST /api/v1/kernels/cancel-session/{kernel_session_id}
+kagglesdk/kernels/types/kernels_api_service.py:139
+```
+
+`ApiCancelKernelSessionRequest` takes exactly one field, `kernel_session_id` (int). The status
+response carries only `status` and `failure_message`; the log-stream endpoint resolves a
+session from `(user_name, kernel_slug, version_label)` server-side and never exposes the
+numeric id. So a cancel call cannot be assembled from the public API alone.
+
+What does work:
+
+1. **Per-version status** - `kaggle kernels status <owner>/<slug>/2` reports that version,
+   which is how you confirm which of two concurrent runs is the wasteful one.
+2. **Stop in the web UI** - open the kernel, select the version, press Stop. This is the only
+   supported way to end one run without touching the other.
+3. **Pushing a new version does not cancel the old one.** Verified: v2 stayed `RUNNING` while
+   v3 started, so two sessions ran concurrently and both billed. Push, then stop.
+
+## 10. How the live channel actually works
+
+Not a polled file. The CLI opens a server-sent-events stream:
+
+```text
+GET /api/v1/kernels/logs/stream/{owner}/{slug}
+Accept: text/event-stream
+kaggle_api_extended.py:6871-6891
+```
+
+While the session runs, that endpoint proxies the worker's SSE feed (`{stream_name, time,
+data}` events, terminated by an `END_OF_LOG` sentinel). Once the session has finished it
+returns the persisted log blob from object storage with a non-SSE content type, which is why
+`kernels logs` and `kernels logs -f` behave differently depending on state - same URL, two
+backends.
 
 ---
 
