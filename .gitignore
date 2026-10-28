@@ -89,7 +89,13 @@ trash/
 # codebase/ is its own repo (essence-dx/codebase) - do not track it here.
 # The root /* rule above already covers it; this line states the intent.
 
+!/threads/
+!/threads/*
 !/JULES_BUILD_PROMPT.md
 !/CAP.md
 !/DX_HARNESS.md
 !/DECISIONS.md
+!/NEEDLE.md
+!/VISSION.md
+!/STT_TTS_LANGUAGES.md
+!/KAGGLE_LIVE_LOGS.md
