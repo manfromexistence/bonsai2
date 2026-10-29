@@ -13,6 +13,23 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-30 - `chore:` parked the VisionPsy Q4_0 quant in `zzz`
+
+`G:\Dx\models\vlm\visionpsy-nano-460m-flash-q4_0.gguf` (243.9 MiB) moved to
+`G:\Dx\zzz\`. It is the smaller alternative (348 MiB with the same projector vs
+393 MiB) but it was never the loaded pair, and both quants read the UI text
+exactly - so it is parked, not deleted.
+
+`models\vlm\` now holds exactly the two files that run:
+
+```text
+visionpsy-nano-460m-flash-q4_k_m-imat.gguf   289.1 MiB
+mmproj-visionpsy-nano-460m-flash-q8.gguf     103.7 MiB
+```
+
+README, `docs/model-tests-2026-10-30.md` and `decisions/docs/MODEL_STACK.md`
+section 8 now say the q4_0 file is in `zzz`.
+
 ### 2026-10-30 - `docs:` name the VisionPsy GGUF pair that is actually loaded
 
 The vision folder holds two LLM quants, and the docs disagreed about which one

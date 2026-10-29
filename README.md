@@ -163,7 +163,7 @@ tests in this section actually loaded.
 | Role | Default model | Files on disk | Size | Runtime |
 | --- | --- | --- | ---: | --- |
 | OCR | **PP-OCRv6 Nano** (`PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/ocr/{det,rec}/inference.onnx` + `ocr/ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
-| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/` — **`q4_k_m-imat` is the loaded LLM**, `q4_0` is the smaller alternative, `mmproj` Q8 is required | **~393 MiB** (289 + 104) / 348 MiB with q4_0 | llama.cpp with a VisionPsy-capable `mtmd` build |
+| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/` — **`q4_k_m-imat` is the loaded LLM**, `mmproj` Q8 is required; the `q4_0` alternative now sits in `zzz\` | **~393 MiB** (289 + 104) | llama.cpp with a VisionPsy-capable `mtmd` build |
 | STT | **Phonon-2.5** (`FermionResearch/Phonon-2.5`) | `models/stt/Phonon-2.5/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
 | STT (hi) - locked | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` (fp32 snapshot beside it) | **76 MB** int8 / 585 MB fp32 | faster-whisper / CTranslate2 |
 | TTS (en/ar/ja) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |

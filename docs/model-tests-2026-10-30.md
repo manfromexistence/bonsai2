@@ -62,7 +62,8 @@ llama-mtmd-cli.exe -m visionpsy-nano-460m-flash-q4_0.gguf `
   -n 64 -t 8 --temp 0
 ```
 
-- q4_0 + mmproj Q8: exact read of all four lines; model load 1.4 s.
+- q4_0 + mmproj Q8: exact read of all four lines; model load 1.4 s. (q4_0 was
+  later parked in `G:\Dx\zzz\`; the locked pair is q4_k_m-imat + mmproj.)
 - q4_k_m-imat + mmproj Q8 on `demo_frames_512x512/frame_00.png`:
   "A serene, sunlit scene features a moss-covered tree with a hidden cave,
   surrounded by lush greenery and a few rocks." (`vision_gguf.log`)
