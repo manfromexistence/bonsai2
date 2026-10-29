@@ -9,7 +9,7 @@ project, with measured CPU performance on the reference machine
 | Role | Model | Why |
 | --- | --- | --- |
 | **Bangla (bn)** - special-purpose | `facebook/mms-tts-ben` (MMS-TTS Bangla, VITS) | Only Bangla-capable model that runs well on CPU; 36.3M params, 16 kHz |
-| **Hindi (hi)** - special-purpose | `rhasspy/piper-voices` hi_IN `pratham` / `priyamvada` / `rohan` via sherpa-onnx | 77 MB per voice, 22.05 kHz, RTF 0.05-0.07, round-trip CER 0.000 |
+| **Hindi (hi)** - locked 2026-10-30, special-purpose | `rhasspy/piper-voices` hi_IN `pratham` / `priyamvada` / `rohan` via sherpa-onnx | 77 MB per voice, 22.05 kHz, RTF 0.05-0.07, round-trip CER 0.000 |
 | **English, Arabic, Japanese** | `Supertone/supertonic-3` (Supertonic 3, ONNX) | Fastest on CPU for these (RTF 0.27-0.36 measured here), 31 languages, 10 preset voices, ~99M params |
 | English high-quality (optional) | `hexgrad/Kokoro-82M` | Best English quality, RTF ~1.33 on CPU |
 | Multilingual / cloning (GPU or slow CPU) | `k2-fsa/OmniVoice` / `Serveurperso/OmniVoice-GGUF` (Q4_K_M) | 600+ languages + zero-shot cloning; RTF ~4.75–8.05 on CPU |
@@ -59,7 +59,8 @@ RTF = real-time factor (lower is faster; <1.0 means faster than real-time).
 - Hindi moved from Supertonic 3 to **Piper hi_IN** on 2026-10-30: 77 MB, 22.05
   kHz, RTF 0.05-0.07, round-trip CER 0.000. Supertonic's Hindi is intelligible
   (CER 0.067) but 5x larger and slower; the earlier "Hindi is weak" note was
-  caused by the multilingual STT, not by the voice.
+  caused by the multilingual STT, not by the voice. **Locked** with sha256 in
+  `decisions/configs/speech_hindi.json`.
 - The Piper bundles here are the sherpa-onnx conversions
   (`csukuangfj/vits-piper-hi_IN-*-medium`), which carry `tokens.txt` and
   `espeak-ng-data/`; the raw `rhasspy/piper-voices` ONNX alone is not enough

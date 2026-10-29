@@ -69,8 +69,9 @@ on five FLEURS `hi_in` test clips it emitted Latin transliteration or Urdu scrip
 | stock whisper-base int8 (replaced) | 152 MB | 1.015 | - | 0.13 |
 
 The mean is dominated by one hard proper-noun clip; base and small are within
-two CER points of each other, so **whisper-base-hindi is the default** and small
-is the accuracy option.
+two CER points of each other, so **whisper-base-hindi is the locked default**
+(2026-10-30) and small is the accuracy option. The pin, with sha256 and the
+measured values, is `decisions/configs/speech_hindi.json`.
 
 Paths:
 

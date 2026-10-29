@@ -30,9 +30,13 @@ Models now live in `G:\Dx\models\stt\whisper-base-hindi{,-ct2}` and
 `G:\Dx\models\tts\piper-hi-{pratham,priyamvada,rohan}`; `whisper-small-hindi`
 and `MMS-TTS-Hindi` were kept as the accuracy/alternative options. Receipts:
 `docs/model-tests/hindi_bench.log`, `bench_stt_hindi.py`, `gen_tts_hindi.py`.
-Docs updated: `README.md`, `docs/stt-models.md`, `docs/tts-models.md`,
-`STT_TTS_LANGUAGES.md`, `docs/model-tests-2026-10-30.md` (including the
-correction that the earlier "Hindi TTS is weak" reading was an STT artefact).
+
+Locked 2026-10-30 with sha256 and measured values in
+`decisions/configs/speech_hindi.json` (decisions commit `03b125a`), and named
+as locked in `decisions/docs/MODEL_STACK.md` section 7. Docs updated:
+`README.md`, `docs/stt-models.md`, `docs/tts-models.md`, `STT_TTS_LANGUAGES.md`,
+`docs/model-tests-2026-10-30.md` (including the correction that the earlier
+"Hindi TTS is weak" reading was an STT artefact).
 
 ### 2026-10-30 - `docs:` local model defaults recorded, all four modalities tested
 

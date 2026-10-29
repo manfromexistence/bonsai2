@@ -5,6 +5,8 @@
 > **All 5 languages have a working STT and TTS model on disk** as of
 > 2026-10-30. Hindi was the last gap and now uses a Hindi fine-tune for STT
 > and Piper for TTS. Chinese was dropped from the target list.
+>
+> Hindi pins, with sha256 and measured CER/RTF: `decisions/configs/speech_hindi.json`.
 
 **Combined footprint: ~1.33-1.44 GB** (STT ~828 MB + TTS ~498-605 MB).
 
