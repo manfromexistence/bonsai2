@@ -163,7 +163,7 @@ tests in this section actually loaded.
 | Role | Default model | Files on disk | Size | Runtime |
 | --- | --- | --- | ---: | --- |
 | OCR | **PP-OCRv6 Nano** (`PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/ocr/{det,rec}/inference.onnx` + `ocr/ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
-| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/` (`q4_0` + `mmproj` Q8; q4_k_m-imat also present) | ~348 MiB GGUF | llama.cpp with a VisionPsy-capable `mtmd` build |
+| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/` — **`q4_k_m-imat` is the loaded LLM**, `q4_0` is the smaller alternative, `mmproj` Q8 is required | **~393 MiB** (289 + 104) / 348 MiB with q4_0 | llama.cpp with a VisionPsy-capable `mtmd` build |
 | STT | **Phonon-2.5** (`FermionResearch/Phonon-2.5`) | `models/stt/Phonon-2.5/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
 | STT (hi) - locked | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` (fp32 snapshot beside it) | **76 MB** int8 / 585 MB fp32 | faster-whisper / CTranslate2 |
 | TTS (en/ar/ja) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
@@ -248,7 +248,7 @@ raw numbers are in `docs/model-tests-2026-10-30.md`.
 | Modality | Result | Evidence |
 | --- | --- | --- |
 | OCR | **works** - PP-OCRv6 Nano read a rendered UI screenshot 4/4 lines exactly in 0.51 s | `docs/model-tests-2026-10-30.md`, `docs/model-tests/test_ocr.py` |
-| Vision | **works** - VisionPsy read the same text exactly through GGUF (q4_0 + mmproj Q8) and through `transformers` fp32 (5.6 t/s) | same, `vision_gguf.log` |
+| Vision | **works** - VisionPsy read the same text exactly through GGUF (`q4_k_m-imat` + `mmproj` Q8) and through `transformers` fp32 (5.6 t/s) | same, `vision_gguf.log` |
 | STT | **5 of 5 languages** - English (Phonon) and Arabic/Japanese/Bangla (Dolphin); Hindi now via whisper-base-hindi at 0.032 median CER | same, `test_stt_roundtrip.py`, `bench_stt_hindi.py` |
 | TTS | **works in all 5** - Supertonic 3 for en/ar/ja at 0.27-0.36 RTF, Piper for hi at 0.05-0.07, MMS Bangla at 0.47; the earlier "Hindi is weak" reading was a broken STT, corrected 2026-10-30 | same, `test_tts.py`, `gen_tts_hindi.py` |
 

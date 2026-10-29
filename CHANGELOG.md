@@ -13,6 +13,19 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-30 - `docs:` name the VisionPsy GGUF pair that is actually loaded
+
+The vision folder holds two LLM quants, and the docs disagreed about which one
+runs. Resolved by checking the harness and re-running it:
+
+- **Loaded pair:** `visionpsy-nano-460m-flash-q4_k_m-imat.gguf` (289.1 MiB)
+  **+** `mmproj-visionpsy-nano-460m-flash-q8.gguf` (103.7 MiB) = **~393 MiB**.
+  The projector is mandatory; `q4_0` alone cannot run.
+- **Alternative:** `q4_0` (243.9 MiB) + the same mmproj = ~348 MiB. It also read
+  the UI text exactly; use it only when 45 MiB matters.
+- README and `decisions/docs/MODEL_STACK.md` section 8 now say this in one place.
+  No model files changed.
+
 ### 2026-10-30 - `chore:` moved the SmolVLM2 vision fallback to `zzz`
 
 `G:\Dx\models\vlm\dx-vision-v1.0\` (306 MiB: `dx-vision-v1.0-Q4_K_M.gguf` 125 MiB
