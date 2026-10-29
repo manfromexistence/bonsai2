@@ -13,6 +13,22 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-30 - `docs:` local model defaults recorded, all four modalities tested
+
+`README.md` now carries a "Local models: OCR, vision, STT, TTS" section: PP-OCRv6
+Nano, VisionPsy-Nano-460M-Flash, Phonon-2.5, Supertonic 3 and MMS-TTS Bangla,
+with the five-language STT/TTS map and the measured results table.
+
+Receipt: `docs/model-tests-2026-10-30.md` (commands + numbers) and the runnable
+scripts in `docs/model-tests/`. Executed here on 2026-10-30: OCR read a rendered
+UI screenshot 4/4 lines exactly in 0.51 s; VisionPsy read the same text through
+GGUF (`llama-mtmd-cli`) and through `transformers` fp32 (5.6 t/s); STT worked in
+4 of 5 languages (Hindi is romanized only); TTS produced audio in all 5 (Hindi
+is the weakest voice on round-trip). Two defects recorded rather than hidden:
+VisionPsy's `compile_inference: true` needs MSVC `cl` and fails without
+`TORCHDYNAMO_DISABLE=1`, and Supertonic 3 writes 44.1 kHz, not the 24 kHz that
+`docs/tts-models.md` claims.
+
 ### 2026-10-21 - `chore:` 122 GB of scratch build output reclaimed, with approval
 
 `G:` fell from 26 GB free to 1.3 GB during this session. The cause was

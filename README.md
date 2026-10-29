@@ -119,7 +119,7 @@ still expose a CLI route.
 | code | `code` | `essence-dx/code` | dx-code: GUI desktop code editor | `dx desktop sync-web` |
 | tui | `tui` | `essence-dx/tui` | dx-tui terminal UI | none (hidden `dx tui` launches `cli/tui`) |
 | bot | `bot` | `essencefromexistence/flow` | dx app for mobile and desktop | `dx bot` (fails closed until release) |
-| decisions | `decisions` | `essence-dx/dx-decisions` | dx decision-model system | `dx decisions` (fails closed until release) |
+| decisions | `decisions` | `essence-dx/dx-decisions` | dx decision-model system (default STT: Phonon-2.5, 156 MB, 25 langs; default VLM: VisionPsy-Nano-460M-Flash, 256 MB Q4_0, 64 visual tokens, ~10-25x faster TTFT) | `dx decisions` (fails closed until release) |
 | extensions | `extensions` | `essence-dx/extensions` | DX Extensions — the DX fork of the Cline agent stack; `apps/dx-vscode` ships as the DX Command Center | none |
 | website | `website` | `essence-dx/website` | dx official website | `dx site` (hidden) |
 | codebase | `codebase` | `essence-dx/codebase` | The code knowledge graph for coding agents. A **fork** of `DeusData/codebase-memory-mcp` (MIT), upstream kept as the `upstream` remote; the DX layer is the decision record in `codebase/TECH.md` and the ledger in `codebase/TODO.md` | none yet — no `dx codebase` route and no release (`codebase/TODO.md` `CB-01`, `CB-02`) |
@@ -150,6 +150,65 @@ token cost; the session measurement is `codebase/TODO.md` `CB-13` and has not
 been run. The reason the surface exists at all is upstream's own figure: a
 session with MCP attached costs **+66% tokens** against the same session
 without it. The graph is upstream's; the surface is the fork's.
+
+## Local models: OCR, vision, STT, TTS
+
+The working models on this machine live in `G:\Dx\models`. They are not the
+same set the `esportsfire` app pins in `esportsfire/models/manifest.json`: that
+manifest still ships `dx-ocr-1.0` (PP-OCRv4) and `dx-vision-1.0`
+(SmolVLM2-256M) as its cascade. The table below is the current local default,
+what `decisions/docs/MODEL_STACK.md` (sections 3, 7, 8) locks, and what the
+tests in this section actually loaded.
+
+| Role | Default model | Files on disk | Size | Runtime |
+| --- | --- | --- | ---: | --- |
+| OCR | **PP-OCRv6 Nano** (`PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/ocr/PP-OCRv6-Nano/{det,rec}/inference.onnx` + `ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
+| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/VisionPsy-Nano-460M-Flash/` (F32) and `...-GGUF/` (`q4_0` + `mmproj` Q8) | 1.89 GB F32 / ~348 MiB GGUF | `transformers` (`trust_remote_code`), or llama.cpp with a VisionPsy-capable `mtmd` build |
+| STT | **Phonon-2.5** (`FermionResearch/Phonon-2.5`) | `models/stt/Phonon-2.5/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
+| TTS (en/ar/ja/hi) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
+| TTS (bn) | **MMS-TTS Bangla** (`facebook/mms-tts-ben`) | `models/tts/MMS-TTS-Bangla/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
+
+`models/vlm/dx-vision-v1.0` (SmolVLM2-256M) is the **shipped fallback**, not the
+preferred VLM. `PP-OCRv4` is retained only as the legacy fallback: it stays
+accurate on UI chrome, but it is no longer the OCR default.
+
+### The five-language speech stack
+
+Target languages are **English, Arabic, Japanese, Bangla, Hindi**; Chinese was
+dropped. Models for all five are on disk, but Hindi STT is romanized only (see
+the test results below).
+
+| Language | STT model | TTS model |
+| --- | --- | --- |
+| English | Phonon-2.5 (also 24 other European languages) | Supertonic 3 |
+| Arabic | Dolphin CTC int8 (fast path) | Supertonic 3 |
+| Japanese | SenseVoice-Small INT8 / Dolphin CTC int8 | Supertonic 3 |
+| Bangla | Whisper base int8 / Dolphin CTC int8 | MMS-TTS Bangla |
+| Hindi | Whisper base int8 | Supertonic 3 |
+
+Moonshine streaming tiny-ar is the documented Arabic specialist, but it is not
+cached on this machine and was not exercised here; Dolphin covers Arabic on
+disk today. Approximate speech footprint: **STT ~752 MB**, **TTS ~421-528 MB**.
+
+### What was actually run (2026-10-30)
+
+All four modalities were exercised on this machine; the scripts, commands and
+raw numbers are in `docs/model-tests-2026-10-30.md`.
+
+| Modality | Result | Evidence |
+| --- | --- | --- |
+| OCR | **works** - PP-OCRv6 Nano read a rendered UI screenshot 4/4 lines exactly in 0.51 s | `docs/model-tests-2026-10-30.md`, `docs/model-tests/test_ocr.py` |
+| Vision | **works** - VisionPsy read the same text exactly through GGUF (q4_0 + mmproj Q8) and through `transformers` fp32 (5.6 t/s) | same, `vision_gguf.log` |
+| STT | **4 of 5 languages** - English (Phonon) and Arabic/Japanese/Bangla (Dolphin) work; Hindi comes back romanized, not Devanagari | same, `test_stt_roundtrip.py` |
+| TTS | **works in all 5** - Supertonic 3 for en/ar/ja/hi at 0.27-0.36 RTF, MMS Bangla at 0.47 RTF; Hindi is audible but the weakest voice on round-trip | same, `test_tts.py`, `test_mms_bn.py` |
+
+Two defects surfaced and are recorded rather than smoothed over:
+
+- VisionPsy's `config.json` enables `torch.compile`, which fails here because
+  MSVC `cl` is absent. It runs with `TORCHDYNAMO_DISABLE=1` / eager mode; the
+  GGUF path avoids the issue entirely.
+- There is no working Hindi STT model on disk. Hindi is the one gap in the
+  five-language claim.
 
 ## Vendored third-party workspaces
 
@@ -319,4 +378,4 @@ PowerShell as the shell.
 | How do I work here without breaking it? | `AGENTS.md` |
 
 MIT OR Apache-2.0
-updated: 2026-10-21 00:00 UTC
+updated: 2026-10-30 00:00 UTC

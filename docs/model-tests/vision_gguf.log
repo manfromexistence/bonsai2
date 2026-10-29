@@ -1,0 +1,21 @@
+0.00.068.862 I common_init_result: fitting params to device memory ...
+0.00.068.870 I common_init_result: (for bugs during this step try to reproduce them with -fit off, or provide --verbose logs if the bug only occurs with -fit on)
+0.00.831.627 I common_init_from_params: warming up the model with an empty run - please wait ... (--no-warmup to disable)
+0.00.884.709 I mtmd_cli_context: chat template example:
+<|im_start|>system
+You are a helpful assistant<|im_end|>
+<|im_start|>user
+Hello<|im_end|>
+<|im_start|>assistant
+Hi there<|im_end|>
+<|im_start|>user
+How are you?<|im_end|>
+<|im_start|>assistant
+
+0.00.999.026 I main: loading model: G:\Dx\models\vlm\VisionPsy-Nano-460M-Flash-GGUF\visionpsy-nano-460m-flash-q4_k_m-imat.gguf
+0.00.999.036 W WARN: This is an experimental CLI for testing multimodal capability.
+0.00.999.037 W       For normal use cases, please use the standard llama-cli
+
+A serene, sunlit scene features a moss-covered tree with a hidden cave, surrounded by lush greenery and a few rocks.
+
+
