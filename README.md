@@ -168,7 +168,7 @@ tests in this section actually loaded.
 | STT (hi) - locked | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` (fp32 snapshot beside it) | **76 MB** int8 / 585 MB fp32 | faster-whisper / CTranslate2 |
 | TTS (en/ar/ja) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
 | TTS (bn) | **MMS-TTS Bangla** (`facebook/mms-tts-ben`) | `models/tts/MMS-TTS-Bangla/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
-| TTS (hi) - locked | **Piper hi_IN** (`pratham`, `priyamvada`, `rohan`) | `models/tts/piper-hi-*/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** per voice | sherpa-onnx VITS, CPU |
+| TTS (hi) - locked | **Piper hi_IN** (`pratham`, `priyamvada`) | `models/tts/piper-hi-*/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** per voice | sherpa-onnx VITS, CPU |
 
 `G:\Dx\zzz\dx-vision-v1.0` (SmolVLM2-256M) is the **shipped fallback**, parked
 outside the model store on 2026-10-30, not the preferred VLM: on the same UI
@@ -213,8 +213,9 @@ fixes it:
 Measured on five FLEURS `hi_in` test clips (8-9 s each, real speech, reference
 transcripts). The mean is pulled up by one hard proper-noun sentence; the
 median is 3.2% CER. The small model gains 2 points of CER for 3x the size and
-2x the time, so **whisper-base-hindi is locked** for Hindi and small stays as
-the accuracy option.
+2x the time, so **whisper-base-hindi is locked** for Hindi. Whisper-small and
+its fp32 source were moved to `G:\Dx\zzz\` on 2026-10-30; they are not on the
+default path.
 
 For TTS, every candidate produced the reference sentence back at CER 0.000:
 
@@ -227,10 +228,11 @@ For TTS, every candidate produced the reference sentence back at CER 0.000:
 | Supertonic 3 (previous) | 383 MB | 44.1 kHz | 0.30 | 0.067 |
 
 Piper wins on size, sample rate and speed, so it is **locked** for Hindi:
-`pratham` (male) is the default, `priyamvada` is the female voice, and `rohan`
-is the alternate male. The earlier "Hindi is the weakest Supertonic voice" note
-was a measurement error: the multilingual STT was romanizing the audio, not the
-voice failing.
+`pratham` (male) is the default and `priyamvada` is the female voice. `rohan`
+and `MMS-TTS Hindi` were moved to `G:\Dx\zzz\` on 2026-10-30 as unneeded
+alternates. The earlier "Hindi is the weakest Supertonic voice" note was a
+measurement error: the multilingual STT was romanizing the audio, not the voice
+failing.
 
 Both pins, with sha256 for every weight file and the measured CER/RTF, are in
 `decisions/configs/speech_hindi.json` (commit `03b125a` in the `decisions`

@@ -143,6 +143,11 @@ were downloaded and measured on five FLEURS `hi_in` test clips:
 | **whisper-base-hindi** | **76 MB** | **0.135** | **0.032** | **0.22** |
 | whisper-small-hindi | 240 MB | 0.114 | 0.028 | 0.43 |
 
+> Note (later on 2026-10-30): `whisper-small-hindi` (int8 + fp32) and the
+> whisper-base fp32 source were moved to `G:\Dx\zzz\`; only the 76 MB int8 base
+> stays on the default path. The numbers above are the measurement that decided
+> it, not a claim that the file is still in `models\stt\`.
+
 TTS was re-judged with the working Hindi STT. Every candidate returned the
 reference sentence at CER 0.000 except Supertonic (0.067):
 
@@ -152,6 +157,9 @@ reference sentence at CER 0.000 except Supertonic (0.067):
 | Piper hi_IN `priyamvada` | 77 MB | 22.05 kHz | 0.07 | 0.000 |
 | Piper hi_IN `rohan` | 77 MB | 22.05 kHz | 0.06 | 0.000 |
 | MMS-TTS Hindi | 291 MB | 16 kHz | 0.27 | 0.000 |
+
+> `rohan` and `MMS-TTS Hindi` were moved to `G:\Dx\zzz\` after this test as
+> unneeded alternates; `pratham` and `priyamvada` remain.
 | Supertonic 3 | 383 MB | 44.1 kHz | 0.30 | 0.067 |
 
 Commands and logs: `docs/model-tests/hindi_bench.log`, `bench_stt_hindi.py`,

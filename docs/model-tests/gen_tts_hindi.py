@@ -36,10 +36,10 @@ def piper(voice):
           f"wall_s={dt:.2f} rtf={dt / dur:.2f} -> {path}", flush=True)
 
 
-for v in ("pratham", "priyamvada", "rohan"):
+for v in ("pratham", "priyamvada"):
     piper(v)
 
-mms_root = r"G:\Dx\models\tts\MMS-TTS-Hindi"
+mms_root = r"G:\Dx\zzz\MMS-TTS-Hindi"  # parked 2026-10-30
 if os.path.exists(os.path.join(mms_root, "config.json")):
     snap = mms_root
 elif os.path.isdir(os.path.join(mms_root, "snapshots")):

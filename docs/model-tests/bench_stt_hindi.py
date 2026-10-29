@@ -16,7 +16,7 @@ TSV = fr"{B}\fleurs_hi_test.tsv"
 AUD = fr"{B}\fleurs_hi"
 MODELS = {
     "base-hi": r"G:\Dx\models\stt\whisper-base-hindi-ct2",
-    "small-hi": r"G:\Dx\models\stt\whisper-small-hindi-ct2",
+    "small-hi": r"G:\Dx\zzz\whisper-small-hindi-ct2",
 }
 REF_TEXT = "नमस्ते, मैं आपकी मदद के लिए यहाँ हूँ। आज मौसम बहुत अच्छा है।"
 
