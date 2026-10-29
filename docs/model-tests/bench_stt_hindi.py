@@ -16,7 +16,6 @@ TSV = fr"{B}\fleurs_hi_test.tsv"
 AUD = fr"{B}\fleurs_hi"
 MODELS = {
     "base-hi": r"G:\Dx\models\stt\whisper-base-hindi-ct2",
-    "small-hi": r"G:\Dx\zzz\whisper-small-hindi-ct2",
 }
 REF_TEXT = "नमस्ते, मैं आपकी मदद के लिए यहाँ हूँ। आज मौसम बहुत अच्छा है।"
 
@@ -117,7 +116,7 @@ def main():
               f"mean RTF={np.mean(rs):.2f}", flush=True)
 
         # TTS round-trip: judge the generated Hindi clips with this model
-        for clip in ("mms_hi.wav", "piper_pratham.wav", "piper_priyamvada.wav"):
+        for clip in ("piper_pratham.wav", "piper_priyamvada.wav"):
             p = os.path.join(r"G:\Temp\UserTemp\opencode\model-tests\out", clip)
             if os.path.exists(p):
                 hyp, dt, dur = transcribe(model, p)

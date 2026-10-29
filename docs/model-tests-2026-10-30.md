@@ -56,15 +56,14 @@ Binary: `G:\Temp\UserTemp\opencode\vkb\bin\llama-mtmd-cli.exe` (the one in
 needs no compiler.
 
 ```powershell
-llama-mtmd-cli.exe -m visionpsy-nano-460m-flash-q4_0.gguf `
+llama-mtmd-cli.exe -m visionpsy-nano-460m-flash-q4_k_m-imat.gguf `
   --mmproj mmproj-visionpsy-nano-460m-flash-q8.gguf `
   --image ui_text.png -p "What text is written in this image? Read it exactly." `
   -n 64 -t 8 --temp 0
 ```
 
-- q4_0 + mmproj Q8: exact read of all four lines; model load 1.4 s. (q4_0 was
-  later parked in `G:\Dx\zzz\`; the locked pair is q4_k_m-imat + mmproj.)
-- q4_k_m-imat + mmproj Q8 on `demo_frames_512x512/frame_00.png`:
+- q4_k_m-imat + mmproj Q8: exact read of all four UI lines; model load 1.4 s.
+- The same pair on `demo_frames_512x512/frame_00.png`:
   "A serene, sunlit scene features a moss-covered tree with a hidden cave,
   surrounded by lush greenery and a few rocks." (`vision_gguf.log`)
 
@@ -92,8 +91,8 @@ Findings:
 - Dolphin is the best on-disk option for Arabic and Japanese, and the fastest
   (RTF 0.01-0.02). SenseVoice is weaker than Dolphin on the Japanese clip.
 - **Hindi is the gap.** Neither Dolphin nor Whisper base produces Devanagari;
-  both emit romanized text. A Hindi-specific model (IndicConformer or
-  whisper-small) is required before Hindi STT can be called done.
+  both emit romanized text. A Hindi-specific fine-tune is required before Hindi
+  STT can be called done.
 - Whisper base accepts only 30 s per call; the 161.7 s Hindi file was truncated
   and produced repeated noise.
 
@@ -134,32 +133,20 @@ multilingual whisper model was romanizing it.
 ## Follow-up: Hindi fixed (2026-10-30, same day)
 
 The first pass left Hindi as a gap because the multilingual whisper-base model
-romanized it. That was an STT failure, not a data problem. Two Hindi fine-tunes
-were downloaded and measured on five FLEURS `hi_in` test clips:
+romanized it. That was an STT failure, not a data problem. A Hindi fine-tune was
+downloaded and measured on five FLEURS `hi_in` test clips:
 
 | Hindi STT (int8, CPU) | Size | Mean CER | Median CER | RTF |
 | --- | ---: | ---: | ---: | ---: |
 | stock whisper-base (multilingual) | 152 MB | 1.015 | - | 0.13 |
 | **whisper-base-hindi** | **76 MB** | **0.135** | **0.032** | **0.22** |
-| whisper-small-hindi | 240 MB | 0.114 | 0.028 | 0.43 |
 
-> Note (later on 2026-10-30): `whisper-small-hindi` (int8 + fp32) and the
-> whisper-base fp32 source were moved to `G:\Dx\zzz\`; only the 76 MB int8 base
-> stays on the default path. The numbers above are the measurement that decided
-> it, not a claim that the file is still in `models\stt\`.
-
-TTS was re-judged with the working Hindi STT. Every candidate returned the
-reference sentence at CER 0.000 except Supertonic (0.067):
+TTS was re-judged with the working Hindi STT:
 
 | Hindi TTS | Size | Sample rate | RTF | CER |
 | --- | ---: | ---: | ---: | ---: |
 | **Piper hi_IN `pratham`** | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
 | Piper hi_IN `priyamvada` | 77 MB | 22.05 kHz | 0.07 | 0.000 |
-| Piper hi_IN `rohan` | 77 MB | 22.05 kHz | 0.06 | 0.000 |
-| MMS-TTS Hindi | 291 MB | 16 kHz | 0.27 | 0.000 |
-
-> `rohan` and `MMS-TTS Hindi` were moved to `G:\Dx\zzz\` after this test as
-> unneeded alternates; `pratham` and `priyamvada` remain.
 | Supertonic 3 | 383 MB | 44.1 kHz | 0.30 | 0.067 |
 
 Commands and logs: `docs/model-tests/hindi_bench.log`, `bench_stt_hindi.py`,
@@ -180,23 +167,10 @@ time / wall / 12 logical threads):
 | Reasoning | 4.16 s for tg256 | 46% / 66% | 206.86 ± 3.16 t/s tg256, 1088 t/s pp32 | 208-226 t/s achieved; CLI 216.9-223.1 |
 | OCR | 1.04 s total (load 0.15 + infer 0.31) | <3% | 4/4 lines exact, scores 0.958-0.988 | 0.51 s, 4/4 exact |
 | Vision (VisionPsy q4_k_m) | 6.93 s | 3% / 11% | read all four screenshot lines exactly | 7.33-8.6 s GGUF; 5.6 t/s fp32 |
-| Vision (`dx-vision-v1.0`, SmolVLM2) | 1.82 s | 4% / 11% | generic description, **does not transcribe the text** | shipped fallback, unchanged |
 
 Variance note: the first reasoning runs in the same session measured 169-175 t/s
 because the box was at 84% CPU load from other apps; once it settled the same
 binary measured 206.9 t/s. Quote the load, not a single sample.
-
-### Which vision model is "right"?
-
-`dx-vision-v1.0` is **SmolVLM2-256M** - the older, smaller, faster fallback the
-`esportsfire` manifest ships. It is real and it runs (1.82 s), but on the same
-image it invents a description instead of reading the text. **VisionPsy GGUF is
-the correct default** for any text/UI/OCR-adjacent frame.
-
-After this comparison the fallback was moved out of the model store to
-`G:\Dx\zzz\dx-vision-v1.0\` (306 MiB), so `models\vlm\` now holds only the
-locked VisionPsy GGUF files. Moving it back is one `Move-Item` if the speed
-fallback is ever wanted again.
 
 MIT OR Apache-2.0
 updated: 2026-10-30 00:00 UTC

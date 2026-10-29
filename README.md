@@ -119,7 +119,7 @@ still expose a CLI route.
 | code | `code` | `essence-dx/code` | dx-code: GUI desktop code editor | `dx desktop sync-web` |
 | tui | `tui` | `essence-dx/tui` | dx-tui terminal UI | none (hidden `dx tui` launches `cli/tui`) |
 | bot | `bot` | `essencefromexistence/flow` | dx app for mobile and desktop | `dx bot` (fails closed until release) |
-| decisions | `decisions` | `essence-dx/dx-decisions` | dx decision-model system (default STT: Phonon-2.5, 156 MB, 25 langs; default VLM: VisionPsy-Nano-460M-Flash, 256 MB Q4_0, 64 visual tokens, ~10-25x faster TTFT) | `dx decisions` (fails closed until release) |
+| decisions | `decisions` | `essence-dx/dx-decisions` | dx decision-model system (default STT: Phonon-2.5, 156 MB, 25 langs; default VLM: VisionPsy-Nano-460M-Flash, 460M params, 64 visual tokens, ~10-25x faster TTFT) | `dx decisions` (fails closed until release) |
 | extensions | `extensions` | `essence-dx/extensions` | DX Extensions — the DX fork of the Cline agent stack; `apps/dx-vscode` ships as the DX Command Center | none |
 | website | `website` | `essence-dx/website` | dx official website | `dx site` (hidden) |
 | codebase | `codebase` | `essence-dx/codebase` | The code knowledge graph for coding agents. A **fork** of `DeusData/codebase-memory-mcp` (MIT), upstream kept as the `upstream` remote; the DX layer is the decision record in `codebase/TECH.md` and the ledger in `codebase/TODO.md` | none yet — no `dx codebase` route and no release (`codebase/TODO.md` `CB-01`, `CB-02`) |
@@ -155,27 +155,23 @@ without it. The graph is upstream's; the surface is the fork's.
 
 The working models on this machine live in `G:\Dx\models`. They are not the
 same set the `esportsfire` app pins in `esportsfire/models/manifest.json`: that
-manifest still ships `dx-ocr-1.0` (PP-OCRv4) and `dx-vision-1.0`
-(SmolVLM2-256M) as its cascade. The table below is the current local default,
-what `decisions/docs/MODEL_STACK.md` (sections 3, 7, 8) locks, and what the
-tests in this section actually loaded.
+manifest still ships `dx-ocr-1.0` (PP-OCRv4) and `dx-vision-1.0` as its cascade.
+The table below is the current local default, what
+`decisions/docs/MODEL_STACK.md` (sections 3, 7, 8) locks, and what the tests in
+this section actually loaded.
 
 | Role | Default model | Files on disk | Size | Runtime |
 | --- | --- | --- | ---: | --- |
 | OCR | **PP-OCRv6 Nano** (`PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/ocr/{det,rec}/inference.onnx` + `ocr/ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
-| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/` — **`q4_k_m-imat` is the loaded LLM**, `mmproj` Q8 is required; the `q4_0` alternative now sits in `zzz\` | **~393 MiB** (289 + 104) | llama.cpp with a VisionPsy-capable `mtmd` build |
+| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/` - **`q4_k_m-imat` is the loaded LLM**, `mmproj` Q8 is required | **~393 MiB** (289 + 104) | llama.cpp with a VisionPsy-capable `mtmd` build |
 | STT | **Phonon-2.5** (`FermionResearch/Phonon-2.5`) | `models/stt/Phonon-2.5/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
-| STT (hi) - locked | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` (fp32 snapshot beside it) | **76 MB** int8 / 585 MB fp32 | faster-whisper / CTranslate2 |
+| STT (hi) - locked | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` | **76 MB** | faster-whisper / CTranslate2 |
 | TTS (en/ar/ja) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
 | TTS (bn) | **MMS-TTS Bangla** (`facebook/mms-tts-ben`) | `models/tts/MMS-TTS-Bangla/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
 | TTS (hi) - locked | **Piper hi_IN** (`pratham`, `priyamvada`) | `models/tts/piper-hi-*/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** per voice | sherpa-onnx VITS, CPU |
 
-`G:\Dx\zzz\dx-vision-v1.0` (SmolVLM2-256M) is the **shipped fallback**, parked
-outside the model store on 2026-10-30, not the preferred VLM: on the same UI
-frame VisionPsy read all four text lines exactly in 6.93 s, while
-`dx-vision-v1.0` described the page generically in 1.82 s and did not transcribe
-the text. `PP-OCRv4` is retained only as the legacy fallback: it stays accurate
-on UI chrome, but it is no longer the OCR default. The VisionPsy F32 snapshot
+`PP-OCRv4` is retained only as the legacy fallback: it stays accurate on UI
+chrome, but it is no longer the OCR default. The VisionPsy F32 snapshot
 (1.89 GB) was removed on 2026-10-30; the GGUF stack is the only local copy and
 the one the tests used.
 
@@ -210,14 +206,10 @@ fixes it:
 | --- | ---: | ---: | ---: | ---: |
 | stock whisper-base (multilingual) | 152 MB | **1.015** | - | 0.13 |
 | **whisper-base-hindi** (`collabora/`) | **76 MB** | **0.135** | **0.032** | **0.22** |
-| whisper-small-hindi (`collabora/`) | 240 MB | 0.114 | 0.028 | 0.43 |
 
 Measured on five FLEURS `hi_in` test clips (8-9 s each, real speech, reference
 transcripts). The mean is pulled up by one hard proper-noun sentence; the
-median is 3.2% CER. The small model gains 2 points of CER for 3x the size and
-2x the time, so **whisper-base-hindi is locked** for Hindi. Whisper-small and
-its fp32 source were moved to `G:\Dx\zzz\` on 2026-10-30; they are not on the
-default path.
+median is 3.2% CER. **whisper-base-hindi is locked** for Hindi.
 
 For TTS, every candidate produced the reference sentence back at CER 0.000:
 
@@ -225,16 +217,12 @@ For TTS, every candidate produced the reference sentence back at CER 0.000:
 | --- | ---: | ---: | ---: | ---: |
 | **Piper `pratham`** (male) | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
 | Piper `priyamvada` (female) | 77 MB | 22.05 kHz | 0.07 | 0.000 |
-| Piper `rohan` (male) | 77 MB | 22.05 kHz | 0.06 | 0.000 |
-| MMS-TTS Hindi | 291 MB | 16 kHz | 0.27 | 0.000 |
 | Supertonic 3 (previous) | 383 MB | 44.1 kHz | 0.30 | 0.067 |
 
 Piper wins on size, sample rate and speed, so it is **locked** for Hindi:
-`pratham` (male) is the default and `priyamvada` is the female voice. `rohan`
-and `MMS-TTS Hindi` were moved to `G:\Dx\zzz\` on 2026-10-30 as unneeded
-alternates. The earlier "Hindi is the weakest Supertonic voice" note was a
-measurement error: the multilingual STT was romanizing the audio, not the voice
-failing.
+`pratham` (male) is the default and `priyamvada` is the female voice. The
+earlier "Hindi is the weakest Supertonic voice" note was a measurement error:
+the multilingual STT was romanizing the audio, not the voice failing.
 
 Both pins, with sha256 for every weight file and the measured CER/RTF, are in
 `decisions/configs/speech_hindi.json` (commit `03b125a` in the `decisions`

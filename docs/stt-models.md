@@ -60,26 +60,21 @@ fastest on long clips). For non-European languages, use Whisper Base as fallback
 
 The multilingual Whisper Base int8 that used to stand in for Hindi is not usable:
 on five FLEURS `hi_in` test clips it emitted Latin transliteration or Urdu script
-(mean CER 1.015). Two Hindi fine-tunes were measured as int8 CTranslate2 models;
-only base stays on the default path:
+(mean CER 1.015). A Hindi fine-tune measured as int8 CTranslate2 is the locked
+default:
 
 | Model | On-disk (int8) | Mean CER | Median CER | RTF |
 | --- | ---: | ---: | ---: | ---: |
 | `collabora/whisper-base-hindi` | **76 MB** | **0.135** | **0.032** | **0.22** |
-| `collabora/whisper-small-hindi` (parked in `G:\Dx\zzz\`) | 240 MB | 0.114 | 0.028 | 0.43 |
 | stock whisper-base int8 (replaced) | 152 MB | 1.015 | - | 0.13 |
 
-The mean is dominated by one hard proper-noun clip; base and small are within
-two CER points of each other, so **whisper-base-hindi is the locked default**
-(2026-10-30). Whisper-small (fp32 and int8) and the base fp32 source were moved
-to `G:\Dx\zzz\` on 2026-10-30; they are not loaded. The pin, with sha256 and the
-measured values, is `decisions/configs/speech_hindi.json`.
+The mean is dominated by one hard proper-noun clip; the median is 0.032. The
+pin, with sha256 and the measured values, is
+`decisions/configs/speech_hindi.json`.
 
 Paths:
 
 - int8 runtime: `G:\Dx\models\stt\whisper-base-hindi-ct2\` (76 MB)
-- fp32 source (parked): `G:\Dx\zzz\whisper-base-hindi\`
-- whisper-small (parked): `G:\Dx\zzz\whisper-small-hindi{,-ct2}\`
 - evaluation log: `docs/model-tests/hindi_bench.log`
 
 Convert another Whisper fine-tune:

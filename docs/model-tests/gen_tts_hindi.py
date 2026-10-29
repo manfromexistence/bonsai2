@@ -38,36 +38,3 @@ def piper(voice):
 
 for v in ("pratham", "priyamvada"):
     piper(v)
-
-mms_root = r"G:\Dx\zzz\MMS-TTS-Hindi"  # parked 2026-10-30
-if os.path.exists(os.path.join(mms_root, "config.json")):
-    snap = mms_root
-elif os.path.isdir(os.path.join(mms_root, "snapshots")):
-    snap = next(
-        (os.path.join(mms_root, "snapshots", d)
-         for d in os.listdir(os.path.join(mms_root, "snapshots"))
-         if os.listdir(os.path.join(mms_root, "snapshots", d))),
-        None,
-    )
-else:
-    snap = None
-
-if snap:
-    import torch
-    from transformers import AutoTokenizer, VitsModel
-
-    t0 = time.time()
-    mms = VitsModel.from_pretrained(snap).eval()
-    tok = AutoTokenizer.from_pretrained(snap)
-    print(f"mms load_s={time.time() - t0:.2f} sr={mms.config.sampling_rate}", flush=True)
-    inputs = tok(REF, return_tensors="pt")
-    t0 = time.time()
-    with torch.no_grad():
-        wave = mms(**inputs).waveform[0].numpy()
-    dt = time.time() - t0
-    path = fr"{OUT}\mms_hi.wav"
-    sf.write(path, wave, mms.config.sampling_rate)
-    dur = len(wave) / mms.config.sampling_rate
-    print(f"mms hi audio_s={dur:.2f} wall_s={dt:.2f} rtf={dt / dur:.2f} -> {path}", flush=True)
-else:
-    print("mms hi not downloaded yet", flush=True)
