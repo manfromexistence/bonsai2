@@ -9,7 +9,7 @@ project, with measured CPU performance on the reference machine
 | Role | Model | Why |
 | --- | --- | --- |
 | **Bangla (bn)** - special-purpose | `facebook/mms-tts-ben` (MMS-TTS Bangla, VITS) | Only Bangla-capable model that runs well on CPU; 36.3M params, 16 kHz |
-| **Hindi (hi)** - locked 2026-10-30, special-purpose | `rhasspy/piper-voices` hi_IN `pratham` / `priyamvada` via sherpa-onnx | 77 MB per voice, 22.05 kHz, RTF 0.05-0.07, round-trip CER 0.000 |
+| **Hindi (hi)** - locked 2026-10-30, special-purpose | `dx-tts-hi-1.0` (Piper hi_IN `pratham` voice) via sherpa-onnx | 77 MB, 22.05 kHz, RTF 0.05, round-trip CER 0.000 |
 | **English, Arabic, Japanese** | `Supertone/supertonic-3` (Supertonic 3, ONNX) | Fastest on CPU for these (RTF 0.27-0.36 measured here), 31 languages, 10 preset voices, ~99M params |
 | English high-quality (optional) | `hexgrad/Kokoro-82M` | Best English quality, RTF ~1.33 on CPU |
 | Multilingual / cloning (GPU or slow CPU) | `k2-fsa/OmniVoice` / `Serveurperso/OmniVoice-GGUF` (Q4_K_M) | 600+ languages + zero-shot cloning; RTF ~4.75–8.05 on CPU |
@@ -29,8 +29,7 @@ models (Supertonic 3, Piper English) do not cover Bengali.
 | OmniVoice (PyTorch) | 600M | ~3.37 GB | 24 kHz | ~8.05× | — | — | `omnivoice_local.wav` |
 | OmniVoice-GGUF Q4_K_M | 0.6B | ~659 MB (407+252) | 24 kHz | ~4.75× | — | — | `omnivoice_gguf_q4.wav` |
 | Piper bn_BD-google-medium | ~18M | ~76 MB | 22.05 kHz | ~1.39× | — | — | `piper_bn_test.wav` |
-| **Piper hi_IN pratham** | ~18M | **77 MB** | 22.05 kHz | **0.05x** | - | - | `piper_pratham.wav` |
-| **Piper hi_IN priyamvada** | ~18M | 77 MB | 22.05 kHz | 0.07x | - | - | `piper_priyamvada.wav` |
+| **dx-tts-hi-1.0** (Piper hi_IN pratham) | ~18M | **77 MB** | 22.05 kHz | **0.05x** | - | - | `dx-tts-hi-1.0.wav` |
 | Pocket TTS | ~100M | ~215 MB | 24 kHz | 0.41–1.22× | — | — | `pocket_test.wav` |
 | Ming-3.0-tts-0.5B | 0.5B | ~2.75 GB | 44.1 kHz | ~45× (CPU) | — | — | `ming` outputs |
 

@@ -168,7 +168,7 @@ this section actually loaded.
 | STT (hi) - locked | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` | **76 MB** | faster-whisper / CTranslate2 |
 | TTS (en/ar/ja) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
 | TTS (bn) | **MMS-TTS Bangla** (`facebook/mms-tts-ben`) | `models/tts/MMS-TTS-Bangla/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
-| TTS (hi) - locked | **Piper hi_IN** (`pratham`, `priyamvada`) | `models/tts/piper-hi-*/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** per voice | sherpa-onnx VITS, CPU |
+| TTS (hi) - locked | **dx-tts-hi-1.0** (Piper hi_IN, `pratham` voice) | `models/tts/dx-tts-hi-1.0/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** | sherpa-onnx VITS, CPU |
 
 `PP-OCRv4` is retained only as the legacy fallback: it stays accurate on UI
 chrome, but it is no longer the OCR default. The VisionPsy F32 snapshot
@@ -215,14 +215,13 @@ For TTS, every candidate produced the reference sentence back at CER 0.000:
 
 | Hindi TTS | Size | Sample rate | RTF | Round-trip CER |
 | --- | ---: | ---: | ---: | ---: |
-| **Piper `pratham`** (male) | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
-| Piper `priyamvada` (female) | 77 MB | 22.05 kHz | 0.07 | 0.000 |
+| **dx-tts-hi-1.0** (Piper `pratham`) | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
 | Supertonic 3 (previous) | 383 MB | 44.1 kHz | 0.30 | 0.067 |
 
-Piper wins on size, sample rate and speed, so it is **locked** for Hindi:
-`pratham` (male) is the default and `priyamvada` is the female voice. The
-earlier "Hindi is the weakest Supertonic voice" note was a measurement error:
-the multilingual STT was romanizing the audio, not the voice failing.
+Piper wins on size, sample rate and speed, so **dx-tts-hi-1.0** is locked for
+Hindi. The earlier "Hindi is the weakest Supertonic voice" note was a
+measurement error: the multilingual STT was romanizing the audio, not the voice
+failing.
 
 Both pins, with sha256 for every weight file and the measured CER/RTF, are in
 `decisions/configs/speech_hindi.json` (commit `03b125a` in the `decisions`

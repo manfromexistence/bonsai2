@@ -145,8 +145,7 @@ TTS was re-judged with the working Hindi STT:
 
 | Hindi TTS | Size | Sample rate | RTF | CER |
 | --- | ---: | ---: | ---: | ---: |
-| **Piper hi_IN `pratham`** | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
-| Piper hi_IN `priyamvada` | 77 MB | 22.05 kHz | 0.07 | 0.000 |
+| **dx-tts-hi-1.0** (Piper `pratham` voice) | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
 | Supertonic 3 | 383 MB | 44.1 kHz | 0.30 | 0.067 |
 
 Commands and logs: `docs/model-tests/hindi_bench.log`, `bench_stt_hindi.py`,

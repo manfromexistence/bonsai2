@@ -116,7 +116,7 @@ def main():
               f"mean RTF={np.mean(rs):.2f}", flush=True)
 
         # TTS round-trip: judge the generated Hindi clips with this model
-        for clip in ("piper_pratham.wav", "piper_priyamvada.wav"):
+        for clip in ("dx-tts-hi-1.0.wav",):
             p = os.path.join(r"G:\Temp\UserTemp\opencode\model-tests\out", clip)
             if os.path.exists(p):
                 hyp, dt, dur = transcribe(model, p)
