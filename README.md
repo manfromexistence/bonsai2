@@ -195,7 +195,9 @@ last gap and is fixed (see below).
 
 Moonshine streaming tiny-ar is the documented Arabic specialist, but it is not
 cached on this machine and was not exercised here; Dolphin covers Arabic on
-disk today. Approximate speech footprint: **STT ~752 MB + 76 MB**, **TTS
+disk today. Dolphin now sits in `models\stt\dolphin-ctc-int8\` (99.4 MiB);
+SenseVoice-Small and the multilingual whisper-base remain in the temp
+evaluation area. Approximate speech footprint: **STT ~752 MB + 76 MB**, **TTS
 ~421-528 MB + 77 MB**.
 
 ### Hindi, fixed and measured (2026-10-30)

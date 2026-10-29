@@ -49,7 +49,7 @@ Tested on this machine via sherpa-onnx. Full results in
 | Model | Size | English (40s) | Asian langs | Verdict |
 |---|---:|---|---|---|
 | Whisper Base (int8) | 152 MB | 4.86 s, accurate | Good (Chinese 1.135s) | Best English fallback |
-| Dolphin CTC (int8) | 99 MB | Broken on English | 0.117s, 48x RTF | Fastest on Asian languages |
+| Dolphin CTC (int8) | 99 MB | Broken on English | 0.117s, 48x RTF | Fastest on Asian languages; copied into `G:\Dx\models\stt\dolphin-ctc-int8\` on 2026-10-30 |
 | OmniASR CTC 300M (int4) | 237 MB | 9.29 s, accurate | 1.693s on Chinese | Most comprehensive (1600+ langs) |
 
 **Recommendation:** Phonon-2.5 remains the locked default (25 European languages,
