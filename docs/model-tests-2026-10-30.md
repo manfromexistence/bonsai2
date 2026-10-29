@@ -25,6 +25,12 @@ Detection was 0.40 s of the 0.51 s; recognition 0.03 s.
 
 ## Vision - VisionPsy-Nano-460M-Flash
 
+> **2026-10-30:** the F32 snapshot this section's first test used
+> (`models/vlm/VisionPsy-Nano-460M-Flash/`, 1.89 GB) was deleted after the test
+> to reclaim space. The GGUF stack is the only local copy now; re-download
+> `qvac/VisionPsy-Nano-460M-Flash` if the `transformers` path is needed again.
+> The numbers below are the historical record from when it ran.
+
 ### HF safetensors path (transformers)
 
 The model's `config.json` sets `compile_inference: true`. On this box that

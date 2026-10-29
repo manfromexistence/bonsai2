@@ -1,4 +1,10 @@
-"""Vision smoke test: VisionPsy-Nano-460M-Flash from the local HF snapshot."""
+"""Vision smoke test: VisionPsy-Nano-460M-Flash from the local HF snapshot.
+
+Requires the F32 snapshot at G:\\Dx\\models\\vlm\\VisionPsy-Nano-460M-Flash,
+which was removed on 2026-10-30 to save 1.89 GB. Re-download
+qvac/VisionPsy-Nano-460M-Flash first if you run this; the GGUF path
+(test_vision GGUF command in docs/model-tests-2026-10-30.md) needs no snapshot.
+"""
 import sys
 import time
 

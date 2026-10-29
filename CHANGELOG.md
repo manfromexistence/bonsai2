@@ -13,6 +13,24 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-30 - `chore:` removed the VisionPsy F32 snapshot (1.89 GB)
+
+Deleted on explicit user instruction after the GGUF route was verified:
+
+- **Target:** `G:\Dx\models\vlm\VisionPsy-Nano-460M-Flash\` — 1.89 GB
+  (1939 MiB), the Hugging Face fp32 snapshot.
+- **Exclusions kept:** `VisionPsy-Nano-460M-Flash-GGUF\` (q4_0 244 MiB +
+  q4_k_m-imat 289 MiB + mmproj Q8 104 MiB) and `dx-vision-v1.0\` (306 MiB).
+- **Evidence it was unused:** no script, config or manifest referenced the F32
+  path; the vision tests in `docs/model-tests-2026-10-30.md` passed on the GGUF
+  files (`llama-mtmd-cli` q4_0 + mmproj Q8 read the screenshot text exactly,
+  and q4_k_m-imat described a game frame). Only the historical
+  `transformers` run used the F32 snapshot.
+- **Docs updated:** `README.md` vision row and note, `docs/model-tests-2026-10-30.md`
+  (marked the transformers result historical), `docs/model-tests/test_vision.py`
+  (header says to re-download first), `decisions/docs/MODEL_STACK.md` section 8
+  (F32 row now says removed locally).
+
 ### 2026-10-30 - `feat:` Hindi STT and TTS replaced with measured models
 
 Hindi was the one language without a working pipeline. The stock multilingual
