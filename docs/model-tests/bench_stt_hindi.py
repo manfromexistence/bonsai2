@@ -15,7 +15,7 @@ TAR = fr"{B}\fleurs_hi_test.tar.gz"
 TSV = fr"{B}\fleurs_hi_test.tsv"
 AUD = fr"{B}\fleurs_hi"
 MODELS = {
-    "base-hi": r"G:\Dx\models\stt\dx-stt-hi-1.0",
+    "base-hi": r"G:\Dx\models\dx-stt-hi-1.0",
 }
 REF_TEXT = "नमस्ते, मैं आपकी मदद के लिए यहाँ हूँ। आज मौसम बहुत अच्छा है।"
 

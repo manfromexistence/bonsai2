@@ -6,7 +6,7 @@ import soundfile as sf
 
 OUT = r"G:\Temp\UserTemp\opencode\model-tests\out"
 REF = "नमस्ते, मैं आपकी मदद के लिए यहाँ हूँ। आज मौसम बहुत अच्छा है।"
-D = r"G:\Dx\models\tts\dx-tts-hi-1.0"
+D = r"G:\Dx\models\dx-tts-hi-1.0"
 
 cfg = sherpa_onnx.OfflineTtsConfig(
     model=sherpa_onnx.OfflineTtsModelConfig(

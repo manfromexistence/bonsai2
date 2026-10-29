@@ -164,11 +164,11 @@ this section actually loaded.
 | --- | --- | --- | ---: | --- |
 | OCR | **dx-ocr-1.0** (PP-OCRv6 Nano: `PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/dx-ocr-1.0/{det,rec}/inference.onnx` + `dx-ocr-1.0/ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
 | Vision | **dx-vision-1.0** (VisionPsy-Nano-460M-Flash, `qvac/...`, Apache-2.0) | `models/dx-vision-1.0/` - **`q4_k_m-imat` is the loaded LLM**, `mmproj` Q8 is required | **~393 MiB** (289 + 104) | llama.cpp with a VisionPsy-capable `mtmd` build |
-| STT | **dx-stt-1.0** (Phonon-2.5, `FermionResearch/Phonon-2.5`) | `models/stt/dx-stt-1.0/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
-| STT (hi) - locked | **dx-stt-hi-1.0** (whisper-base-hindi int8) | `models/stt/dx-stt-hi-1.0/` | **76 MB** | faster-whisper / CTranslate2 |
-| TTS (en/ar/ja) | **dx-tts-1.0** (Supertonic 3, `Supertone/supertonic-3`) | `models/tts/dx-tts-1.0/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
-| TTS (bn) | **dx-tts-bn-1.0** (MMS-TTS Bangla) | `models/tts/dx-tts-bn-1.0/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
-| TTS (hi) - locked | **dx-tts-hi-1.0** (Piper hi_IN, `pratham` voice) | `models/tts/dx-tts-hi-1.0/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** | sherpa-onnx VITS, CPU |
+| STT | **dx-stt-1.0** (Phonon-2.5, `FermionResearch/Phonon-2.5`) | `models/dx-stt-1.0/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
+| STT (hi) - locked | **dx-stt-hi-1.0** (whisper-base-hindi int8) | `models/dx-stt-hi-1.0/` | **76 MB** | faster-whisper / CTranslate2 |
+| TTS (en/ar/ja) | **dx-tts-1.0** (Supertonic 3, `Supertone/supertonic-3`) | `models/dx-tts-1.0/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
+| TTS (bn) | **dx-tts-bn-1.0** (MMS-TTS Bangla) | `models/dx-tts-bn-1.0/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
+| TTS (hi) - locked | **dx-tts-hi-1.0** (Piper hi_IN, `pratham` voice) | `models/dx-tts-hi-1.0/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** | sherpa-onnx VITS, CPU |
 
 `PP-OCRv4` is retained only as the legacy fallback: it stays accurate on UI
 chrome, but it is no longer the OCR default. The VisionPsy F32 snapshot
@@ -191,7 +191,7 @@ last gap and is fixed (see below).
 
 Moonshine streaming tiny-ar is the documented Arabic specialist, but it is not
 cached on this machine and was not exercised here; Dolphin covers Arabic on
-disk today. Dolphin now sits in `models\stt\dx-stt-multi-1.0\` (99.4 MiB);
+disk today. Dolphin now sits in `models\dx-stt-multi-1.0\` (99.4 MiB);
 SenseVoice-Small and the multilingual whisper-base remain in the temp
 evaluation area. Approximate speech footprint: **STT ~752 MB + 76 MB**, **TTS
 ~421-528 MB + 77 MB**.
@@ -228,7 +228,7 @@ Both pins, with sha256 for every weight file and the measured CER/RTF, are in
 repo). Re-check a pin with:
 
 ```powershell
-Get-FileHash G:\Dx\models\stt\dx-stt-hi-1.0\model.bin -Algorithm SHA256
+Get-FileHash G:\Dx\models\dx-stt-hi-1.0\model.bin -Algorithm SHA256
 ```
 
 ### What was actually run (2026-10-30)
