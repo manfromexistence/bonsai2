@@ -162,8 +162,8 @@ tests in this section actually loaded.
 
 | Role | Default model | Files on disk | Size | Runtime |
 | --- | --- | --- | ---: | --- |
-| OCR | **PP-OCRv6 Nano** (`PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/ocr/PP-OCRv6-Nano/{det,rec}/inference.onnx` + `ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
-| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/VisionPsy-Nano-460M-Flash-GGUF/` (`q4_0` + `mmproj` Q8; q4_k_m-imat also present) | ~348 MiB GGUF | llama.cpp with a VisionPsy-capable `mtmd` build |
+| OCR | **PP-OCRv6 Nano** (`PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/ocr/{det,rec}/inference.onnx` + `ocr/ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
+| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/` (`q4_0` + `mmproj` Q8; q4_k_m-imat also present) | ~348 MiB GGUF | llama.cpp with a VisionPsy-capable `mtmd` build |
 | STT | **Phonon-2.5** (`FermionResearch/Phonon-2.5`) | `models/stt/Phonon-2.5/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
 | STT (hi) - locked | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` (fp32 snapshot beside it) | **76 MB** int8 / 585 MB fp32 | faster-whisper / CTranslate2 |
 | TTS (en/ar/ja) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
@@ -171,10 +171,12 @@ tests in this section actually loaded.
 | TTS (hi) - locked | **Piper hi_IN** (`pratham`, `priyamvada`, `rohan`) | `models/tts/piper-hi-*/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** per voice | sherpa-onnx VITS, CPU |
 
 `models/vlm/dx-vision-v1.0` (SmolVLM2-256M) is the **shipped fallback**, not the
-preferred VLM. `PP-OCRv4` is retained only as the legacy fallback: it stays
-accurate on UI chrome, but it is no longer the OCR default. The VisionPsy F32
-snapshot (1.89 GB) was removed on 2026-10-30; the GGUF stack is the only local
-copy and the one the tests used.
+preferred VLM: on the same UI frame (2026-10-30) VisionPsy read all four text
+lines exactly in 6.93 s, while `dx-vision-v1.0` described the page generically
+in 1.82 s and did not transcribe the text. `PP-OCRv4` is retained only as the
+legacy fallback: it stays accurate on UI chrome, but it is no longer the OCR
+default. The VisionPsy F32 snapshot (1.89 GB) was removed on 2026-10-30; the
+GGUF stack is the only local copy and the one the tests used.
 
 ### The five-language speech stack
 

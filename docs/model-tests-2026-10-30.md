@@ -11,7 +11,7 @@ Python used: `G:\Dx\decisions\.venv-vision\Scripts\python.exe`
 ## OCR - PP-OCRv6 Nano
 
 Command: `python test_ocr.py ui_text.png` with
-`RapidOCR(config_path="G:\Dx\models\ocr\PP-OCRv6-Nano\v6_config.yaml")`.
+`RapidOCR(config_path="G:\Dx\models\ocr\v6_config.yaml")`.
 
 | Image | Lines | Load | Total | Result |
 | --- | ---: | ---: | ---: | --- |
@@ -156,6 +156,35 @@ reference sentence at CER 0.000 except Supertonic (0.067):
 Commands and logs: `docs/model-tests/hindi_bench.log`, `bench_stt_hindi.py`,
 `gen_tts_hindi.py`, `fetch_hindi*.py`. New defaults: **whisper-base-hindi int8
 for Hindi STT**, **Piper hi_IN for Hindi TTS**.
+
+## Re-check after the folder restructure (2026-10-30)
+
+The single-model layers were flattened to `models\{decision,reasoning,ocr,vlm}\`
+(model files one level up; `stt` and `tts` keep per-model folders because they
+hold several). `Axiomic-GPT-X3-150M` was deleted on request. All four layers were
+re-run afterwards with `docs/model-tests/bench_core.py` (exact CPU = process CPU
+time / wall / 12 logical threads):
+
+| Layer | Wall | CPU (avg / peak) | Quality now | Previous receipt |
+| --- | ---: | ---: | --- | --- |
+| Decision | 0.77 s cold, 0.51-0.61 s warm | 4-8% / 11% | `choice` picked the correct action (0.999); `noul` true at 0.585; "you are an idiot" scored *mildly rude*, not *insulting* | 29/30 frozen set (unchanged) |
+| Reasoning | 4.16 s for tg256 | 46% / 66% | 206.86 ± 3.16 t/s tg256, 1088 t/s pp32 | 208-226 t/s achieved; CLI 216.9-223.1 |
+| OCR | 1.04 s total (load 0.15 + infer 0.31) | <3% | 4/4 lines exact, scores 0.958-0.988 | 0.51 s, 4/4 exact |
+| Vision (VisionPsy q4_k_m) | 6.93 s | 3% / 11% | read all four screenshot lines exactly | 7.33-8.6 s GGUF; 5.6 t/s fp32 |
+| Vision (`dx-vision-v1.0`, SmolVLM2) | 1.82 s | 4% / 11% | generic description, **does not transcribe the text** | shipped fallback, unchanged |
+
+Variance note: the first reasoning runs in the same session measured 169-175 t/s
+because the box was at 84% CPU load from other apps; once it settled the same
+binary measured 206.9 t/s. Quote the load, not a single sample.
+
+### Which vision model is "right"?
+
+`dx-vision-v1.0` is **SmolVLM2-256M** - the older, smaller, faster fallback the
+`esportsfire` manifest ships. It is real and it runs (1.82 s), but on the same
+image it invents a description instead of reading the text. **VisionPsy GGUF is
+the correct default** for any text/UI/OCR-adjacent frame; keep SmolVLM2 only as
+the speed fallback. That is why `vlm\` keeps one subfolder (`dx-vision-v1.0\`)
+while the VisionPsy GGUF files sit at the top level.
 
 MIT OR Apache-2.0
 updated: 2026-10-30 00:00 UTC

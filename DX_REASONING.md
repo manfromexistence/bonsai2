@@ -12,7 +12,7 @@
 | Architecture | 14 layers (7 shortconv + 7 attention), 1024 embd, 2560 FFN |
 | Token embedding | Q6_K (52.5 MB) — tied with output layer |
 | Context length | 128000 (default bench uses 288 for tg tests) |
-| File | `G:\Dx\models\reasoning\dx-reasoning-1.0\dx-reasoning-1.0.gguf` |
+| File | `G:\Dx\models\reasoning\dx-reasoning-1.0.gguf` |
 
 ## Target
 
@@ -149,7 +149,7 @@ Thread scaling tests showed t=5 and t=6 are nearly identical, but t=5 has slight
 ## Recommended configuration for maximum speed
 
 ```powershell
-llama-cli -m G:\Dx\models\reasoning\dx-reasoning-1.0\dx-reasoning-1.0.gguf `
+llama-cli -m G:\Dx\models\reasoning\dx-reasoning-1.0.gguf `
   -t 5 -c 512 -n 256 --temp 0 --no-display-prompt --perf
 ```
 

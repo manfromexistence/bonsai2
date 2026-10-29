@@ -13,6 +13,31 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-30 - `chore:` flattened single-model folders, deleted Axiomic-GPT-X3
+
+Single-model layers now keep their files one level up, matching how the folders
+are actually used:
+
+| Was | Now |
+| --- | --- |
+| `models\decision\dx-decisions-1.0\dx-decisions-1.0\*` | `models\decision\*` (`model.onnx` 64.5 MB at the top) |
+| `models\reasoning\dx-reasoning-1.0\dx-reasoning-1.0.gguf` | `models\reasoning\dx-reasoning-1.0.gguf` |
+| `models\ocr\PP-OCRv6-Nano\*` | `models\ocr\*` (`det\`, `rec\`, `ppocrv6_keys.txt`, `v6_config.yaml`) |
+| `models\vlm\VisionPsy-Nano-460M-Flash-GGUF\*` | `models\vlm\*` (GGUF + mmproj at the top) |
+
+- **Deleted on request:** `models\reasoning\Axiomic-GPT-X3-150M\` - 576.9 MB.
+- **Kept:** `models\vlm\dx-vision-v1.0\` because vision genuinely has a second
+  model (the SmolVLM2 speed fallback), same as `stt`/`tts`.
+- `ocr\v6_config.yaml` absolute paths were updated to the new det/rec locations;
+  README, `DX_REASONING.md`, the model-test receipt and the test scripts follow.
+- Re-checked all four layers after the move: decision 0.24-0.43 s warm, reasoning
+  206.86 t/s, OCR 4/4 lines in 0.31 s, VisionPsy 4/4 lines in 6.93 s. Full table
+  and the `dx-vision-v1.0` verdict are in `docs/model-tests-2026-10-30.md`.
+- Still nested by design (unused variants, not loaded at runtime):
+  `decision\dx-decisions\` (68 MB, September 231-fit), `decision\dx-decisions-1.0-base\`
+  (134 MB, restore source), and three reasoning experiment GGUFs
+  (MiniCPM5-1B, Qwen3.5-0.8B, Udgam-384M). Deleting those is a separate call.
+
 ### 2026-10-30 - `chore:` removed the VisionPsy F32 snapshot (1.89 GB)
 
 Deleted on explicit user instruction after the GGUF route was verified:
