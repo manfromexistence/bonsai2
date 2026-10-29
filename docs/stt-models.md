@@ -2,7 +2,7 @@
 
 ## Locked model
 
-- **Model:** `FermionResearch/Phonon-2.5` (Phonon-2.5)
+- **Model:** `FermionResearch/Phonon-2.5` (Phonon-2.5), shipped as **`dx-stt-1.0`**
 - **Role:** Default speech-to-text (ASR) for this project
 - **Location:** `C:\Users\Computer\.cache\fermion\speech\FermionResearch__Phonon-2.5\` (cached via Fermion)
 - **Size:** ~156 MB

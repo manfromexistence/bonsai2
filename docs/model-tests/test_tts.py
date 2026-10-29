@@ -5,7 +5,7 @@ import time
 import soundfile as sf
 
 OUT = r"G:\Temp\UserTemp\opencode\model-tests\out"
-MODEL_DIR = r"G:\Dx\models\tts\Supertonic-3"
+MODEL_DIR = r"G:\Dx\models\dx-tts-1.0"
 
 CASES = [
     ("en", "M1", "DX is online. The chat is running at seventy tokens per second."),

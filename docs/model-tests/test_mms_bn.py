@@ -6,7 +6,7 @@ import torch
 from transformers import AutoTokenizer, VitsModel
 
 MODEL = (
-    r"G:\Dx\models\tts\MMS-TTS-Bangla\snapshots"
+    r"G:\Dx\models\dx-tts-bn-1.0\snapshots"
     r"\0da99de6074c8829121cdabfbdba423af18e8e56"
 )
 OUT = r"G:\Temp\UserTemp\opencode\model-tests\out\mms_bn.wav"

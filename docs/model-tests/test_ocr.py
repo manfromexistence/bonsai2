@@ -1,4 +1,4 @@
-"""OCR smoke test: PP-OCRv6-Nano through rapidocr_onnxruntime."""
+"""OCR smoke test: dx-ocr-1.0 (PP-OCRv6 Nano) through rapidocr_onnxruntime."""
 import sys
 import time
 

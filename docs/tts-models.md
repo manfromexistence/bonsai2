@@ -8,7 +8,7 @@ project, with measured CPU performance on the reference machine
 
 | Role | Model | Why |
 | --- | --- | --- |
-| **Bangla (bn)** - special-purpose | `facebook/mms-tts-ben` (MMS-TTS Bangla, VITS) | Only Bangla-capable model that runs well on CPU; 36.3M params, 16 kHz |
+| **Bangla (bn)** - special-purpose | **dx-tts-bn-1.0** (MMS-TTS Bangla, `facebook/mms-tts-ben`, VITS) | Only Bangla-capable model that runs well on CPU; 36.3M params, 16 kHz |
 | **Hindi (hi)** - locked 2026-10-30, special-purpose | `dx-tts-hi-1.0` (Piper hi_IN `pratham` voice) via sherpa-onnx | 77 MB, 22.05 kHz, RTF 0.05, round-trip CER 0.000 |
 | **English, Arabic, Japanese** | **dx-tts-1.0** (Supertonic 3, ONNX) | Fastest on CPU for these (RTF 0.27-0.36 measured here), 31 languages, 10 preset voices, ~99M params |
 | English high-quality (optional) | `hexgrad/Kokoro-82M` | Best English quality, RTF ~1.33 on CPU |
