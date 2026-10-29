@@ -12,7 +12,7 @@ import torch
 from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
-MODEL = r"G:\Dx\models\vlm\VisionPsy-Nano-460M-Flash"
+MODEL = r"G:\Dx\models\dx-vision-1.0\VisionPsy-Nano-460M-Flash"
 IMAGE = sys.argv[1] if len(sys.argv) > 1 else r"G:\Dx\models\demo_frames_512x512\frame_00.png"
 PROMPT = sys.argv[2] if len(sys.argv) > 2 else "Describe this image in one sentence."
 

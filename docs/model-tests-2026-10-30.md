@@ -8,10 +8,10 @@ Python used: `G:\Dx\decisions\.venv-vision\Scripts\python.exe`
 (`rapidocr-onnxruntime 1.4.4`, `sherpa_onnx 1.13.8`, `transformers 5.19.0`,
 `torch 2.14.1+cpu`), plus the system Python 3.12 for the `supertonic` package.
 
-## OCR - PP-OCRv6 Nano
+## OCR - dx-ocr-1.0 (PP-OCRv6 Nano)
 
 Command: `python test_ocr.py ui_text.png` with
-`RapidOCR(config_path="G:\Dx\models\ocr\v6_config.yaml")`.
+`RapidOCR(config_path="G:\Dx\models\dx-ocr-1.0\v6_config.yaml")`.
 
 | Image | Lines | Load | Total | Result |
 | --- | ---: | ---: | ---: | --- |
@@ -23,13 +23,12 @@ Read back exactly: `DX Chat - esportsfire`,
 `Server port 3000 - models on 8788`, `OCR check: Hello 1234`.
 Detection was 0.40 s of the 0.51 s; recognition 0.03 s.
 
-## Vision - VisionPsy-Nano-460M-Flash
+## Vision - dx-vision-1.0 (VisionPsy-Nano-460M-Flash)
 
-> **2026-10-30:** the F32 snapshot this section's first test used
-> (`models/vlm/VisionPsy-Nano-460M-Flash/`, 1.89 GB) was deleted after the test
-> to reclaim space. The GGUF stack is the only local copy now; re-download
-> `qvac/VisionPsy-Nano-460M-Flash` if the `transformers` path is needed again.
-> The numbers below are the historical record from when it ran.
+> **2026-10-30:** the F32 snapshot this section's first test used (1.89 GB) was
+> deleted after the test to reclaim space. The GGUF stack is the only local copy
+> now; re-download `qvac/VisionPsy-Nano-460M-Flash` if the `transformers` path is
+> needed again. The numbers below are the historical record from when it ran.
 
 ### HF safetensors path (transformers)
 
@@ -56,8 +55,8 @@ Binary: `G:\Temp\UserTemp\opencode\vkb\bin\llama-mtmd-cli.exe` (the one in
 needs no compiler.
 
 ```powershell
-llama-mtmd-cli.exe -m visionpsy-nano-460m-flash-q4_k_m-imat.gguf `
-  --mmproj mmproj-visionpsy-nano-460m-flash-q8.gguf `
+llama-mtmd-cli.exe -m dx-vision-1.0-q4_k_m-imat.gguf `
+  --mmproj dx-vision-1.0-mmproj-q8.gguf `
   --image ui_text.png -p "What text is written in this image? Read it exactly." `
   -n 64 -t 8 --temp 0
 ```
@@ -74,14 +73,14 @@ TTS-generated clips (text known) for Arabic/Japanese/Bangla/Hindi.
 
 | Test | Model | Audio | Wall | RTF | Verdict |
 | --- | --- | ---: | ---: | ---: | --- |
-| en (JFK clip) | Phonon-2.5 | 3.8 s | 0.21 s decode | 0.055 | **exact** |
-| ar | Phonon-2.5 | 5.0 s | 0.19 s | 0.04 | garbage, Latin transliteration |
-| ar | Dolphin CTC int8 | 2.5 s | 0.04 s | 0.02 | **correct** |
-| ja | Dolphin CTC int8 | 3.7 s | 0.05 s | 0.01 | **exact** |
+| en (JFK clip) | dx-stt-1.0 (Phonon-2.5) | 3.8 s | 0.21 s decode | 0.055 | **exact** |
+| ar | dx-stt-1.0 (Phonon-2.5) | 5.0 s | 0.19 s | 0.04 | garbage, Latin transliteration |
+| ar | dx-stt-multi-1.0 | 2.5 s | 0.04 s | 0.02 | **correct** |
+| ja | dx-stt-multi-1.0 | 3.7 s | 0.05 s | 0.01 | **exact** |
 | ja | SenseVoice-Small INT8 | 3.7 s | 0.13 s | 0.04 | partial (`日 D X今日良天気`) |
-| bn | Dolphin CTC int8 | 2.3 s | 0.03 s | 0.02 | near-correct |
+| bn | dx-stt-multi-1.0 | 2.3 s | 0.03 s | 0.02 | near-correct |
 | bn | Whisper base int8 | 2.3 s | 0.38 s | 0.17 | Latin transliteration |
-| hi | Dolphin CTC int8 | 2.0 s | 0.04 s | 0.02 | **fails** |
+| hi | dx-stt-multi-1.0 | 2.0 s | 0.04 s | 0.02 | **fails** |
 | hi | Whisper base int8 | 2.0 s | 0.25 s | 0.13 | Latin transliteration only |
 
 Findings:
@@ -96,7 +95,7 @@ Findings:
 - Whisper base accepts only 30 s per call; the 161.7 s Hindi file was truncated
   and produced repeated noise.
 
-## TTS - Supertonic 3 and MMS Bangla
+## TTS - dx-tts-1.0 (Supertonic 3) and dx-tts-bn-1.0 (MMS Bangla)
 
 Supertonic was loaded from the local directory with `auto_download=False`, so
 nothing was fetched.
@@ -128,7 +127,7 @@ multilingual whisper model was romanizing it.
 | Can OCR run? | Yes - PP-OCRv6 Nano, exact on UI text, sub-second |
 | Can vision run? | Yes - both HF fp32 and GGUF q4; the GGUF route is the practical one |
 | Can STT run in all 5 languages? | Yes as of the follow-up below - Hindi was fixed with a fine-tune |
-| Can TTS run in all 5 languages? | Yes - Supertonic 3 for en/ar/ja, Piper for hi, MMS for bn |
+| Can TTS run in all 5 languages? | Yes - dx-tts-1.0 for en/ar/ja, dx-tts-hi-1.0, dx-tts-bn-1.0 |
 
 ## Follow-up: Hindi fixed (2026-10-30, same day)
 
@@ -139,14 +138,14 @@ downloaded and measured on five FLEURS `hi_in` test clips:
 | Hindi STT (int8, CPU) | Size | Mean CER | Median CER | RTF |
 | --- | ---: | ---: | ---: | ---: |
 | stock whisper-base (multilingual) | 152 MB | 1.015 | - | 0.13 |
-| **whisper-base-hindi** | **76 MB** | **0.135** | **0.032** | **0.22** |
+| **dx-stt-hi-1.0** (whisper-base-hindi) | **76 MB** | **0.135** | **0.032** | **0.22** |
 
 TTS was re-judged with the working Hindi STT:
 
 | Hindi TTS | Size | Sample rate | RTF | CER |
 | --- | ---: | ---: | ---: | ---: |
 | **dx-tts-hi-1.0** (Piper `pratham` voice) | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
-| Supertonic 3 | 383 MB | 44.1 kHz | 0.30 | 0.067 |
+| dx-tts-1.0 | 383 MB | 44.1 kHz | 0.30 | 0.067 |
 
 Commands and logs: `docs/model-tests/hindi_bench.log`, `bench_stt_hindi.py`,
 `gen_tts_hindi.py`, `fetch_hindi*.py`. New defaults: **whisper-base-hindi int8
@@ -165,7 +164,7 @@ time / wall / 12 logical threads):
 | Decision | 0.77 s cold, 0.51-0.61 s warm | 4-8% / 11% | `choice` picked the correct action (0.999); `noul` true at 0.585; "you are an idiot" scored *mildly rude*, not *insulting* | 29/30 frozen set (unchanged) |
 | Reasoning | 4.16 s for tg256 | 46% / 66% | 206.86 ± 3.16 t/s tg256, 1088 t/s pp32 | 208-226 t/s achieved; CLI 216.9-223.1 |
 | OCR | 1.04 s total (load 0.15 + infer 0.31) | <3% | 4/4 lines exact, scores 0.958-0.988 | 0.51 s, 4/4 exact |
-| Vision (VisionPsy q4_k_m) | 6.93 s | 3% / 11% | read all four screenshot lines exactly | 7.33-8.6 s GGUF; 5.6 t/s fp32 |
+| Vision (dx-vision-1.0 q4_k_m) | 6.93 s | 3% / 11% | read all four screenshot lines exactly | 7.33-8.6 s GGUF; 5.6 t/s fp32 |
 
 Variance note: the first reasoning runs in the same session measured 169-175 t/s
 because the box was at 84% CPU load from other apps; once it settled the same

@@ -58,7 +58,7 @@ def report(name, wall, avg, peak):
 
 def reason():
     cmd = [LLAMA_BENCH, "-m",
-           r"G:\Dx\models\reasoning\dx-reasoning-1.0.gguf",
+           r"G:\Dx\models\dx-reasoning-1.0\dx-reasoning-1.0.gguf",
            "-t", "6", "-ngl", "0", "-n", "256", "-p", "32", "-r", "3"]
     code, out, err, wall, avg, peak = run_measured(cmd, timeout=600)
     print(out[-2500:])
@@ -80,12 +80,8 @@ def vision():
     prompt = "What text is written in this image? Read it exactly."
     cases = {
         "visionpsy-q4_k_m": [
-            r"G:\Dx\models\vlm\visionpsy-nano-460m-flash-q4_k_m-imat.gguf",
-            r"G:\Dx\models\vlm\mmproj-visionpsy-nano-460m-flash-q8.gguf",
-        ],
-        "dx-vision-v1.0": [
-            r"G:\Dx\zzz\dx-vision-v1.0\dx-vision-v1.0-Q4_K_M.gguf",
-            r"G:\Dx\zzz\dx-vision-v1.0\dx-vision-v1.0-mmproj-f16.gguf",
+            r"G:\Dx\models\dx-vision-1.0\dx-vision-1.0-q4_k_m-imat.gguf",
+            r"G:\Dx\models\dx-vision-1.0\dx-vision-1.0-mmproj-q8.gguf",
         ],
     }
     for name, (model, mmproj) in cases.items():

@@ -4,7 +4,7 @@ import time
 
 from rapidocr_onnxruntime import RapidOCR
 
-CONFIG = r"G:\Dx\models\ocr\v6_config.yaml"
+CONFIG = r"G:\Dx\models\dx-ocr-1.0\v6_config.yaml"
 IMAGES = sys.argv[1:] or [r"G:\Dx\models\demo_frames_512x512\frame_00.png"]
 
 t0 = time.time()

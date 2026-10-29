@@ -119,7 +119,7 @@ still expose a CLI route.
 | code | `code` | `essence-dx/code` | dx-code: GUI desktop code editor | `dx desktop sync-web` |
 | tui | `tui` | `essence-dx/tui` | dx-tui terminal UI | none (hidden `dx tui` launches `cli/tui`) |
 | bot | `bot` | `essencefromexistence/flow` | dx app for mobile and desktop | `dx bot` (fails closed until release) |
-| decisions | `decisions` | `essence-dx/dx-decisions` | dx decision-model system (default STT: Phonon-2.5, 156 MB, 25 langs; default VLM: VisionPsy-Nano-460M-Flash, 460M params, 64 visual tokens, ~10-25x faster TTFT) | `dx decisions` (fails closed until release) |
+| decisions | `decisions` | `essence-dx/dx-decisions` | dx decision-model system (default STT: dx-stt-1.0 / Phonon-2.5, 156 MB, 25 langs; default VLM: dx-vision-1.0 / VisionPsy-Nano-460M-Flash, 460M params, 64 visual tokens, ~10-25x faster TTFT) | `dx decisions` (fails closed until release) |
 | extensions | `extensions` | `essence-dx/extensions` | DX Extensions — the DX fork of the Cline agent stack; `apps/dx-vscode` ships as the DX Command Center | none |
 | website | `website` | `essence-dx/website` | dx official website | `dx site` (hidden) |
 | codebase | `codebase` | `essence-dx/codebase` | The code knowledge graph for coding agents. A **fork** of `DeusData/codebase-memory-mcp` (MIT), upstream kept as the `upstream` remote; the DX layer is the decision record in `codebase/TECH.md` and the ledger in `codebase/TODO.md` | none yet — no `dx codebase` route and no release (`codebase/TODO.md` `CB-01`, `CB-02`) |
@@ -162,12 +162,12 @@ this section actually loaded.
 
 | Role | Default model | Files on disk | Size | Runtime |
 | --- | --- | --- | ---: | --- |
-| OCR | **PP-OCRv6 Nano** (`PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/ocr/{det,rec}/inference.onnx` + `ocr/ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
-| Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/` - **`q4_k_m-imat` is the loaded LLM**, `mmproj` Q8 is required | **~393 MiB** (289 + 104) | llama.cpp with a VisionPsy-capable `mtmd` build |
-| STT | **Phonon-2.5** (`FermionResearch/Phonon-2.5`) | `models/stt/Phonon-2.5/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
-| STT (hi) - locked | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` | **76 MB** | faster-whisper / CTranslate2 |
-| TTS (en/ar/ja) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
-| TTS (bn) | **MMS-TTS Bangla** (`facebook/mms-tts-ben`) | `models/tts/MMS-TTS-Bangla/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
+| OCR | **dx-ocr-1.0** (PP-OCRv6 Nano: `PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/dx-ocr-1.0/{det,rec}/inference.onnx` + `dx-ocr-1.0/ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
+| Vision | **dx-vision-1.0** (VisionPsy-Nano-460M-Flash, `qvac/...`, Apache-2.0) | `models/dx-vision-1.0/` - **`q4_k_m-imat` is the loaded LLM**, `mmproj` Q8 is required | **~393 MiB** (289 + 104) | llama.cpp with a VisionPsy-capable `mtmd` build |
+| STT | **dx-stt-1.0** (Phonon-2.5, `FermionResearch/Phonon-2.5`) | `models/stt/dx-stt-1.0/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
+| STT (hi) - locked | **dx-stt-hi-1.0** (whisper-base-hindi int8) | `models/stt/dx-stt-hi-1.0/` | **76 MB** | faster-whisper / CTranslate2 |
+| TTS (en/ar/ja) | **dx-tts-1.0** (Supertonic 3, `Supertone/supertonic-3`) | `models/tts/dx-tts-1.0/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
+| TTS (bn) | **dx-tts-bn-1.0** (MMS-TTS Bangla) | `models/tts/dx-tts-bn-1.0/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
 | TTS (hi) - locked | **dx-tts-hi-1.0** (Piper hi_IN, `pratham` voice) | `models/tts/dx-tts-hi-1.0/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** | sherpa-onnx VITS, CPU |
 
 `PP-OCRv4` is retained only as the legacy fallback: it stays accurate on UI
@@ -183,15 +183,15 @@ last gap and is fixed (see below).
 
 | Language | STT model | TTS model |
 | --- | --- | --- |
-| English | Phonon-2.5 (also 24 other European languages) | Supertonic 3 |
-| Arabic | Dolphin CTC int8 (fast path) | Supertonic 3 |
-| Japanese | Dolphin CTC int8 / SenseVoice-Small INT8 | Supertonic 3 |
-| Bangla | Dolphin CTC int8 / Whisper base int8 | MMS-TTS Bangla |
-| Hindi | **whisper-base-hindi int8** | **Piper hi_IN** |
+| English | dx-stt-1.0 (Phonon-2.5, also 24 other European languages) | dx-tts-1.0 (Supertonic 3) |
+| Arabic | dx-stt-multi-1.0 (Dolphin CTC int8) | dx-tts-1.0 |
+| Japanese | dx-stt-multi-1.0 / SenseVoice-Small INT8 | dx-tts-1.0 |
+| Bangla | dx-stt-multi-1.0 / Whisper base int8 | dx-tts-bn-1.0 |
+| Hindi | **dx-stt-hi-1.0** | **dx-tts-hi-1.0** |
 
 Moonshine streaming tiny-ar is the documented Arabic specialist, but it is not
 cached on this machine and was not exercised here; Dolphin covers Arabic on
-disk today. Dolphin now sits in `models\stt\dolphin-ctc-int8\` (99.4 MiB);
+disk today. Dolphin now sits in `models\stt\dx-stt-multi-1.0\` (99.4 MiB);
 SenseVoice-Small and the multilingual whisper-base remain in the temp
 evaluation area. Approximate speech footprint: **STT ~752 MB + 76 MB**, **TTS
 ~421-528 MB + 77 MB**.
@@ -205,7 +205,7 @@ fixes it:
 | Hindi STT (int8, CPU) | Size | Mean CER | Median CER | RTF |
 | --- | ---: | ---: | ---: | ---: |
 | stock whisper-base (multilingual) | 152 MB | **1.015** | - | 0.13 |
-| **whisper-base-hindi** (`collabora/`) | **76 MB** | **0.135** | **0.032** | **0.22** |
+| **dx-stt-hi-1.0** (whisper-base-hindi, `collabora/`) | **76 MB** | **0.135** | **0.032** | **0.22** |
 
 Measured on five FLEURS `hi_in` test clips (8-9 s each, real speech, reference
 transcripts). The mean is pulled up by one hard proper-noun sentence; the
@@ -228,7 +228,7 @@ Both pins, with sha256 for every weight file and the measured CER/RTF, are in
 repo). Re-check a pin with:
 
 ```powershell
-Get-FileHash G:\Dx\models\stt\whisper-base-hindi-ct2\model.bin -Algorithm SHA256
+Get-FileHash G:\Dx\models\stt\dx-stt-hi-1.0\model.bin -Algorithm SHA256
 ```
 
 ### What was actually run (2026-10-30)
