@@ -165,8 +165,10 @@ tests in this section actually loaded.
 | OCR | **PP-OCRv6 Nano** (`PP-OCRv6_tiny_det_onnx` + `PP-OCRv6_tiny_rec_onnx`) | `models/ocr/PP-OCRv6-Nano/{det,rec}/inference.onnx` + `ppocrv6_keys.txt` | ~6.0 MB | RapidOCR over ONNX Runtime, CPU |
 | Vision | **VisionPsy-Nano-460M-Flash** (`qvac/VisionPsy-Nano-460M-Flash`, Apache-2.0) | `models/vlm/VisionPsy-Nano-460M-Flash/` (F32) and `...-GGUF/` (`q4_0` + `mmproj` Q8) | 1.89 GB F32 / ~348 MiB GGUF | `transformers` (`trust_remote_code`), or llama.cpp with a VisionPsy-capable `mtmd` build |
 | STT | **Phonon-2.5** (`FermionResearch/Phonon-2.5`) | `models/stt/Phonon-2.5/snapshots/*/phonon-2.5.fsq` | ~149 MB | Fermion, CPU |
-| TTS (en/ar/ja/hi) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
+| STT (hi) | **whisper-base-hindi** (int8 CTranslate2) | `models/stt/whisper-base-hindi-ct2/` (fp32 snapshot beside it) | **76 MB** int8 / 585 MB fp32 | faster-whisper / CTranslate2 |
+| TTS (en/ar/ja) | **Supertonic 3** (`Supertone/supertonic-3`) | `models/tts/Supertonic-3/onnx/*.onnx` + `voice_styles/` | ~383 MB | ONNX Runtime, CPU |
 | TTS (bn) | **MMS-TTS Bangla** (`facebook/mms-tts-ben`) | `models/tts/MMS-TTS-Bangla/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
+| TTS (hi) | **Piper hi_IN** (`pratham`, `priyamvada`, `rohan`) | `models/tts/piper-hi-*/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** per voice | sherpa-onnx VITS, CPU |
 
 `models/vlm/dx-vision-v1.0` (SmolVLM2-256M) is the **shipped fallback**, not the
 preferred VLM. `PP-OCRv4` is retained only as the legacy fallback: it stays
@@ -175,20 +177,52 @@ accurate on UI chrome, but it is no longer the OCR default.
 ### The five-language speech stack
 
 Target languages are **English, Arabic, Japanese, Bangla, Hindi**; Chinese was
-dropped. Models for all five are on disk, but Hindi STT is romanized only (see
-the test results below).
+dropped. All five now have a working model in each direction; Hindi was the
+last gap and is fixed (see below).
 
 | Language | STT model | TTS model |
 | --- | --- | --- |
 | English | Phonon-2.5 (also 24 other European languages) | Supertonic 3 |
 | Arabic | Dolphin CTC int8 (fast path) | Supertonic 3 |
-| Japanese | SenseVoice-Small INT8 / Dolphin CTC int8 | Supertonic 3 |
-| Bangla | Whisper base int8 / Dolphin CTC int8 | MMS-TTS Bangla |
-| Hindi | Whisper base int8 | Supertonic 3 |
+| Japanese | Dolphin CTC int8 / SenseVoice-Small INT8 | Supertonic 3 |
+| Bangla | Dolphin CTC int8 / Whisper base int8 | MMS-TTS Bangla |
+| Hindi | **whisper-base-hindi int8** | **Piper hi_IN** |
 
 Moonshine streaming tiny-ar is the documented Arabic specialist, but it is not
 cached on this machine and was not exercised here; Dolphin covers Arabic on
-disk today. Approximate speech footprint: **STT ~752 MB**, **TTS ~421-528 MB**.
+disk today. Approximate speech footprint: **STT ~752 MB + 76 MB**, **TTS
+~421-528 MB + 77 MB**.
+
+### Hindi, fixed and measured (2026-10-30)
+
+The stock multilingual `whisper-base` int8 produced romanized text or Urdu for
+Hindi, which is why Hindi was previously reported as a gap. A Hindi fine-tune
+fixes it:
+
+| Hindi STT (int8, CPU) | Size | Mean CER | Median CER | RTF |
+| --- | ---: | ---: | ---: | ---: |
+| stock whisper-base (multilingual) | 152 MB | **1.015** | - | 0.13 |
+| **whisper-base-hindi** (`collabora/`) | **76 MB** | **0.135** | **0.032** | **0.22** |
+| whisper-small-hindi (`collabora/`) | 240 MB | 0.114 | 0.028 | 0.43 |
+
+Measured on five FLEURS `hi_in` test clips (8-9 s each, real speech, reference
+transcripts). The mean is pulled up by one hard proper-noun sentence; the
+median is 3.2% CER. The small model gains 2 points of CER for 3x the size and
+2x the time, so **base is the default** and small is the accuracy option.
+
+For TTS, every candidate produced the reference sentence back at CER 0.000:
+
+| Hindi TTS | Size | Sample rate | RTF | Round-trip CER |
+| --- | ---: | ---: | ---: | ---: |
+| **Piper `pratham`** (male) | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
+| Piper `priyamvada` (female) | 77 MB | 22.05 kHz | 0.07 | 0.000 |
+| Piper `rohan` (male) | 77 MB | 22.05 kHz | 0.06 | 0.000 |
+| MMS-TTS Hindi | 291 MB | 16 kHz | 0.27 | 0.000 |
+| Supertonic 3 (previous) | 383 MB | 44.1 kHz | 0.30 | 0.067 |
+
+Piper wins on size, sample rate and speed, so it replaces Supertonic for Hindi.
+The earlier "Hindi is the weakest Supertonic voice" note was a measurement
+error: the multilingual STT was romanizing the audio, not the voice failing.
 
 ### What was actually run (2026-10-30)
 
@@ -199,16 +233,16 @@ raw numbers are in `docs/model-tests-2026-10-30.md`.
 | --- | --- | --- |
 | OCR | **works** - PP-OCRv6 Nano read a rendered UI screenshot 4/4 lines exactly in 0.51 s | `docs/model-tests-2026-10-30.md`, `docs/model-tests/test_ocr.py` |
 | Vision | **works** - VisionPsy read the same text exactly through GGUF (q4_0 + mmproj Q8) and through `transformers` fp32 (5.6 t/s) | same, `vision_gguf.log` |
-| STT | **4 of 5 languages** - English (Phonon) and Arabic/Japanese/Bangla (Dolphin) work; Hindi comes back romanized, not Devanagari | same, `test_stt_roundtrip.py` |
-| TTS | **works in all 5** - Supertonic 3 for en/ar/ja/hi at 0.27-0.36 RTF, MMS Bangla at 0.47 RTF; Hindi is audible but the weakest voice on round-trip | same, `test_tts.py`, `test_mms_bn.py` |
+| STT | **5 of 5 languages** - English (Phonon) and Arabic/Japanese/Bangla (Dolphin); Hindi now via whisper-base-hindi at 0.032 median CER | same, `test_stt_roundtrip.py`, `bench_stt_hindi.py` |
+| TTS | **works in all 5** - Supertonic 3 for en/ar/ja at 0.27-0.36 RTF, Piper for hi at 0.05-0.07, MMS Bangla at 0.47; the earlier "Hindi is weak" reading was a broken STT, corrected 2026-10-30 | same, `test_tts.py`, `gen_tts_hindi.py` |
 
 Two defects surfaced and are recorded rather than smoothed over:
 
 - VisionPsy's `config.json` enables `torch.compile`, which fails here because
   MSVC `cl` is absent. It runs with `TORCHDYNAMO_DISABLE=1` / eager mode; the
   GGUF path avoids the issue entirely.
-- There is no working Hindi STT model on disk. Hindi is the one gap in the
-  five-language claim.
+- Hindi STT was the one gap. It is fixed: `whisper-base-hindi` (76 MB int8)
+  replaced the stock multilingual model, whose output was romanized.
 
 ## Vendored third-party workspaces
 

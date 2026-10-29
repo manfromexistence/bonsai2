@@ -109,9 +109,11 @@ local snapshot in 0.89 s at 16 kHz.
 
 Round-trip check (each TTS clip fed back into STT): Japanese came back exactly,
 Arabic and Bangla came back correct or near-correct, and Hindi came back as
-"Namaste med DXO" - audible, but only partly intelligible. Hindi is the weakest
-of the four Supertonic voices and needs a listening pass before it is called
-good.
+"Namaste med DXO" with the stock multilingual whisper model. **That verdict was
+wrong, and it was the STT side that failed.** Re-run with the Hindi fine-tune
+(2026-10-30, `whisper-base-hindi`), the same Supertonic clip transcribes as
+"नमस्ते मैं डी एक्स हूं", CER 0.067. Supertonic's Hindi voice is fine; the
+multilingual whisper model was romanizing it.
 
 ## What this establishes
 
@@ -119,8 +121,35 @@ good.
 | --- | --- |
 | Can OCR run? | Yes - PP-OCRv6 Nano, exact on UI text, sub-second |
 | Can vision run? | Yes - both HF fp32 and GGUF q4; the GGUF route is the practical one |
-| Can STT run in all 5 languages? | 4 of 5 - English, Arabic, Japanese and Bangla work; Hindi is romanized only |
-| Can TTS run in all 5 languages? | Yes - Supertonic 3 for en/ar/ja/hi, MMS for bn |
+| Can STT run in all 5 languages? | Yes as of the follow-up below - Hindi was fixed with a fine-tune |
+| Can TTS run in all 5 languages? | Yes - Supertonic 3 for en/ar/ja, Piper for hi, MMS for bn |
+
+## Follow-up: Hindi fixed (2026-10-30, same day)
+
+The first pass left Hindi as a gap because the multilingual whisper-base model
+romanized it. That was an STT failure, not a data problem. Two Hindi fine-tunes
+were downloaded and measured on five FLEURS `hi_in` test clips:
+
+| Hindi STT (int8, CPU) | Size | Mean CER | Median CER | RTF |
+| --- | ---: | ---: | ---: | ---: |
+| stock whisper-base (multilingual) | 152 MB | 1.015 | - | 0.13 |
+| **whisper-base-hindi** | **76 MB** | **0.135** | **0.032** | **0.22** |
+| whisper-small-hindi | 240 MB | 0.114 | 0.028 | 0.43 |
+
+TTS was re-judged with the working Hindi STT. Every candidate returned the
+reference sentence at CER 0.000 except Supertonic (0.067):
+
+| Hindi TTS | Size | Sample rate | RTF | CER |
+| --- | ---: | ---: | ---: | ---: |
+| **Piper hi_IN `pratham`** | **77 MB** | 22.05 kHz | **0.05** | **0.000** |
+| Piper hi_IN `priyamvada` | 77 MB | 22.05 kHz | 0.07 | 0.000 |
+| Piper hi_IN `rohan` | 77 MB | 22.05 kHz | 0.06 | 0.000 |
+| MMS-TTS Hindi | 291 MB | 16 kHz | 0.27 | 0.000 |
+| Supertonic 3 | 383 MB | 44.1 kHz | 0.30 | 0.067 |
+
+Commands and logs: `docs/model-tests/hindi_bench.log`, `bench_stt_hindi.py`,
+`gen_tts_hindi.py`, `fetch_hindi*.py`. New defaults: **whisper-base-hindi int8
+for Hindi STT**, **Piper hi_IN for Hindi TTS**.
 
 MIT OR Apache-2.0
 updated: 2026-10-30 00:00 UTC

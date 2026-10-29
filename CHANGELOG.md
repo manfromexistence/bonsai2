@@ -13,6 +13,27 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-30 - `feat:` Hindi STT and TTS replaced with measured models
+
+Hindi was the one language without a working pipeline. The stock multilingual
+`whisper-base` int8 romanized Hindi (mean CER 1.015 on five FLEURS `hi_in`
+clips); it was replaced with **`collabora/whisper-base-hindi`**, converted to
+int8 CTranslate2 (76 MB, mean CER 0.135, median 0.032, RTF 0.22). The small
+variant (240 MB) measured 0.114 mean CER at 2x the time, so base is the default.
+
+For TTS, **Piper hi_IN** (`pratham` / `priyamvada` / `rohan`, 77 MB per voice,
+22.05 kHz) replaces Supertonic 3 for Hindi: RTF 0.05-0.07 and round-trip CER
+0.000, against Supertonic's 0.067 at 383 MB. Every candidate was judged by
+feeding its audio back into the new Hindi STT.
+
+Models now live in `G:\Dx\models\stt\whisper-base-hindi{,-ct2}` and
+`G:\Dx\models\tts\piper-hi-{pratham,priyamvada,rohan}`; `whisper-small-hindi`
+and `MMS-TTS-Hindi` were kept as the accuracy/alternative options. Receipts:
+`docs/model-tests/hindi_bench.log`, `bench_stt_hindi.py`, `gen_tts_hindi.py`.
+Docs updated: `README.md`, `docs/stt-models.md`, `docs/tts-models.md`,
+`STT_TTS_LANGUAGES.md`, `docs/model-tests-2026-10-30.md` (including the
+correction that the earlier "Hindi TTS is weak" reading was an STT artefact).
+
 ### 2026-10-30 - `docs:` local model defaults recorded, all four modalities tested
 
 `README.md` now carries a "Local models: OCR, vision, STT, TTS" section: PP-OCRv6
