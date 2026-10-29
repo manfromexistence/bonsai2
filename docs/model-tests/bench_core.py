@@ -84,8 +84,8 @@ def vision():
             r"G:\Dx\models\vlm\mmproj-visionpsy-nano-460m-flash-q8.gguf",
         ],
         "dx-vision-v1.0": [
-            r"G:\Dx\models\vlm\dx-vision-v1.0\dx-vision-v1.0-Q4_K_M.gguf",
-            r"G:\Dx\models\vlm\dx-vision-v1.0\dx-vision-v1.0-mmproj-f16.gguf",
+            r"G:\Dx\zzz\dx-vision-v1.0\dx-vision-v1.0-Q4_K_M.gguf",
+            r"G:\Dx\zzz\dx-vision-v1.0\dx-vision-v1.0-mmproj-f16.gguf",
         ],
     }
     for name, (model, mmproj) in cases.items():

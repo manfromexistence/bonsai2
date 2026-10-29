@@ -13,6 +13,18 @@ Nothing in this file is release-qualified.
 
 ## Unreleased
 
+### 2026-10-30 - `chore:` moved the SmolVLM2 vision fallback to `zzz`
+
+`G:\Dx\models\vlm\dx-vision-v1.0\` (306 MiB: `dx-vision-v1.0-Q4_K_M.gguf` 125 MiB
++ `dx-vision-v1.0-mmproj-f16.gguf` 181 MiB) moved to
+`G:\Dx\zzz\dx-vision-v1.0\` on request. Measured on the same UI frame it
+describes generically in 1.82 s and does not transcribe text, while the locked
+VisionPsy GGUF reads the frame exactly in 6.93 s - so it is parked, not deleted.
+
+`models\vlm\` now holds only the three VisionPsy GGUF files. README,
+`docs/model-tests-2026-10-30.md` and `docs/model-tests/bench_core.py` point at
+the `zzz` path; moving it back is one `Move-Item`.
+
 ### 2026-10-30 - `chore:` flattened single-model folders, deleted Axiomic-GPT-X3
 
 Single-model layers now keep their files one level up, matching how the folders

@@ -170,13 +170,14 @@ tests in this section actually loaded.
 | TTS (bn) | **MMS-TTS Bangla** (`facebook/mms-tts-ben`) | `models/tts/MMS-TTS-Bangla/snapshots/*/model.safetensors` | ~139 MB | PyTorch (VITS), CPU |
 | TTS (hi) - locked | **Piper hi_IN** (`pratham`, `priyamvada`, `rohan`) | `models/tts/piper-hi-*/` (ONNX + `tokens.txt` + `espeak-ng-data`) | **77 MB** per voice | sherpa-onnx VITS, CPU |
 
-`models/vlm/dx-vision-v1.0` (SmolVLM2-256M) is the **shipped fallback**, not the
-preferred VLM: on the same UI frame (2026-10-30) VisionPsy read all four text
-lines exactly in 6.93 s, while `dx-vision-v1.0` described the page generically
-in 1.82 s and did not transcribe the text. `PP-OCRv4` is retained only as the
-legacy fallback: it stays accurate on UI chrome, but it is no longer the OCR
-default. The VisionPsy F32 snapshot (1.89 GB) was removed on 2026-10-30; the
-GGUF stack is the only local copy and the one the tests used.
+`G:\Dx\zzz\dx-vision-v1.0` (SmolVLM2-256M) is the **shipped fallback**, parked
+outside the model store on 2026-10-30, not the preferred VLM: on the same UI
+frame VisionPsy read all four text lines exactly in 6.93 s, while
+`dx-vision-v1.0` described the page generically in 1.82 s and did not transcribe
+the text. `PP-OCRv4` is retained only as the legacy fallback: it stays accurate
+on UI chrome, but it is no longer the OCR default. The VisionPsy F32 snapshot
+(1.89 GB) was removed on 2026-10-30; the GGUF stack is the only local copy and
+the one the tests used.
 
 ### The five-language speech stack
 

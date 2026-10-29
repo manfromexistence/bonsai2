@@ -182,9 +182,12 @@ binary measured 206.9 t/s. Quote the load, not a single sample.
 `dx-vision-v1.0` is **SmolVLM2-256M** - the older, smaller, faster fallback the
 `esportsfire` manifest ships. It is real and it runs (1.82 s), but on the same
 image it invents a description instead of reading the text. **VisionPsy GGUF is
-the correct default** for any text/UI/OCR-adjacent frame; keep SmolVLM2 only as
-the speed fallback. That is why `vlm\` keeps one subfolder (`dx-vision-v1.0\`)
-while the VisionPsy GGUF files sit at the top level.
+the correct default** for any text/UI/OCR-adjacent frame.
+
+After this comparison the fallback was moved out of the model store to
+`G:\Dx\zzz\dx-vision-v1.0\` (306 MiB), so `models\vlm\` now holds only the
+locked VisionPsy GGUF files. Moving it back is one `Move-Item` if the speed
+fallback is ever wanted again.
 
 MIT OR Apache-2.0
 updated: 2026-10-30 00:00 UTC
