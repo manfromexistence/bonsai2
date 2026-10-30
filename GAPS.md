@@ -115,6 +115,12 @@ framed comparison surface that must not be counted as native capability".
 | G50 | Authentication security: passkeys, DPoP, env policy | MEDIUM-HIGH |
 | G51 | Runtime hardening: egress, subprocesses, launcher watch | MEDIUM |
 | G52 | Provider runtime metadata: budget, capabilities, limits | MEDIUM |
+| G53 | Shared client runtime: reconnect, load-balancing, handoff | HIGH |
+| G54 | AI thread titles and provider text generation | MEDIUM |
+| G55 | Queued message steering and subagent thread tools | MEDIUM-HIGH |
+| G56 | Thread search across environments | MEDIUM |
+| G57 | Effect-based services and typed failure model | MEDIUM (quality) |
+| G58 | Release channels: beta, labs, nightly | MEDIUM |
 
 ### G1 - The `/t3code/*` surfaces are frames, not ports (CRITICAL TO HONESTY)
 
@@ -813,6 +819,80 @@ each CLI can do.
 
 
 
+### G53 - Shared client runtime: reconnect, load-balancing, handoff logic (HIGH)
+
+T3 Code keeps connection and domain state in `packages/client-runtime` so web,
+desktop and mobile cannot diverge: `handoff.ts`, `load-balancing.ts`,
+`linkRequest.ts`, `changeRequestLinks.ts`, `composerThreadItems.ts`,
+`filePreview.ts`, `diffCount.ts`, `mediaActions.ts`, `clock.ts`, plus
+`docs/internals/connection-runtime.md` and a visible
+`ConnectionStatusDot.tsx`.
+
+dxbot keeps related logic per feature (`use-fan-out.ts`, `server-channel.ts`,
+`use-server-threads.ts`, local host mirror). There is no shared runtime
+package, no load-balancing across environments, and no connection-quality
+surface. Every client re-implements the same reconnect rules.
+
+### G54 - AI thread titles and provider text generation (MEDIUM)
+
+T3 Code generates titles and other short text through each provider's own
+text-generation adapter: `apps/server/src/textGeneration/` carries
+`ClaudeTextGeneration.ts`, `CodexTextGeneration.ts`,
+`AntigravityTextGeneration.ts`, `OpenCode2TextGeneration.ts`, and
+`evals/thread-titles` scores the result.
+
+dxbot titles a thread from its first prompt with a string heuristic
+(`titleFromUserContent` in `src/features/dx/core/agent-conversation-store.ts`).
+A long or vague prompt produces a poor title, and there is no provider-backed
+title model.
+
+### G55 - Queued message steering and subagent thread tools (MEDIUM-HIGH)
+
+T3 Code's thread toolkit treats the queue as state: list/read/edit/cancel/
+reorder queued messages, and **promote_to_steer** an entry into the active run
+(`apps/server/src/mcp/toolkits/thread/tools.ts`). The same toolkit exposes
+pin/snooze/settle/archive and deliberately skips subagent threads, which are
+first-class in `packages/contracts/src/orchestrationV2.ts`.
+
+dxbot's queue pane already supports drag-reorder, inline edit, delete and
+"send now" (`src/features/dx/components/chat/panes/prompt-queue-pane.tsx`).
+Missing: steering into a live run, and any subagent-thread concept for the
+agent or the UI.
+
+### G56 - Thread search across environments (MEDIUM)
+
+T3 Code has a thread-search contract (`packages/contracts/src/threadSearch.ts`)
+and serves it to clients and outside agents (the MCP thread toolkit's search
+tool matches title, branch, PR, project and message text, across active
+threads and skipping subagent threads).
+
+dxbot's `thread-search` appears only in ported wire shapes, fixtures and the
+port manifest; there is no served search and no UI.
+
+### G57 - Effect-based services and typed failure model (MEDIUM, quality)
+
+T3 Code builds its server and provider adapters on Effect:
+`packages/effect-acp`, `effect-codex-app-server`, `docs/internals/effect-services.md`.
+Services are injected, failures are typed, and retries/timeouts are part of
+the layer rather than each call site.
+
+dxbot mixes ad-hoc Rust services, Tauri commands and TypeScript facades
+(`src/lib/agent/host.ts`). The failure vocabulary is strings and `Result`, and
+retry policy lives wherever the call happens. This is not a user-visible gap
+until something fails; then it is the reason the failure is hard to classify.
+
+### G58 - Release channels: beta, labs, nightly (MEDIUM)
+
+T3 Code has beta and labs settings routes
+(`_chat.settings.beta.tsx`, `_chat.settings.labs.tsx`), nightly tags
+(`v0.1.6-nightly.20261030.3917`) and release notes in-app. Features ship behind
+labs flags (guest links, device notifications) instead of being all-or-nothing.
+
+dxbot ships one stable channel from GitHub Releases and has no labs/beta
+surface; every experimental feature is either on or absent.
+
+
+
 ## 3. What dxbot has that T3 Code does not
 
 | Capability | dxbot evidence | T3 Code |
@@ -924,12 +1004,14 @@ owners still to grow.
 9. Visual replies (G26), the device panel (G27) and the multi-thread
    orchestrator (G43) - all three are visible, demoable wins.
 10. Outside agents through an MCP server (G28); preview service (G42).
-11. Eval harness (G44), perf lane (G45) and licence notices (G46).
+11. Eval harness (G44), perf lane (G45), licence notices (G46), AI titles
+    (G54) and labs/beta channels (G58).
 
 **P2 - compounding architecture**
 
-12. Ownership boundary (G40), outbox/run finalization (G41), run graph,
-    fork/lineage, provider handoff (G10, G24); peer delegation (G29).
+12. Ownership boundary (G40), outbox/run finalization (G41), shared client
+    runtime (G53), run graph, fork/lineage, provider handoff (G10, G24); peer
+    delegation (G29).
 13. Shared contract package and browser-test lane (G22); settings inheritance
     UI (G32) and keybinding page (G38).
 14. Diagnostics, updates, secrets, MCP apps (G12-G15); provider install/update
