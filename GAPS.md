@@ -1,16 +1,15 @@
-# GAPS.md - dxbot (Tauri) against T3 Code (Electron), measured 2026-10-31
+# GAPS.md - dxbot (Tauri) against T3 Code (Electron), deep pass 2026-10-31
 
-**What this file is.** A fresh, deliberately unkind comparison between
-`G:\Dx\bot` (dxbot, Tauri desktop) and `G:\Dx\t3code` (T3 Code, Electron
-desktop + web + server + mobile), written after syncing the T3 Code clone to
-upstream. It answers one question only: *what does T3 Code do better, and what
-would it take to close each gap?* It is not a feature inventory of dxbot; the
-"what we have that they do not" section exists so the document is not a
-one-sided advert.
+**What this file is.** A deliberately unkind comparison between `G:\Dx\bot`
+(dxbot, Tauri desktop) and `G:\Dx\t3code` (T3 Code: Electron desktop, web,
+server and mobile), written after syncing the T3 Code clone to upstream. It
+answers one question: *what does T3 Code do better, and how would each gap be
+closed?* It is not an inventory of dxbot; the "what we lead on" section exists
+so the document is not a one-sided advert.
 
-**Claim tiers.** Every row here is **repo-managed**: a path in one of the two
-trees, named so it can be opened. Nothing was built, launched or benchmarked
-for this document. No row is `executed`, `runtime` or `release-qualified`.
+**Claim tiers.** Every row is **repo-managed**: a path in one of the two trees,
+named so it can be opened. Nothing was built, launched or benchmarked for this
+document. No row is `executed`, `runtime` or `release-qualified`.
 
 **Provenance.**
 
@@ -18,7 +17,7 @@ for this document. No row is `executed`, `runtime` or `release-qualified`.
 | --- | --- |
 | T3 Code clone | `G:\Dx\t3code`, remote `pingdotgg/t3code` |
 | T3 Code synced to | `6fc9144a` (`origin/main`, 2026-10-31; 31 commits pulled) |
-| Local T3 Code change | `pnpm-lock.yaml` was stashed before the fast-forward (`git stash list`, message "local pnpm-lock before sync"); `TAURI.md` is untracked and was left alone |
+| Local T3 Code change | `pnpm-lock.yaml` stashed before the fast-forward (`stash@{0}`); `TAURI.md` untracked and untouched |
 | dxbot measured at | `be20e485` on `main` (= `bot/main`) |
 | T3 Code licence | MIT, (c) 2026 T3 Tools Inc. |
 | dxbot licence | AGPL-3.0 |
@@ -27,18 +26,17 @@ for this document. No row is `executed`, `runtime` or `release-qualified`.
 
 ## 0. The brutal one-paragraph answer
 
-T3 Code is the better **agent cockpit**: its terminal is a real VT engine
-(Ghostty's, via `libghostty-vt` WebAssembly and native bindings), its right
-panel is a composable surface system with Browser, Terminal, Files, Diff,
-Pull request, Linked pull requests and Device tabs, its browser preview has a
-CDP relay, passkeys, session recording, element picking and annotations, and
-its Windows story runs agents inside WSL with a shipped Linux CLI archive.
-dxbot has the larger product (its own agent engine, voice, dictation, grammar,
-memory, plan, dashboard, 14-tab right pane) and a genuinely good terminal with
-split panes, but T3 Code wins on **reach, terminal fidelity, preview depth,
-source-control depth and multi-client sharing**. dxbot's "VM" is an embedded
-Linux guest that has never booted; T3 Code's "VM" is WSL plus a dev container,
-which ships today.
+T3 Code is the better **agent cockpit**. Its terminal is Ghostty's VT engine,
+its right panel is a composable surface system (Browser, Terminal, Files,
+Diff, Pull request, Linked pull requests, Device), its browser preview has a
+CDP relay, passkeys, recording, element picking and annotations, its projects
+have branches, worktrees and scripts, and its Windows story is WSL plus a dev
+container that ship. dxbot is the larger product - own agent engine, voice,
+dictation, grammar, memory, plan, dashboard, 14-tab right pane - but several
+of its T3-shaped surfaces are **frames around a running T3 Code sidecar, not
+ports**: `T3_NATIVE_ROUTES` is empty. The honest scoreboard is "wider product,
+shallower cockpit, and a framed comparison surface that must not be counted as
+native capability".
 
 ---
 
@@ -48,223 +46,390 @@ which ships today.
 | --- | --- | --- |
 | Shape | Agent harness control surface for *other* CLIs | Local-first AI workspace with its own Rust harness |
 | Desktop shell | Electron | Tauri 2 |
-| Clients | Web, Electron desktop, **iOS and Android** | Tauri desktop; Android scaffold; no iOS project |
+| Clients | Web, Electron desktop, iOS and Android | Tauri desktop; Android scaffold; no iOS project |
 | Backend | `apps/server` Node CLI, outlives every client | `server/` Rust crate, port 3773 |
-| Terminal engine | `libghostty-vt` (C ABI, WASM in web, native on mobile) | xterm.js 6 + host-op PTY |
-| Right panel | 7 tab types, inline or sheet, resize per frame | 14 tabs, one column width, desktop/mobile sheet |
-| Provider layer | 12 packages (`provider-*`, `effect-*`) | 6 drivers under `src/features/providers` |
-| Source control | 9 packages (GitHub, GitLab, Bitbucket, Azure DevOps, Forgejo, GitCafe, core, definitions, testing) | GitHub PR sections + GitLab/Bitbucket/Gitea/Azure DevOps clients under `src/features/integrations` |
-| Remote reach | Clerk identity + Cloudflare relay + managed tunnels + push | LAN / tailnet / SSH only |
-| Install channels | npx, install scripts, winget, scoop, brew, deb, AUR, GitHub Releases | GitHub Releases (macOS + Windows) |
+| Terminal engine | `libghostty-vt` (C ABI, WASM + native) | xterm.js 6 + host-op PTY |
+| Right panel | 7 surface types, inline or sheet, per-surface runtime ids | 14 tabs, one column width, desktop/mobile sheet |
+| Ported T3 surfaces in dxbot | - | `/t3code/*` routes frame the upstream app; **0 native ports** |
+| Provider layer | 12 provider/effect packages | 6 drivers |
+| Source control | 9 packages + PR surfaces | 4 SCM clients + a GitHub section, no PR tab |
+| Remote reach | Clerk + Cloudflare relay + push | LAN / tailnet / SSH |
+| Install channels | npx, scripts, winget, scoop, brew, deb, AUR, Releases | GitHub Releases only |
 
 ---
 
-## 2. Gaps, ranked by impact
+## 2. Gaps, ranked by what a user feels
 
-Severity is about what a user feels, not how hard the fix is. Evidence is the
-T3 Code path, then our nearest path.
+| # | Gap | Severity |
+| --- | --- | --- |
+| G1 | `/t3code/*` surfaces are frames, not ports | CRITICAL TO HONESTY |
+| G2 | Terminal fidelity and multi-client sharing | HIGH |
+| G3 | WSL ships; our hypervisor guest has never booted | HIGH |
+| G4 | Right panel surface system | HIGH |
+| G5 | Project, branch and worktree workflow | HIGH |
+| G6 | Background threads, notifications, badges | HIGH |
+| G7 | Thread lifecycle in the sidebar | MEDIUM-HIGH |
+| G8 | Command palette breadth | MEDIUM-HIGH |
+| G9 | Guest links, prompt links, sharing | MEDIUM-HIGH |
+| G10 | Portable handoffs and thread lineage | MEDIUM-HIGH |
+| G11 | SnapShot annotated capture | MEDIUM-HIGH |
+| G12 | Diagnostics and observability | MEDIUM |
+| G13 | Update orchestration | MEDIUM |
+| G14 | Secrets providers | MEDIUM |
+| G15 | MCP server and MCP apps | MEDIUM |
+| G16 | Pull request workspace | MEDIUM-HIGH |
+| G17 | Triage workflow | MEDIUM |
+| G18 | Activity log | MEDIUM |
+| G19 | Mobile experience and widgets | MEDIUM-HIGH |
+| G20 | Background service and CLI | MEDIUM |
+| G21 | Keybindings as a product | MEDIUM |
+| G22 | Contracts, tests, docs, browser tests | MEDIUM (compounding) |
+| G23 | Distribution and release engineering | MEDIUM |
+| G24 | Agent orchestration depth | HIGH (architectural) |
+| G25 | Environment model | MEDIUM |
 
-### G1 - Terminal fidelity and sharing (HIGH)
+### G1 - The `/t3code/*` surfaces are frames, not ports (CRITICAL TO HONESTY)
 
-**What they have.**
+dxbot exposes 26 T3 routes under `src/app/t3code/**`, including Pull
+requests, Scheduled tasks, Diagnostics, Keybindings, Snap and Source control.
+Every one of them renders `T3CodePage`, which **starts the T3 Code sidecar and
+frames its upstream URL**:
 
-- The terminal is not xterm. It is the same `libghostty-vt` C ABI that Ghostty
-  uses, compiled to WASM for the web and bound natively on mobile:
-  `apps/web/src/terminal/ghostty/README.md` (renderer batches backgrounds and
-  style runs into a Canvas 2D frame; IME, selection, scrolling, links and
-  cursor blinking live in `surface.ts`). A Nerd Font is vendored for prompt
-  glyphs.
-- PTYs are **server-owned** and outlive the renderer. The environment server
-  owns session lifetime and retained output; every client attaches through the
-  environment connection, so a session can be reconnected to, or shared by two
-  clients: `docs/internals/terminal-runtime.md`.
-- Retention is bounded and specified: 5,000 lines and 8 MiB UTF-8 per terminal
-  on the server, 512 KiB per client buffer, with query/response traffic stripped
-  from replayed history so a restored scrollback cannot inject junk into a live
-  shell (`docs/internals/terminal-runtime.md`).
-- Mobile has a **native terminal view** for both platforms:
-  `apps/mobile/modules/t3-terminal/android/src/main/java/expo/modules/t3terminal/TerminalCanvasView.kt`
-  and `apps/mobile/modules/t3-terminal/ios/T3TerminalView.swift`.
+- `src/features/t3code/components/t3code-page.tsx` - "This is not a port of
+  t3code's UI ... When the routes are ported into this app's Next build, this
+  component is what gets replaced."
+- `src/features/t3code/native/index.ts` - `T3_NATIVE_ROUTES` is **empty on
+  purpose**; nothing is ported.
+- `src-tauri/src/t3code_host.rs` - supervises the sidecar (`DX_T3CODE_ROOT`,
+  `T3CODE_RELATIVE = ../inspirations/t3code-build`).
 
-**What we have.** A real PTY over host ops, session reuse across reloads, and
-split panes with maximise that does not remount a terminal:
-`src/features/terminal/core/transport.ts`, `src/features/dx/components/chat/terminal-workspace.tsx`.
-The renderer is xterm.js (`@xterm/xterm ^6.0.0` in `package.json`), not a VT
-engine; there is no native mobile terminal.
+**Consequence.** "We have the scheduled tasks page" currently means "we can
+show T3 Code's scheduled tasks page inside dxbot". It must not be counted as a
+dxbot capability in any ledger, and the framing must be labelled in the UI.
 
-**The gap in one sentence.** Our terminal is a good xterm in a well-built
-split layout; theirs is Ghostty's VT with server-shared scrollback and native
-mobile surfaces.
+**Closing it.** Port surfaces one at a time into the existing tab registry and
+delete them from `T3_ROUTES` as they land. The empty registry is the right
+mechanism; it just has to stop being empty.
 
-**Closing it.** Two separable pieces. (a) A Ghostty VT adapter behind the
-existing `terminal-view.tsx` surface: the WASM artefacts and the C ABI are
-MIT/upstream, and our transport already speaks raw PTY bytes. (b) A
-server-side scrollback owner so two clients can attach; today our output is
-pulled per pane and the session is host-op scoped.
+### G2 - Terminal fidelity and multi-client sharing (HIGH)
 
-### G2 - The right panel is a surface system, ours is a tab list (HIGH)
+**They have.**
 
-**What they have.** `apps/web/src/components/RightPanelTabs.tsx:319-369`
-declares the tab types: **Browser, Terminal, Files, Diff, Pull request, Linked
-pull requests, Device**. Each is a *surface* with its own runtime tab id,
-rename, mute, reorder, and add-browser-in-profile action; the panel renders
-inline beside the chat or as a sheet on narrow layouts
-(`apps/web/src/components/chat/ChatRightPanel.tsx`), and its width follows a
-resize drag every frame.
+- Ghostty's VT engine, not an xterm compatibility layer:
+  `apps/web/src/terminal/ghostty/README.md` - `libghostty-vt` C ABI compiled to
+  WASM; Canvas 2D renderer; IME, selection, scrolling, links, cursor in
+  `surface.ts`; a vendored Nerd Font for prompt glyphs.
+- Server-owned PTYs that outlive the renderer and can be shared or
+  reconnected: `docs/internals/terminal-runtime.md`.
+- Bounded retention: 5,000 lines / 8 MiB UTF-8 server, 512 KiB client, with
+  query/response traffic stripped from replayed history.
+- Native mobile terminal views in Kotlin and Swift:
+  `apps/mobile/modules/t3-terminal/android/.../TerminalCanvasView.kt`,
+  `apps/mobile/modules/t3-terminal/ios/T3TerminalView.swift`.
 
-**What we have.** Fourteen tabs in one list (`RIGHT_PANE_TABS` in
-`src/features/dx/components/chat/right-pane.tsx:59`): menu, search, files,
-terminal, browser, chat, review, preview, environment, dashboard, plan, memory,
-usage, settings. It already has an inline/sheet split and a resize handle
-(`right-pane.tsx:383-470`), so the shell is not the problem.
+**We have.** Real PTY host ops, session reuse across reloads, split panes and
+maximise without remount: `src/features/terminal/core/transport.ts`,
+`src/features/dx/components/chat/terminal-workspace.tsx`; renderer is xterm 6.
 
-**The real gap.** Missing surfaces, not missing chrome: no **Pull request**
-surface, no **Linked pull requests** surface, no **Device** surface (a live
-mobile-device preview), and no per-surface runtime identity (rename, mute,
-reorder, multiple browser surfaces in one profile). Our `review` tab is a
-review/diff read-out, not a PR workspace.
+**Gap.** A good xterm in a good layout vs a VT engine with shared scrollback
+and native mobile surfaces. Closing: Ghostty adapter behind
+`terminal-view.tsx`; server-side scrollback owner for two-client attach.
 
-**Closing it.** Add three surfaces to the existing tab registry:
-`pr` (reuse `src/features/dx/components/agent/github-prs-section.tsx` plus the
-integrations clients), `prLinked` (same data, link view), and `device` (needs
-G5's mobile work first). Give browser surfaces a tab id per profile instead of
-one browser tab.
+### G3 - "VM": WSL ships, our hypervisor guest has never booted (HIGH)
 
-### G3 - "VM": WSL and a dev container ship; our hypervisor guest has never booted (HIGH)
+T3 Code has **no embedded hypervisor**:
 
-The premise needs correcting. T3 Code has **no embedded hypervisor**. What it
-has:
-
-- **WSL as a first-class runtime.** Windows builds embed a same-arch Linux CLI
-  archive and run agents/projects inside a chosen WSL distro
-  (`docs/user/install.md:114`, `docs/operations/release.md:494-515`,
+- **WSL runtime**: Windows builds embed a same-arch Linux CLI archive and run
+  agents/projects inside a chosen distro (`docs/user/install.md`, install
+  section on WSL; `docs/operations/release.md` `--wsl-runtime`;
   `apps/desktop/src/wsl/`).
-- **A dev container** for the repo (Ubuntu 24.04, Node 26, pnpm, Rust, `vp`,
-  `gh`) with named volumes: `docs/internals/devcontainer.md`.
-- **Per-provider sandbox policy** handed to the CLI that owns it, rather than a
-  sandbox of its own (`docs/user/cursor.md:62-66`,
-  `docs/orchestration-v2/provider-capability-system.md:242`).
+- **Dev container**: Ubuntu 24.04, Node 26, pnpm, Rust, `vp`, `gh`
+  (`docs/internals/devcontainer.md`).
+- **Sandbox delegated per provider**, not owned (`docs/user/cursor.md`,
+  `docs/orchestration-v2/provider-capability-system.md`).
+- **Default browser** and Finder HTML files can open into a browser surface
+  (`docs/user/default-browser.md`), which is a desktop-integration depth we do
+  not have.
 
-dxbot has the opposite shape: a real embedded Linux guest behind a `GuestExec`
-trait in `src-tauri/src/host_vm.rs` (1,863 lines / 89 KB), with the WHP
-partition probe and named refusals - but the measured status is **32 / 100
-capability, ~5 / 100 verified-shipping, zero boots** (bot `AGENTS.md`, goal 9),
-and there is no WSL runtime and no dev container.
+dxbot: `src-tauri/src/host_vm.rs` (1,863 lines) is a real WHP guest with
+refusals and a `GuestExec` trait, but the measured status is 32/100 capability,
+~5/100 verified-shipping, **zero boots** (bot `AGENTS.md`, goal 9). No WSL
+runtime, no dev container.
 
-**Verdict.** T3 Code's VM story is unglamorous and works; ours is ambitious and
-has never run. If the goal is "agents in a Linux box on Windows", WSL is the
-short path and is one release channel away; the WHP guest is a research track.
+Closing: WSL backend first; keep the WHP guest as a separate research track
+until a boot is measured.
 
-**Closing it.** P0: a WSL runtime backend (spawn the shipped Linux CLI archive,
-map `terminal.*` and `fs.*` host ops to `wsl.exe`). Keep the WHP guest as a
-separate track; do not claim it as the VM answer until a boot is measured.
+### G4 - Right panel surface system (HIGH)
 
-### G4 - Browser preview depth (HIGH)
+`apps/web/src/components/RightPanelTabs.tsx:319-369` declares Browser,
+Terminal, Files, Diff, Pull request, Linked pull requests and Device. Each
+surface has a runtime tab id, rename, mute, reorder, can be opened per browser
+profile, and the panel is inline or a sheet with per-frame resizing
+(`ChatRightPanel.tsx`, `RightPanelSheet.tsx`). `PersistentThreadTerminals.tsx`
+keeps a thread's terminals across navigation.
 
-**What they have.** The desktop preview is a real browser host, not an iframe:
-`apps/desktop/src/preview/` contains `CdpRelay` (agent drives the page over the
-Chrome DevTools Protocol), `Passkeys` / `PasskeyBackend` (WebAuthn works),
-`RecordingInput` (session recording), `PickPreload` (element picking feeds the
-agent), `Annotation*`, `FaviconCapture`, `DesktopBrowserHost`, `Manager` and a
-profile model. Settings expose browser profiles and import
-(`packages/contracts/src/browserProfile.ts`, `browserImport.ts`).
+dxbot: `RIGHT_PANE_TABS` (`right-pane.tsx:59`) = menu, search, files, terminal,
+browser, chat, review, preview, environment, dashboard, plan, memory, usage,
+settings. Inline/sheet and resize already exist; missing surfaces are Pull
+request, Linked pull requests and Device, plus per-surface identity.
 
-**What we have.** A browser pane and a browser-view iframe path; the port
-records the iframe limitation in our own gap history, and the per-origin policy
-model exists (`src/features/browser/core/profiles.ts`). No CDP relay, no
-passkeys, no recording, no element picker, no annotation layer.
+### G5 - Project, branch and worktree workflow (HIGH)
 
-**Closing it.** The Tauri equivalent is a child WebView plus a CDP bridge, not
-an iframe. The existing browser tab and profile policy can host it; the work is
-the host side, and it is the largest single UI gap after terminal.
+T3 Code treats a project as an object with settings, a clone flow, a favicon,
+an environment badge, branch selection and base-branch selection:
 
-### G5 - Reach: identity, relay, push, mobile (HIGH)
+- `apps/web/src/components/BranchToolbar.tsx`,
+  `BranchToolbarBranchSelector.tsx`, `BranchToolbarEnvModeSelector.tsx`.
+- `WorktreeBaseBranchPicker.tsx`, `WorktreeBaseBranchPicker` in the project
+  flow, and `PreviousWorktreeItemContent.tsx`.
+- `ProjectScriptsControl.tsx` and `projectScriptEditor.tsx`: per-project
+  scripts run into a terminal.
+- `ProjectCloneToastCoordinator.tsx`, `ProjectEnvironmentBadge.tsx`.
 
-- **Identity:** Clerk across web/desktop/mobile vs our local `better-auth`.
-- **Relay:** Cloudflare relay with DPoP bootstrap and webhook forwarding
-  (`docs/internals/remote.md`) vs LAN/tailnet/SSH
-  (`src-tauri/src/host_tailscale.rs`, `host_ssh.rs`, `src-tauri/src/remote/`).
-- **Push:** APNs/FCM and Live Activities/widgets vs in-app toasts only.
-- **Mobile:** shipped iOS and Android apps, including the native terminal
-  (`apps/mobile/`), vs an Android scaffold in `src-tauri/gen/android` and no
-  iOS project.
-- **Install channels:** npx/scripts/winget/scoop/brew/deb/AUR/Releases vs
-  Releases only.
+dxbot has branch and worktree choice **at new-chat time**
+(`src/features/dx/components/chat/new-chat-dialog.tsx`: `branchMode`,
+`worktreeMode`, `listWorktrees`), plus the backend (`host_git.rs`,
+`server/src/worktree_setup.rs`) and a Git surface
+(`src/features/dx/components/agent/git-surface.tsx`). What is missing is the
+**in-thread workflow**: no branch toolbar beside the composer, no explicit
+base-branch picker when creating a worktree, and no per-project script editor.
 
-This is the gap that makes T3 Code feel like a product and dxbot feel like a
-desktop app.
+### G6 - Background threads, notifications and badges (HIGH)
 
-### G6 - Provider ecosystem as packages (MEDIUM-HIGH)
+T3 Code:
 
-T3 Code has `packages/provider-core`, `provider-acp`, `provider-acp-registry`,
-`provider-cursor`, `provider-grok`, `provider-muse`, `provider-opencode`,
-`provider-pi`, `provider-fx`, `provider-testing`, plus
-`effect-codex-app-server` and `effect-acp`: twelve packages, each with its own
-contracts and tests. dxbot has six drivers:
-`src/features/providers/{claude,codex,cursor,grok,opencode,antigravity}-driver.ts`.
+- `BackgroundThreadAnnouncer.tsx` and `backgroundThreadAnnouncement.ts`.
+- `ThreadNotificationCoordinator.tsx` + logic tests, badges per thread.
+- `PersistentThreadTerminals.tsx`.
+- Mobile push and Live Activities: `docs/user/mobile-notifications.md`,
+  `apps/mobile/src/widgets/AgentActivity.tsx`.
 
-The difference is not count alone. Their provider layer is an installable
-capability system (auth, install, update, model manifest, usage limits), and
-the UI is generated from it (`docs/internals/adding-a-provider.md`). Ours is a
-driver per CLI plus a hand-built picker.
+dxbot: no background-thread announcer; notifications are in-app toasts, and
+there is no push, badge or ongoing-activity surface (confirmed by a search for
+`BackgroundThread`, `mobile-notifications`, APNs/FCM in `src`, `src-tauri/src`,
+`server/src`).
 
-### G7 - Source control and pull requests (MEDIUM-HIGH)
+### G7 - Thread lifecycle in the sidebar (MEDIUM-HIGH)
 
-T3 Code ships nine source-control packages (GitHub, GitLab, Bitbucket, Azure
-DevOps, Forgejo, GitCafe, core, definitions, testing) and a Pull request
-surface with linked PRs and per-file revisions
-(`packages/contracts/src/pullRequest.ts`, `threadPullRequest.ts`,
-`docs/internals/pull-request-file-revisions.md`).
+T3 Code: snooze (`Sidebar.snooze.ts`, `CustomSnoozeDialog.tsx`), pin, settle,
+undo close (`SidebarThreadUndoNotice.tsx`), archived migration
+(`LegacyThreadMigrationToast.ts`), thread hover card
+(`ThreadHoverCard.tsx`), status indicators, reopen-closed-view shortcut,
+history swipe navigation (`HistorySwipeNavigation.ts`), in-thread find bar.
 
-dxbot has real clients for GitHub, GitLab, Bitbucket, Gitea, Azure DevOps under
-`src/features/integrations/core/` and a GitHub PR section
-(`src/features/dx/components/agent/github-prs-section.tsx`), so the transport
-layer is not the gap. The gap is the **surface**: no PR tab, no linked-PR
-workflow from a thread, no file-revision view.
+dxbot: shelves and snooze exist (`src/features/dx/components/browser/thread-shelves.tsx`),
+bookmarks exist, but there is no thread undo notice, no hover card, no
+reopen-closed-view command, and no thread-level find bar (the only find bar in
+the tree is the spreadsheet showcase).
 
-### G8 - Resource telemetry and diagnostics (MEDIUM)
+### G8 - Command palette (MEDIUM-HIGH)
 
-T3 Code exposes per-agent CPU/memory to clients, including a Linux monitor for
-the WSL backend (`docs/internals/resource-telemetry.md`,
-`packages/contracts/src/resourceTelemetry.ts`). dxbot has wire names transcribed
-and unserved; there is no producer.
+T3 Code's palette is a product: projects, threads, themes, add-project,
+triage, copy prompt link - split into `CommandPalette*.tsx` with logic tests
+(`CommandPalette.logic.ts`, `CommandPaletteThemeItems.tsx`,
+`CommandPaletteProjectItems.tsx`, `CommandPaletteAddProject.tsx`).
 
-### G9 - Scheduled tasks, updates and distribution polish (MEDIUM)
+dxbot has a "Search and Command Palette" dialog
+(`src/features/dx/components/sidebar.tsx:917`) with suggestions and recent
+tabs, plus a file Quick Open. What it does not have is T3 Code's palette
+breadth: projects, all threads, themes, add-project, triage, and prompt-link
+actions in one list.
 
-T3 Code has a scheduled-tasks settings route
-(`apps/web/src/routes/_chat.settings.scheduled-tasks.tsx`), an "update
-everything" flow (`apps/web/src/components/sidebar/useUpdateEverything.ts`),
-server-update status in the composer, and eight install channels. dxbot has
-durable jobs in the server (`server/src/durable_jobs.rs`) but no scheduled-task
-surface of the same completeness, and one install channel.
+### G9 - Sharing: guest links, prompt links, public read-only follow (MEDIUM-HIGH)
 
-### G10 - Contracts, docs and tests as a product (MEDIUM, compounding)
+- Guest links let a teammate follow one thread in a browser with no account,
+  and their messages queue until the owner sends or dismisses them
+  (`docs/user/guest-links.md`; beta behind Labs + T3 Connect).
+- Prompt links open a draft prompt, never execute, and cannot change mode,
+  branch or worktree (`docs/user/prompt-links.md`); sent messages expose a
+  "Copy prompt link" button.
+- ChatGPT sharing control exists in the composer
+  (`ChatGptSharingControl.tsx`).
 
-T3 Code: 107 contract modules under `packages/contracts/src`, shared by every
-client, each with tests; 85 docs across user/internals/operations/
-orchestration-v2; 5,444 test files. dxbot: five ported contract files, six docs
-under `docs/`, and 582 TS test files plus Rust tests. Their contract package is
-why web, desktop and mobile stay in step; ours is a port, and the port has
-already drifted once (the orchestration contract split).
+dxbot: no guest links, no prompt links, no share-link surface. A search for
+`guest link`, `prompt link` and `ChatGptSharing` finds nothing.
+
+### G10 - Portable handoffs and thread lineage (MEDIUM-HIGH)
+
+T3 Code transfers context when switching providers, after a portable restart,
+or on a fork the provider cannot resume (`docs/user/portable-handoffs.md`):
+short conversations intact; long ones favor recent turns, the original request
+and command outcomes; Codex gets native history where supported; the rest get
+attributed context; reasoning/tool state/attachments are not copied.
+
+Its orchestration model is a run graph (`AppThread -> Run[] -> ExecutionNode`)
+with thread fork/lineage and worktree handoff (`t3_worktree_handoff`).
+
+dxbot: thread + turn only; no fork, lineage, handoff or provider-switch
+context transfer (`server/src/orchestration/command.rs` has no `Fork`; no
+`worktree` in `server/src/rpc.rs`). This is the deepest architectural gap.
+
+### G11 - SnapShot: annotated screen capture (MEDIUM-HIGH)
+
+T3 Code ships a full capture flow in the desktop shell:
+`apps/desktop/src/snapShot/DesktopSnapShot.ts`, `captureConfigKdl.ts`,
+`captureConfigEdit.ts`, `CaptureShortcutConfig.ts`, `ActiveWindow.ts`, plus a
+settings route (`apps/web/src/routes/_chat.settings.snap-shot.tsx`) and
+contracts (`DesktopSnapShot`, `SnapShotShortcut`, modifier pairs). It is not a
+screenshot button; it is a configurable capture + annotation surface.
+
+dxbot has OCR features and a notes/annotation stack, but no equivalent
+capture-shortcut/annotation product. A search for `snapShot` finds only the
+framed T3 route.
+
+### G12 - Diagnostics and observability (MEDIUM)
+
+T3 Code: `SlowRpcRequestToastCoordinator.ts`, `HostFreezeToastCoordinator.ts`,
+`ConnectionStatusDot.tsx`, `RenderErrorBoundary.tsx`, `os-jank.ts`,
+`apps/server/src/diagnostics/`, `apps/server/src/observability/`,
+`apps/server/src/telemetry/`, desktop `DesktopTelemetryPublisher.ts`,
+diagnostics settings route.
+
+dxbot: `src-tauri/src/analytics.rs` and logs, but no slow-RPC, host-freeze,
+connection-quality or render-error surface, and no telemetry publisher to a
+server.
+
+### G13 - Update system (MEDIUM)
+
+T3 Code: desktop update logic + toast (`desktopUpdate.logic.ts`,
+`desktopUpdate.toast.tsx`), server update action (`ServerUpdateAction.tsx`),
+provider update launch notifications
+(`ProviderUpdateLaunchNotification.logic.ts`), "update everything"
+(`useUpdateEverything.ts`, `UpdateEverythingDialog.tsx`), release notes,
+`QuitHoldOverlay.tsx`, `QuitHold.ts`, `DesktopRemoteUpdates.ts`.
+
+dxbot: `update_checker.rs` and the Tauri updater; no provider/server update
+orchestration, no update-everything, no quit-hold coordination.
+
+### G14 - Secrets and identity providers (MEDIUM)
+
+T3 Code: `packages/secret-provider-core`,
+`secret-provider-definitions`, `secret-provider-onepassword` (1Password
+integration), plus environment auth (`docs/internals/environment-auth.md`) and
+Clerk identity.
+
+dxbot: OS keychain through `src-tauri/src/crypto.rs` and `host_secret.rs`;
+no external secret-manager provider.
+
+### G15 - MCP: server, apps and thread metadata (MEDIUM)
+
+T3 Code: `apps/server/src/mcp/`, `apps/server/src/mcpApps/`,
+`packages/contracts/src/threadMetadataMcp.ts` - agents can rename, settle and
+link PRs themselves through MCP, and MCP apps render in the panel.
+
+dxbot: MCP **client** support exists (`src/features/acp/core/client.ts`,
+`src/features/dx/components/agent/mcps-surface.tsx`), but there is no MCP
+server that exposes thread state, and no MCP app host.
+
+### G16 - Pull request workspace (MEDIUM-HIGH)
+
+T3 Code: `apps/server/src/pullRequest/`, `apps/server/src/review/`,
+`PullRequestThreadDialog.tsx`, `PullRequestContextDetails.tsx`,
+`packages/contracts/src/pullRequest.ts`, `threadPullRequest.ts`,
+`docs/internals/pull-request-file-revisions.md`, nine source-control packages.
+
+dxbot: clients for GitHub, GitLab, Bitbucket, Gitea and Azure DevOps
+(`src/features/integrations/core/`), a GitHub PR section, and a framed PR
+route. Missing: a PR tab, linked-PR workflow from a thread, per-file revision
+view, and review comments.
+
+### G17 - Triage workflow (MEDIUM)
+
+T3 Code: `apps/server/src/triage/`, command-palette "Triage an issue", a new
+thread with no project, agent reads logs/state/source for that version, asks
+before fixing or posting (`docs/user/triage.md`).
+
+dxbot: no triage entry point. Support surfaces exist in the CMS showcase, not
+for dxbot itself.
+
+### G18 - Activity log (MEDIUM)
+
+T3 Code groups consecutive tool calls into an expandable summary with commands,
+inputs, status, exit codes, live updating output, "Open diff", and
+orchestrator summaries ("Ran 2 commands and sent messages to 3 threads")
+(`docs/user/activity-log.md`).
+
+dxbot renders tool parts (`message-parts.tsx`, `tool-network-table.tsx`) but has
+no grouped activity summary or orchestrator activity semantics.
+
+### G19 - Mobile experience and widgets (MEDIUM-HIGH)
+
+T3 Code mobile: native terminal, notifications, Live Activities, home-screen
+widgets (`apps/mobile/src/widgets/AgentActivity.tsx`,
+`SubscriptionUsage*.tsx`), navigation, offline persistence, store releases
+(`docs/operations/mobile-app-store-screenshots.md`).
+
+dxbot: Android scaffold only (`src-tauri/gen/android`), no iOS project, no
+widgets, no push.
+
+### G20 - Background service and CLI (MEDIUM)
+
+T3 Code: `t3 service install/status` on Linux/macOS, server CLI, headless
+environment (`docs/user/background-service.md`, `apps/server/src/cli/`).
+
+dxbot: `server/` binary and CLI module (`server/src/cli.rs`) but no user
+service install and no documented headless mode.
+
+### G21 - Keybindings as a product (MEDIUM)
+
+T3 Code: keybinding contract (`packages/contracts/src/keybindings.ts`), a
+settings route (`_chat.settings.keybindings.tsx`), warnings
+(`KeybindingsConfigWarning.tsx`), update toast, keyboard focus doc.
+
+dxbot: `src/features/settings/keybindings.ts` contract only; no page and no
+storage path (the bot's own gap history already records this).
+
+### G22 - Contracts, tests, docs, browser tests (MEDIUM, compounding)
+
+T3 Code, measured today: **74** non-test contract modules under
+`packages/contracts/src`, **92** docs under `docs/`, **1,755** `*.test.ts(x)`
+files across the repo including `*.browser.test.tsx`, 1,730 `.ts/.tsx` files in
+`apps/web/src` and 1,238 in `apps/server/src`.
+
+dxbot, measured today: five ported contract files, **13** docs under `docs/`,
+**582** TS test files, 141 `.rs` files in `src-tauri/src` and 31 in
+`server/src`. The framed `/t3code/*` routes are the clearest symptom: without a
+shared contract package, a surface drifts into a frame.
+
+### G23 - Distribution and release engineering (MEDIUM)
+
+T3 Code: six desktop artifacts in parallel, macOS/Linux/Windows signing,
+Windows ARM, jsign on Linux runners, verify runners, npx/scripts/winget/scoop/
+brew/deb/AUR, WSL archive embedded in installers.
+
+dxbot: `release.yml` matrix = macOS + Windows, GitHub Releases only.
+
+### G24 - Agent orchestration depth (HIGH, architectural)
+
+From T3 Code's contracts and docs: run graph, execution nodes, subagents,
+thread fork/lineage, provider handoff, worktree handoff, thread search across
+environments, per-agent resource telemetry, command receipts and durable
+events. dxbot has event sourcing, checkpoints, settlement and durable jobs, but
+a thread is one linear turn stream. Every feature that depends on "this thread
+was forked from that one" or "this run has three nodes" is blocked on this.
+
+### G25 - Environment model (MEDIUM)
+
+T3 Code: projects belong to environments; environments are machines (local,
+WSL, SSH) with their own theme, auth and telemetry; the UI has an environment
+selector in the branch toolbar and an environment context chip.
+
+dxbot: a right-pane "environment" tab and remote/tailnet/SSH backends, but no
+project-to-machine binding and no environment-scoped settings.
 
 ---
 
 ## 3. What dxbot has that T3 Code does not
 
-Not a consolation prize - these are real, and two of them are product-defining:
-
 | Capability | dxbot evidence | T3 Code |
 | --- | --- | --- |
-| Its own agent engine (no external CLI required) | `crates/`, in-process harness behind Tauri | none; requires one of the CLIs |
-| Voice: wake word, local ASR, TTS, dictation modes | `src-tauri/src/recorder.rs`, `transcribe.rs`, `local_transcription.rs`, `src/features/pill` | voice input exists, no local ASR/TTS stack of this depth |
-| Grammarly-style grammar with Harper, system-wide overlay | `src-tauri/src/grammar.rs`, `grammar_overlay*.rs`, 55/100 capability measured | not a feature |
-| Pill/overlay window UX, toasts, tray, OS integration | `src-tauri/src/pill.rs`, `toast.rs`, `tray.rs` | Electron window chrome only |
-| Scratchpad, canvas, research, memory, plan, dashboard, environment tabs | 14 right-pane tabs, `right-pane.tsx:59` | 7 tab types |
-| Usage/token accounting surfaces | `token-usage.ts`, `token-usage-panel.tsx`, `context-usage.tsx` | usage exists, less granular |
-| Local-first storage and offline path | Rust storage, local mirror | server + cloud identity first |
-
-The honest summary: dxbot is a **workspace** with an agent in it; T3 Code is an
-**agent cockpit** that is better at being a cockpit.
+| Own agent engine (no external CLI required) | `crates/`, in-process harness | none; requires a CLI |
+| Voice: wake word, local ASR, TTS, dictation | `src-tauri/src/recorder.rs`, `transcribe.rs`, `local_transcription.rs`, `src/features/pill` | voice input, no local ASR/TTS stack |
+| Grammar (Harper) with system-wide overlay | `grammar.rs`, `grammar_overlay*.rs`, 55/100 capability | not a feature |
+| Pill/overlay UX, toasts, tray, OS integration | `pill.rs`, `toast.rs`, `tray.rs` | Electron chrome only |
+| Scratchpad, canvas, research, memory, plan, dashboard, environment tabs | 14 right-pane tabs | 7 surface types |
+| Token/usage accounting surfaces | `token-usage.ts`, `context-usage.tsx` | usage exists, less granular |
+| Local-first storage and offline path | Rust storage + local mirror | server/cloud first |
 
 ---
 
@@ -272,17 +437,17 @@ The honest summary: dxbot is a **workspace** with an agent in it; T3 Code is an
 
 | Surface | T3 Code | dxbot | Gap |
 | --- | --- | --- | --- |
-| Browser | yes, multi-surface per profile, CDP, annotations, passkeys | partial: one browser tab, iframe-level | HIGH (G4) |
-| Terminal | yes, Ghostty VT, server-shared | yes, xterm + splits, host-op PTY | MEDIUM (G1) |
+| Browser | yes, multi-surface per profile, CDP, annotations, passkeys | partial: one tab, iframe-level | HIGH (G4, G5 preview) |
+| Terminal | Ghostty VT, server-shared | xterm + splits, host-op PTY | MEDIUM (G2) |
 | Files | yes | yes | parity |
-| Diff | yes | yes (`review`, diff parts) | parity |
-| Pull request | yes | no tab; clients + a GitHub section exist | HIGH (G7) |
+| Diff | yes, worker pool, changed-files tree | yes (`review`, diff parts) | parity-ish |
+| Pull request | yes, linked PRs, revisions | no tab; clients + GitHub section | HIGH (G16) |
 | Linked pull requests | yes | no | HIGH |
-| Device (mobile preview) | yes | no | HIGH (G5) |
-| Search | yes (route-level) | yes | parity |
-| Usage / telemetry | usage + resource telemetry | usage yes; telemetry no | MEDIUM (G8) |
-| Canvas / mini player | yes (`ChatCanvas.tsx`) | canvas exists elsewhere | parity-ish |
-| Plan / memory / environment / dashboard | no equivalents as tabs | yes | we lead |
+| Device (mobile preview) | yes | no | HIGH (G19) |
+| Search | global, route-level | quick-open + files | MEDIUM (G8) |
+| Usage | usage + resource telemetry | usage yes; telemetry no | MEDIUM |
+| Canvas / mini player | yes (`ChatCanvas.tsx`) | canvas elsewhere | parity-ish |
+| Plan / memory / environment / dashboard | no tab equivalents | yes | we lead |
 
 ---
 
@@ -293,12 +458,13 @@ The honest summary: dxbot is a **workspace** with an agent in it; T3 Code is an
 | VT engine | `libghostty-vt` C ABI (WASM + native) | xterm.js 6 |
 | Renderer | Canvas 2D batches, React out of the loop | xterm canvas/DOM |
 | PTY owner | environment server, shared by clients | host op, per pane |
-| Reconnect / share | yes, attach from any client | session reuse on reload |
-| Scrollback bound | 5,000 lines / 8 MiB server, 512 KiB client | 2 MB replay in the pane |
+| Reconnect/share | attach from any client | session reuse on reload |
+| Scrollback bound | 5,000 lines / 8 MiB server, 512 KiB client | 2 MB replay per pane |
 | Replay safety | strips query/response traffic | not specified in our tree |
-| Splits / maximise | yes (client layouts) | yes, no remount on split |
-| Mobile terminal | native Kotlin + Swift views | none |
-| Theming | terminal appearance settings | theme pairs in `features/terminal/core/theme.ts` |
+| Splits/maximise | client layouts | yes, no remount |
+| Thread-owned terminals | yes (`PersistentThreadTerminals`) | pane layout persisted, not thread-scoped |
+| Mobile terminal | native Kotlin + Swift | none |
+| Theming | terminal appearance settings | `features/terminal/core/theme.ts` |
 
 ---
 
@@ -306,7 +472,7 @@ The honest summary: dxbot is a **workspace** with an agent in it; T3 Code is an
 
 | | T3 Code | dxbot |
 | --- | --- | --- |
-| Windows Linux runtime | WSL distro, shipped Linux CLI archive | none |
+| Windows Linux runtime | WSL distro + shipped Linux CLI archive | none |
 | Dev environment | `.devcontainer` + Codespaces | none |
 | Agent sandbox | delegated to the provider CLI | none of our own |
 | Embedded hypervisor guest | none | `host_vm.rs`, WHP probe, zero boots |
@@ -317,31 +483,30 @@ The honest summary: dxbot is a **workspace** with an agent in it; T3 Code is an
 
 ## 7. Prioritised plan
 
-**P0 - close in weeks, high user impact**
+**P0 - weeks, high user impact**
 
-1. **WSL runtime** (G3): spawn the existing Linux CLI under `wsl.exe`; map
-   `terminal.*`, `fs.*`, `git.*` host ops. This is the shortest path to "agents
-   in Linux on Windows" and does not depend on the hypervisor work.
-2. **Pull request surface** (G7): promote `github-prs-section.tsx` and the
-   integrations clients into a `pr` tab with linked PRs and file revisions.
-3. **Terminal adapter** (G1a): put Ghostty VT behind `terminal-view.tsx`; keep
-   xterm as the fallback until parity is measured.
+1. **Port one T3 surface for real** (G1) and remove it from `T3_ROUTES`; stop
+   counting framed routes as capability.
+2. **WSL runtime** (G3): spawn the Linux CLI archive, map terminal/fs/git host
+   ops; this is the shipping answer to "agents in Linux on Windows".
+3. **Pull request surface** (G16) from the existing clients and GitHub section.
+4. **Ghostty VT adapter** (G2) behind `terminal-view.tsx`, xterm as fallback.
 
 **P1 - product reach**
 
-4. **Browser preview host** (G4): Tauri child WebView + CDP bridge; passkeys,
-   element picking, annotations, profiles.
-5. **Relay + identity** (G5): a hosted path to the machine before mobile.
-6. **Mobile**: finish Android, then iOS; the native terminal module is the
-   reference shape.
+5. Browser preview host (CDP, passkeys, recording, picker, annotations).
+6. Guest links and prompt links (G9); they are small surfaces with large
+   product effect.
+7. Relay + identity before mobile (G19); then Android, then iOS.
+8. Project/branch/worktree workflow (G5), command palette (G8), thread
+   lifecycle (G7).
 
-**P2 - compounding**
+**P2 - compounding architecture**
 
-7. **Provider packages** (G6): turn the six drivers into capability packages
-   with auth/install/usage contracts the picker reads.
-8. **Telemetry** (G8) and **contracts** (G10): one contract package shared by
-   desktop and server, generated types, drift test.
-9. **Distribution** (G9): winget/scoop/brew, `npx`-style bootstrap.
+9. Run graph, fork/lineage, provider handoff (G10, G24).
+10. Shared contract package and browser-test lane (G22).
+11. Diagnostics, updates, secrets, MCP server (G12-G15).
+12. Distribution channels (G23).
 
 ---
 
@@ -352,16 +517,17 @@ The honest summary: dxbot is a **workspace** with an agent in it; T3 Code is an
 git -C G:\Dx\t3code fetch origin --prune
 git -C G:\Dx\t3code rev-list --left-right --count main...origin/main
 Get-ChildItem G:\Dx\t3code\packages -Directory | Measure-Object
-Get-ChildItem G:\Dx\t3code\apps
-
-# terminal / panel / preview evidence
-Get-Content G:\Dx\t3code\docs\internals\terminal-runtime.md
+Get-Content G:\Dx\t3code\apps\web\src\terminal\ghostty\README.md
 Select-String G:\Dx\t3code\apps\web\src\components\RightPanelTabs.tsx -Pattern 'label:'
 Get-ChildItem G:\Dx\t3code\apps\desktop\src\preview
+Get-ChildItem G:\Dx\t3code\apps\desktop\src\snapShot
+Get-Content G:\Dx\t3code\docs\user\portable-handoffs.md
+Get-Content G:\Dx\t3code\docs\user\guest-links.md
 
 # dxbot side
-Get-Content G:\Dx\bot\src\features\dx\components\chat\right-pane.tsx |
-  Select-String 'RIGHT_PANE_TABS' -Context 0,20
+Get-Content G:\Dx\bot\src\features\t3code\native\index.ts
+Get-Content G:\Dx\bot\src-tauri\src\t3code_host.rs
+Select-String G:\Dx\bot\src\features\dx\components\chat\right-pane.tsx -Pattern 'RIGHT_PANE_TABS' -Context 0,20
 Get-Content G:\Dx\bot\src\features\terminal\core\transport.ts
 Get-ChildItem G:\Dx\bot\src\features\providers
 Get-Item G:\Dx\bot\src-tauri\src\host_vm.rs
@@ -371,12 +537,12 @@ Get-Item G:\Dx\bot\src-tauri\src\host_vm.rs
 
 ## 9. What this file does not claim
 
-- It does not claim T3 Code's features work on this machine; they are read from
-  the tree, not run.
-- It does not claim dxbot's rows are release-qualified; most are
-  repo-managed and some (the hypervisor guest) have never executed.
-- It does not treat "has a package" as "ships a usable feature". Where a T3
-  Code capability is contract-only, the row says so.
+- It does not claim T3 Code's features work on this machine; they are read
+  from the tree, not run.
+- It does not claim dxbot's rows are release-qualified; most are repo-managed
+  and the hypervisor guest has never executed.
+- It does not treat "has a package" or "has a framed route" as "ships a usable
+  feature". Framed routes are called out separately, by name.
 
 MIT OR Apache-2.0
 updated: 2026-10-31 00:00 UTC
