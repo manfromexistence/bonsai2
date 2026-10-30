@@ -102,6 +102,19 @@ framed comparison surface that must not be counted as native capability".
 | G37 | Onboarding, migration and project bootstrap | MEDIUM |
 | G38 | Keyboard focus model and accessibility | MEDIUM |
 | G39 | Appearance/theme distribution (we partly lead) | MEDIUM |
+| G40 | Ownership boundary: thin clients over a server execution plane | HIGH (architectural) |
+| G41 | Durable effects: outbox, receipts, run finalization | HIGH |
+| G42 | Preview service: server browser, streams, agent control | HIGH |
+| G43 | Multi-thread orchestrator | HIGH |
+| G44 | Model-behaviour evaluation harness | MEDIUM |
+| G45 | Performance regression tooling | MEDIUM |
+| G46 | Third-party licence compliance | MEDIUM |
+| G47 | File/document preview depth | MEDIUM |
+| G48 | Mobile feature surface beyond chat | MEDIUM |
+| G49 | Provider install/update lifecycle | MEDIUM |
+| G50 | Authentication security: passkeys, DPoP, env policy | MEDIUM-HIGH |
+| G51 | Runtime hardening: egress, subprocesses, launcher watch | MEDIUM |
+| G52 | Provider runtime metadata: budget, capabilities, limits | MEDIUM |
 
 ### G1 - The `/t3code/*` surfaces are frames, not ports (CRITICAL TO HONESTY)
 
@@ -631,6 +644,175 @@ the command palette, and themes are not shared/published across devices.
 
 
 
+### G40 - Ownership boundary: thin clients over a server-owned execution plane (HIGH, architectural)
+
+T3 Code's rule is explicit: provider processes, terminals, Git and project
+files belong to the **server**; a remote client must never substitute its own
+filesystem, credentials or machine state. Shared connection/domain state lives
+in `packages/client-runtime`; clients supply platform services and UI only
+(`docs/internals/overview.md`). That is why web, desktop and mobile can all
+drive the same thread.
+
+dxbot splits execution across a Tauri host (`src-tauri/src`), a Rust server
+(`server/`) and a Next client that also talks to host ops
+(`src/lib/agent/host.ts`). The client is not thin, and "which layer owns this
+provider process / terminal / git checkout" changes per surface. Every new
+client multiplies that ambiguity.
+
+Closing: pick one owner for execution (the server), make host ops a transport
+detail, and move shared connection state into a client-runtime package.
+
+### G41 - Durable effects: outbox, command receipts, run finalization (HIGH)
+
+T3 Code's `EventSink` commits the event, projection, accepted command receipt
+and **outbox effects** in one transaction; an `EffectWorker` performs side
+effects after intent is recorded, so command retries stay idempotent. Provider
+turn completion and run finalization are separate milestones, and a
+`PullRequestSyncReactor` re-reads PR state after a run that may have merged:
+
+- `apps/server/src/orchestration-v2/EventSink.ts`, `EffectWorker.ts`,
+  `RunFinalizationService.ts`, `PullRequestSyncReactor.ts`.
+- `docs/internals/overview.md`, "Durable intent and side effects".
+
+dxbot has `event_store.rs`, receipts and settlement, but no outbox, no
+`RunFinalizationService` equivalent and no PR sync reactor (a search for
+`outbox` and `RunFinalization` in `server/src` returns nothing). Side effects
+are not causally tied to the event that requested them.
+
+### G42 - Preview service: server browser, streams and agent control (HIGH)
+
+T3 Code's preview is a service, not an iframe: `apps/server/src/preview/`
+contains `PreviewBrowser`, `ServerBrowser`, `ServerBrowserContexts`,
+`ServerBrowserPage`, `ServerBrowserStream`, `SessionControl`,
+`DesktopBrowserChannel`, `PortScanner`, `PdfDocumentNavigation` and
+`PreviewAgentActivity`; the desktop host adds a CDP relay, passkeys,
+recording and annotations (`apps/desktop/src/preview/`). A browser context is
+server-owned and streamable to any client.
+
+dxbot has one browser tab and an iframe-level preview. This is a deeper gap
+than G4: even with a Tauri child WebView, there is no server-side browser
+context to stream or share.
+
+### G43 - Multi-thread orchestrator (HIGH)
+
+T3 Code's Orchestrator is an agent that acts **across threads**: it can create
+threads, send messages to several of them, and report actions such as "Ran 2
+commands and sent messages to 3 threads" in the activity log
+(`docs/user/activity-log.md`, `packages/contracts/src/orchestratorMcp.ts`,
+`apps/server/src/mcp/toolkits/thread/`).
+
+dxbot's agent works inside one thread. There is no tool to create another
+thread, message it, or aggregate the results, so "do this in two repos in
+parallel" is a manual workflow.
+
+### G44 - Evaluation harness (MEDIUM)
+
+T3 Code keeps an `evals/` workspace: `mcp-tool-use`, `thread-titles`,
+`test-signal`, `shared`. These are provider/model evaluations run by the team,
+not user-facing, and they are how changes to prompts and provider adapters are
+measured.
+
+dxbot has unit, Rust and golden tests, but no model-behaviour eval suite. A
+prompt or provider change is therefore argued from code reading, not from a
+scored run.
+
+### G45 - Performance regression tooling (MEDIUM)
+
+T3 Code has a documented perf regression command that exercises the real v2
+projection and client reducers (`docs/internals/performance-regressions.md`,
+`vp run test:perf:v2-wire`), plus `os-jank.ts` and `SlowRpcRequestToast`.
+
+dxbot has no perf lane and no slow-RPC instrumentation; renderer regressions
+are found by feel.
+
+### G46 - Third-party licence compliance (MEDIUM)
+
+T3 Code ships `third-party-licenses/spdx` and an in-app open-source licences
+page (`apps/web/src/routes/_chat.settings.open-source-licenses.tsx`). dxbot has
+two vendored notices (`src-tauri/crates/zeroclaw/VENDOR-NOTICE.md`,
+`crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md`) and a framed T3 route,
+but no generated notice set for its dependency graph.
+
+This matters more for dxbot than for T3 Code because AGPL distribution
+obligations attach to the bundle.
+
+### G47 - File and document preview depth (MEDIUM)
+
+T3 Code's files components preview PDFs (page navigation), audio, delimited
+tables, binary files through a worker, images, and browser documents
+(`apps/web/src/components/files/`: `DocumentPages`, `AudioPreview`,
+`DelimitedTablePreview`, `BinaryViewer`, `binaryPreview.worker`,
+`BrowserDocumentFrame`, `AttachmentFilePreview`).
+
+dxbot has a files pane and some document preview inside the vendored dsh
+tree, but not one integrated preview surface with worker-backed binary
+decoding and page navigation.
+
+### G48 - Mobile feature set beyond chat (MEDIUM)
+
+T3 Code's mobile app is not a chat client: it has projects, diffs, pull
+requests, review, triage, usage, updates, diagnostics, sharing, prompt links,
+devices, keyboard handling, voice input and archive
+(`apps/mobile/src/features/**`). Its navigation model is documented
+(`docs/internals/mobile-navigation.md`), including deep-link selection versus
+drill-in.
+
+dxbot has no mobile UI beyond the Android scaffold; G19 covers the platform,
+this row covers the surface set that would have to exist after it.
+
+### G49 - Provider install/update lifecycle (MEDIUM)
+
+T3 Code's provider packages own auth, install, update, model manifests and
+usage limits, and the client surfaces update actions and launch notifications
+(`ProviderUpdatesAction.tsx`, `ProviderUpdateLaunchNotification.logic.ts`,
+`packages/provider-*`). dxbot has six drivers plus auth flows
+(`src/features/providers/provider-auth.ts`) and an ACP registry snapshot
+(`src/features/acp/registry.ts`, `registry-snapshot.json`), but no install or
+update lifecycle for the CLIs it drives.
+
+
+
+### G50 - Authentication security: passkeys, DPoP, environment auth policy (MEDIUM-HIGH)
+
+T3 Code's remote path is authenticated per environment, not per app: DPoP
+proofs (`packages/shared/src/dpop.ts`), environment auth and policy
+(`apps/server/src/auth/EnvironmentAuth.ts`, `EnvironmentAuthPolicy.ts`,
+`McpOAuth.ts`), passkey/WebAuthn broker in the desktop preview host
+(`apps/desktop/src/preview/Passkeys.ts`, `PasskeyBackend.ts`,
+`PasskeyBackendMac.ts`, `PasskeyAttestation.ts`), and documented auth in
+`docs/internals/environment-auth.md`.
+
+dxbot has `better-auth` for web sessions, OS keychain secrets and device
+pairing (`server/src/pairing.rs`), but no DPoP, no passkey/WebAuthn broker and
+no per-environment auth policy. Its remote story relies on Tailscale/SSH and a
+local session.
+
+### G51 - Runtime hardening: outbound HTTP, process runner, compile cache (MEDIUM)
+
+T3 Code's server has small, tested guards that keep a long-lived process
+trustworthy: `outboundHttp.ts` (egress policy), `processRunner.ts` (bounded
+subprocesses), `compileCache.ts`, `httpResponseErrorGuard.ts`,
+`launcherWatch.ts` (supervise the CLI), `os-jank.ts` (event-loop stalls).
+
+dxbot has host ops in Rust and a Rust server, but no equivalent documented
+egress policy, subprocess bounds or launcher watchdog. A misbehaving provider
+CLI or a hung request is handled per call site, not by one owner.
+
+### G52 - Provider runtime metadata: budget, capabilities, limits (MEDIUM)
+
+T3 Code models what a provider can actually do, per provider:
+`apps/server/src/provider/agentContextBudget.json`, `AgentContextBudget.test.ts`,
+`builtInProviderCatalog.ts`, `builtInDrivers.ts`, `*CapabilitiesProbe.ts`,
+`*UsageLimits.ts`, `ClaudeModelCatalog` and the ACP registry probe. The client
+picker and the context meter read those facts.
+
+dxbot has a model catalogue (`models-config.ts`) and a context ring fed by the
+model's `contextLength`, but no capability probe per provider and no usage-limit
+model beyond `provider-usage`. The picker shows models; it does not know what
+each CLI can do.
+
+
+
 ## 3. What dxbot has that T3 Code does not
 
 | Capability | dxbot evidence | T3 Code |
@@ -739,19 +921,21 @@ owners still to grow.
 7. Relay + identity before mobile (G19); then Android, then iOS.
 8. Project/branch/worktree workflow (G5), command palette (G8), thread
    lifecycle (G7), composer depth (G33).
-9. Visual replies (G26) and the device panel (G27) - both are visible,
-   demoable wins.
-10. Outside agents through an MCP server (G28).
+9. Visual replies (G26), the device panel (G27) and the multi-thread
+   orchestrator (G43) - all three are visible, demoable wins.
+10. Outside agents through an MCP server (G28); preview service (G42).
+11. Eval harness (G44), perf lane (G45) and licence notices (G46).
 
 **P2 - compounding architecture**
 
-11. Run graph, fork/lineage, provider handoff (G10, G24); peer delegation
-    (G29).
-12. Shared contract package and browser-test lane (G22); settings inheritance
+12. Ownership boundary (G40), outbox/run finalization (G41), run graph,
+    fork/lineage, provider handoff (G10, G24); peer delegation (G29).
+13. Shared contract package and browser-test lane (G22); settings inheritance
     UI (G32) and keybinding page (G38).
-13. Diagnostics, updates, secrets, MCP apps (G12-G15); provider-specific model
-    options (G36).
-14. Distribution channels (G23) and onboarding/migration (G37).
+14. Diagnostics, updates, secrets, MCP apps (G12-G15); provider install/update
+    lifecycle (G49), runtime metadata (G52) and auth security (G50).
+15. Distribution channels (G23), onboarding/migration (G37), file/document
+    previews (G47), mobile surface set (G48) and runtime hardening (G51).
 
 ---
 
