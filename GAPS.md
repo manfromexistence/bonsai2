@@ -121,6 +121,13 @@ framed comparison surface that must not be counted as native capability".
 | G56 | Thread search across environments | MEDIUM |
 | G57 | Effect-based services and typed failure model | MEDIUM (quality) |
 | G58 | Release channels: beta, labs, nightly | MEDIUM |
+| G59 | Server update/rollback launcher | MEDIUM-HIGH |
+| G60 | Source-control review depth (diff sources, commit lane) | MEDIUM-HIGH |
+| G61 | Remote model manifest pipeline | MEDIUM |
+| G62 | Context handoff and compaction service | MEDIUM-HIGH |
+| G63 | Provider breadth: Muse, Pi, Fx, ACP registry | MEDIUM |
+| G64 | Wire protocol versioning and compatibility | MEDIUM-HIGH |
+| G65 | MCP OAuth and scoped external-agent auth | MEDIUM |
 
 ### G1 - The `/t3code/*` surfaces are frames, not ports (CRITICAL TO HONESTY)
 
@@ -893,6 +900,95 @@ surface; every experimental feature is either on or absent.
 
 
 
+### G59 - Server update/rollback launcher (MEDIUM-HIGH)
+
+T3 Code's background service is owned by a **stable launcher**: exact-version
+installs, staging plus preflight, an immutable runtime, a durable pending-update
+record before acknowledgement, trial start, and same-directory fsync writes for
+service state (`docs/internals/server-updates.md`,
+`apps/server/src/serviceLauncher.ts`). "Update everything" then coordinates
+providers, servers and the desktop app, each on its own channel
+(`docs/user/updating.md`).
+
+dxbot has `update_checker.rs` for the desktop app and no server launcher,
+staged install, rollback or channel-aware update. A failed server update has no
+trial/rollback contract.
+
+### G60 - Source-control review depth (MEDIUM-HIGH)
+
+T3 Code's Diff pane has a **source picker**: a turn's own changes, a branch
+comparison against the base, or one local commit at a time (newest 100, merge
+commits against first parent). A turn that pulls/merges/rebase leaves the
+brought-in files out unless the turn edited, committed or resolved them.
+Restore returns the complete saved workspace, and commit/PR links open the
+right pane on any branch (`docs/user/source-control.md`,
+`docs/internals/pull-request-file-revisions.md`).
+
+dxbot shows diff parts and a review view, but no diff-source picker, no
+commit-by-commit lane, no merge-aware filtering and no workspace restore from
+the diff surface.
+
+### G61 - Remote model manifest pipeline (MEDIUM)
+
+T3 Code ships a bundled model manifest for offline startup, can fetch a newer
+one from the release branch, validates it against the catalog and each
+provider's adapter before caching, and lets a newer bundle outrank a cached
+remote by `updatedAt` (`docs/internals/model-manifest.md`,
+`apps/server/src/provider/model-manifest.json`).
+
+dxbot's catalogue is static code (`models-config.ts`) plus runtime discovery.
+There is no signed/validated remote manifest, no offline bundle with precedence
+rules, and no adapter-level validation before a model is offered.
+
+### G62 - Context handoff and compaction service (MEDIUM-HIGH)
+
+T3 Code's `ContextHandoffServiceV2` builds textual handoffs from user and
+assistant messages, command executions, file changes and checkpoints; text is
+compacted to 240 characters, file changes carry the filename, checkpoints carry
+the file count; provider handoffs use full eligible history or the delta since
+that provider last participated; fork merge-back uses the child's delta
+(`docs/internals/context-handoffs.md`).
+
+dxbot has `/compact` as a command inserted into the composer and a context ring,
+but no compaction service that builds a bounded handoff, and no delta tracking
+per provider. Long conversations either fit or fail.
+
+### G63 - Provider breadth: Muse, Pi, Fx and ACP registry (MEDIUM)
+
+T3 Code ships provider packages for **Muse**, **Pi** and **Fx** alongside
+Claude, Codex, Cursor, Grok, OpenCode and Antigravity, plus
+`provider-acp-registry` for ACP agents discovered at runtime.
+dxbot has six drivers (`claude`, `codex`, `cursor`, `grok`, `opencode`,
+`antigravity`) and an ACP client/registry snapshot
+(`src/features/acp/registry.ts`), but no Muse, Pi or Fx driver and no install
+path for registry agents.
+
+### G64 - Wire protocol versioning and compatibility (MEDIUM-HIGH)
+
+T3 Code treats the RPC contract as a versioned boundary: protocol-2
+environments advertise capabilities (`threadPullRequests`, legacy
+`threadPullRequestLinking`), clients hide features until the server config
+loads, older clients keep reading derived fields, and persisted events must
+remain decodable on replay (`docs/internals/overview.md`,
+`packages/contracts/src/rpc.ts`).
+
+dxbot has `server/src/contract.rs` and ported wire shapes, but no
+protocol-version handshake and no capability advertisement (a search for
+`protocolVersion` finds nothing). A newer server and older client have no
+negotiated contract.
+
+### G65 - MCP OAuth and scoped external-agent auth (MEDIUM)
+
+T3 Code's MCP server signs external agents in and scopes what they may do:
+`apps/server/src/auth/McpOAuth.ts`, `mcpOAuthHtml.ts`, `McpInvocationContext`,
+`docs/user/outside-agents.md`. Each agent signs in once; permissions are
+per-agent.
+
+dxbot has an MCP **client**, device pairing and keychain secrets, but no MCP
+server, no OAuth flow for external agents, and no per-agent MCP scope.
+
+
+
 ## 3. What dxbot has that T3 Code does not
 
 | Capability | dxbot evidence | T3 Code |
@@ -1010,14 +1106,16 @@ owners still to grow.
 **P2 - compounding architecture**
 
 12. Ownership boundary (G40), outbox/run finalization (G41), shared client
-    runtime (G53), run graph, fork/lineage, provider handoff (G10, G24); peer
-    delegation (G29).
+    runtime (G53), protocol versioning (G64), run graph, fork/lineage, provider
+    handoff and context compaction (G10, G24, G62); peer delegation (G29).
 13. Shared contract package and browser-test lane (G22); settings inheritance
     UI (G32) and keybinding page (G38).
 14. Diagnostics, updates, secrets, MCP apps (G12-G15); provider install/update
-    lifecycle (G49), runtime metadata (G52) and auth security (G50).
+    lifecycle (G49), runtime metadata (G52), provider breadth (G63), model
+    manifest (G61) and auth security (G50, G65).
 15. Distribution channels (G23), onboarding/migration (G37), file/document
-    previews (G47), mobile surface set (G48) and runtime hardening (G51).
+    previews (G47), mobile surface set (G48), server launcher (G59) and
+    source-control review depth (G60).
 
 ---
 
