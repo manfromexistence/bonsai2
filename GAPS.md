@@ -29,14 +29,15 @@ document. No row is `executed`, `runtime` or `release-qualified`.
 T3 Code is the better **agent cockpit**. Its terminal is Ghostty's VT engine,
 its right panel is a composable surface system (Browser, Terminal, Files,
 Diff, Pull request, Linked pull requests, Device), its browser preview has a
-CDP relay, passkeys, recording, element picking and annotations, its projects
-have branches, worktrees and scripts, and its Windows story is WSL plus a dev
-container that ship. dxbot is the larger product - own agent engine, voice,
-dictation, grammar, memory, plan, dashboard, 14-tab right pane - but several
-of its T3-shaped surfaces are **frames around a running T3 Code sidecar, not
-ports**: `T3_NATIVE_ROUTES` is empty. The honest scoreboard is "wider product,
-shallower cockpit, and a framed comparison surface that must not be counted as
-native capability".
+CDP relay, passkeys, recording, element picking and annotations, agents answer
+with sandboxed HTML pages verified by a headless browser, a live simulator can
+sit beside a thread, its projects have branches, worktrees and scripts, and
+its Windows story is WSL plus a dev container that ship. dxbot is the larger
+product - own agent engine, voice, dictation, grammar, memory, plan,
+dashboard, 14-tab right pane - but several of its T3-shaped surfaces are
+**frames around a running T3 Code sidecar, not ports**: `T3_NATIVE_ROUTES` is
+empty. The honest scoreboard is "wider product, shallower cockpit, and a
+framed comparison surface that must not be counted as native capability".
 
 ---
 
@@ -87,6 +88,20 @@ native capability".
 | G23 | Distribution and release engineering | MEDIUM |
 | G24 | Agent orchestration depth | HIGH (architectural) |
 | G25 | Environment model | MEDIUM |
+| G26 | Visual replies (agent-published HTML pages) | HIGH |
+| G27 | Device panel (live simulator/emulator) | HIGH |
+| G28 | Outside agents and MCP interoperability | HIGH |
+| G29 | Multi-environment peers and delegation | MEDIUM-HIGH |
+| G30 | Browser profile import and default browser | MEDIUM-HIGH |
+| G31 | Question answers with file attachments | MEDIUM |
+| G32 | Settings inheritance and project-scoped UI | MEDIUM |
+| G33 | Composer depth | MEDIUM-HIGH |
+| G34 | Rendering, citations and selection | MEDIUM |
+| G35 | Diff and review performance | MEDIUM |
+| G36 | Provider-specific model options and history | MEDIUM |
+| G37 | Onboarding, migration and project bootstrap | MEDIUM |
+| G38 | Keyboard focus model and accessibility | MEDIUM |
+| G39 | Appearance/theme distribution (we partly lead) | MEDIUM |
 
 ### G1 - The `/t3code/*` surfaces are frames, not ports (CRITICAL TO HONESTY)
 
@@ -419,6 +434,203 @@ project-to-machine binding and no environment-scoped settings.
 
 ---
 
+### G26 - Visual replies: agents answer with a sandboxed page (HIGH)
+
+T3 Code lets an agent publish a self-contained HTML page above its written
+reply: charts, tables, diagrams, collages, mockups. The page follows the
+current theme, runs scripts in a sandbox, supports expand and zoom, embeds
+local images so it survives the source files moving, and is deleted with the
+thread. Before publishing, the agent verifies the page with screenshots from a
+headless Chrome that T3 Code keeps for itself (about 120 MB, downloaded once):
+
+- `apps/server/src/htmlRender/HtmlRender.ts`, `headlessChrome.ts`,
+  `publicProxy.ts`.
+- `apps/web/src/components/guest/GuestPage.tsx`, `GuestHtmlRender.tsx`.
+- `docs/user/html-renders.md`.
+
+dxbot has HTML renderers inside the showcase/router and Whirl, but no
+agent-authored visual-reply surface, no per-thread page lifecycle, and no
+headless-browser verification pass. Search for `htmlRender` finds only
+showcase code.
+
+Closing: a `visual` message part plus a sandboxed renderer in the transcript,
+and a headless Chromium service for verification. The message-part schema
+already supports typed parts.
+
+### G27 - Device panel: live simulator/emulator beside a thread (HIGH)
+
+T3 Code runs an iOS Simulator or Android Emulator in the right panel, exposes
+it to the agent through `device_*` tools and an `agent-device` CLI, and lets
+the user tap the same device while watching:
+
+- `apps/server/src/device/` (`DeviceService`, `DeviceHubProxy`,
+  `AgentDeviceShim`, `AgentDeviceTarget`, `DeviceActions`, `DeviceHost`).
+- Right-panel `Device` tab (`RightPanelTabs.tsx:367`).
+- `docs/user/devices.md`.
+
+dxbot has browser device presets (`features/browser/core/devices.ts`) and an
+Android build emulator helper (`features/distributed/core/emulator.ts`), but no
+live device surface, no device tool namespace, and no device-sharing between
+agent and user.
+
+### G28 - Outside agents and MCP interoperability (HIGH)
+
+T3 Code's environment exposes an MCP server so agents it did not start -
+Claude Code or Codex in a terminal, ChatGPT, MCP-capable bots - can read
+projects and threads, start and message threads, and list providers/models.
+Each external agent signs in once and is scoped:
+
+- `apps/server/src/mcp/`, `apps/server/src/mcpApps/`,
+  `apps/server/src/peer/PeerMcpClient.ts`.
+- `packages/contracts/src/threadMetadataMcp.ts`.
+- `docs/user/outside-agents.md`.
+
+dxbot has an MCP **client** (`src/features/acp/core/client.ts`,
+`mcps-surface.tsx`), but no MCP server exposing dxbot's own threads, no MCP
+apps host, and therefore no outside-agent interoperability.
+
+### G29 - Multi-environment peers and delegation (MEDIUM-HIGH)
+
+T3 Code models environments as peers that can forward work and delegate
+remotely: `apps/server/src/peer/PeerForwarding.ts`, `RemoteDelegation.ts`,
+`PeerLinks.ts`, `PeerLinkRequests.ts`, plus `apps/server/src/environment/`.
+A thread can live on one machine while the client is on another.
+
+dxbot has remote transports (`host_tailscale.rs`, `host_ssh.rs`,
+`src-tauri/src/remote/`) but no peer link, forwarding or delegation contract; a
+"remote" is a transport to one machine, not a set of collaborating
+environments.
+
+### G30 - Browser profiles import and default browser (MEDIUM-HIGH)
+
+T3 Code imports cookies from another browser into a preview profile (OS keyring
+unlock, one-time copy), and on macOS the app can be the system default browser,
+opening links into a browser surface:
+
+- `docs/user/browser-import.md`, `docs/user/default-browser.md`.
+- Desktop `preview/BrowserSession.ts`, `WebviewPreferences.ts`, profile model in
+  `packages/contracts/src/browserProfile.ts` / `browserImport.ts`.
+
+dxbot has per-origin policy (`src/features/browser/core/profiles.ts`) but no
+cookie import and no default-browser registration.
+
+### G31 - Question answers with file attachments (MEDIUM)
+
+T3 Code lets a user attach files or paste images into an agent question's
+answer field, uploads them to the environment running the thread (including
+remote environments), gives the agent paths, keeps per-question drafts, and
+cleans attachments up when a thread is reverted or deleted
+(`docs/user/question-attachments.md`, `apps/server/src/attachmentStore.ts`,
+`attachmentPaths.ts`).
+
+dxbot's question view (`src/features/dx/components/chat/question-part-view.tsx`)
+tells the user to "attach files in the composer" - it does not own attachments
+per question, and there is no server-side upload/cleanup contract for them.
+
+### G32 - Settings inheritance and project-scoped overrides UI (MEDIUM)
+
+T3 Code stores most settings on the server, lets a project override a defined
+subset of keys, and every settings page has an "Applying settings for ..."
+selector for project and environment (`docs/user/project-settings.md`,
+`packages/contracts/src/settings.ts`).
+
+dxbot has ported the layering core (`src/features/settings/settings-layers.ts`)
+but its own header says the page wiring is still owed; the theme import,
+server-published themes and WSL choice are also listed as not done. So the
+model exists and no user can reach it.
+
+### G33 - Composer depth (MEDIUM-HIGH)
+
+T3 Code's composer is a product of its own:
+
+- Tiptap rich mode plus a plain mode, with Markdown canonicalisation
+  (`docs/internals/composer-editors.md`).
+- 120,000-character limit, and a paste of 32 KiB or more becomes a text-file
+  attachment instead of filling context (`docs/user/composer.md`).
+- Context chips for files, pull requests, terminal excerpts, environments and
+  threads; prompt history; a stash; slash-command search; code-block language
+  picker; drag-to-mention; context undo; pending approval actions; pending
+  user-input panel; plan follow-up banner; provider-state row; prompt-length
+  validation.
+
+dxbot has a Plate composer, prompt recall (`prompt-recall.ts`), draft stash
+(`parkDraft` / `restoreStashed`), context chips (`context-chips.ts`), slash
+commands and skills. Missing pieces: plain/rich toggle, hard length cap,
+paste-to-attachment, code-block language picker, pending-approval actions, and
+a per-question user-input panel.
+
+### G34 - Rendering, citations and selection (MEDIUM)
+
+T3 Code renders markdown under explicit permission rules
+(`ChatMarkdown.permissions.browser.test.tsx`), citations with a comment editor
+and source attribution (`AssistantCitationChip.tsx`,
+`AssistantCitationCommentEditor.tsx`, `AssistantCitationSource.tsx`,
+`CitationList`), a selection toolbar, generated-image markdown, media
+components, and per-message actions.
+
+dxbot has `ChatMarkdown`-equivalent rendering, `assistant-citation-chip.tsx`,
+`assistant-selection-toolbar.tsx` and `response-media.tsx`. The gap is the
+citation **comment editor** and the permissions test lane, not the basic chip.
+
+### G35 - Diff and review performance (MEDIUM)
+
+T3 Code runs diffs off the main thread and renders a changed-files tree:
+`DiffWorkerPoolProvider.tsx`, `DiffPanel.tsx`, `DiffPanelShell.tsx`,
+`ChangedFilesTree.tsx`, `DiffFilePathCopyButton.tsx`, pull-request file
+revisions (`docs/internals/pull-request-file-revisions.md`).
+
+dxbot has diff parts and a review surface, but no diff worker pool and no
+changed-files tree equivalent; large diffs block the renderer. A search for
+`new Worker` finds only showcase and vendor code.
+
+### G36 - Provider-specific model options and history (MEDIUM)
+
+T3 Code parses per-provider model options and imports existing CLI history:
+`apps/server/src/claudeModelOptions.ts`, `codexModelOptions.ts`,
+`claudeHistoryWorker.ts`, `claude-history-worker.ts`, plus provider packages
+with their own contracts. The picker therefore reflects what each CLI actually
+accepts, and old Claude sessions can be imported.
+
+dxbot has a generic model catalogue (`models-config.ts`, `model-discovery.ts`)
+and six drivers, but no per-provider option parser and no CLI-history import.
+
+### G37 - Onboarding, migration and project bootstrap (MEDIUM)
+
+T3 Code: a welcome wizard for new installs (`docs/user/welcome-wizard.md`), a
+V1-to-V2 database copy and thread migration on first launch
+(`docs/user/thread-migration.md`), a legacy-thread migration toast, project
+clone flow, and `ProjectCloneToastCoordinator`.
+
+dxbot has an onboarding screen and storage migrations in Rust, but no thread
+schema migration from an older product, no legacy-migration surface, and no
+project clone flow.
+
+### G38 - Keyboard focus model and accessibility (MEDIUM)
+
+T3 Code documents and implements focus ownership: the palette keeps focus and
+returns it to the composer; workspace focus commands; number shortcuts while a
+palette or model picker is open; model shortcuts inside Settings; terminal
+startup not stealing the composer:
+
+- `docs/user/keyboard-focus.md`, `docs/user/keybindings.md`.
+- `KeybindingsConfigWarning.tsx`, `KeybindingsUpdateToast.tsx`.
+
+dxbot has a keybindings contract and shortcut arrays, but no focus-ownership
+model, no keybinding page (per its own header), and no accessibility test lane.
+
+### G39 - Appearance and theme distribution (MEDIUM, where we partly lead)
+
+T3 Code ships per-device appearance settings, light/dark theme pairing, command
+palette theme switching, and a theme-picker shortcut
+(`docs/user/appearance.md`, `CommandPaletteThemeItems.tsx`).
+
+dxbot's theme editor is deeper (custom CSS/font/colour presets,
+`src/features/settings/theme/*`, `/themes` route), so this is not a gap in
+capability; it is a gap in **reach**: our theme choice is not available from
+the command palette, and themes are not shared/published across devices.
+
+
+
 ## 3. What dxbot has that T3 Code does not
 
 | Capability | dxbot evidence | T3 Code |
@@ -481,6 +693,33 @@ project-to-machine binding and no environment-scoped settings.
 
 ---
 
+## 6.1 Server surface: breadth, not just file size
+
+`apps/server/src` carries **40 directories**; `server/src` carries **one**
+(`orchestration/`) beside 25 files. That shape is the architecture gap in one
+line - T3 Code's server is a product with domain owners, ours is a core with
+owners still to grow.
+
+| Server domain | T3 Code | dxbot nearest |
+| --- | --- | --- |
+| Terminal | `terminal/` (PTY, retention) | host op in Tauri, no server owner |
+| Preview / HTML render | `preview/`, `htmlRender/` | browser pane in the client |
+| Pull request / review | `pullRequest/`, `review/`, `sourceControl/` | integrations clients in `src/features/integrations` |
+| Triage | `triage/` | none |
+| Scheduled tasks / scheduling | `scheduledTasks/`, `scheduling/` | `durable_jobs.rs` (jobs, no scheduler product) |
+| MCP / MCP apps | `mcp/`, `mcpApps/` | client only in `src/features/acp` |
+| Peer / relay / cloud | `peer/`, `relay/`, `cloud/` | `remote/`, Tailscale/SSH transports |
+| Device | `device/` | none |
+| Resource telemetry | `resourceTelemetry/` | none |
+| Secrets | `secrets/` + provider packages | `host_secret.rs` / keychain |
+| Usage / usage limits | `usage/` | `runtime_usage.rs`, budgets |
+| Workspace / project / git / vcs | `workspace/`, `project/`, `git/`, `vcs/` | `worktree_setup.rs`, `host_git.rs` |
+| Attachments | `attachmentStore.ts`, `attachmentPaths.ts` | composer attachments, no server store |
+| Diagnostics / observability / telemetry | `diagnostics/`, `observability/`, `telemetry/` | `analytics.rs` |
+| Guest share | `guest/` | none |
+
+
+
 ## 7. Prioritised plan
 
 **P0 - weeks, high user impact**
@@ -494,19 +733,25 @@ project-to-machine binding and no environment-scoped settings.
 
 **P1 - product reach**
 
-5. Browser preview host (CDP, passkeys, recording, picker, annotations).
-6. Guest links and prompt links (G9); they are small surfaces with large
-   product effect.
+5. Browser preview host (CDP, passkeys, recording, picker, annotations) and
+   profile import (G4, G30).
+6. Guest links and prompt links (G9); small surfaces with large product effect.
 7. Relay + identity before mobile (G19); then Android, then iOS.
 8. Project/branch/worktree workflow (G5), command palette (G8), thread
-   lifecycle (G7).
+   lifecycle (G7), composer depth (G33).
+9. Visual replies (G26) and the device panel (G27) - both are visible,
+   demoable wins.
+10. Outside agents through an MCP server (G28).
 
 **P2 - compounding architecture**
 
-9. Run graph, fork/lineage, provider handoff (G10, G24).
-10. Shared contract package and browser-test lane (G22).
-11. Diagnostics, updates, secrets, MCP server (G12-G15).
-12. Distribution channels (G23).
+11. Run graph, fork/lineage, provider handoff (G10, G24); peer delegation
+    (G29).
+12. Shared contract package and browser-test lane (G22); settings inheritance
+    UI (G32) and keybinding page (G38).
+13. Diagnostics, updates, secrets, MCP apps (G12-G15); provider-specific model
+    options (G36).
+14. Distribution channels (G23) and onboarding/migration (G37).
 
 ---
 
