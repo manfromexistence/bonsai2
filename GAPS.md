@@ -245,10 +245,14 @@ T3 Code:
 - Mobile push and Live Activities: `docs/user/mobile-notifications.md`,
   `apps/mobile/src/widgets/AgentActivity.tsx`.
 
-dxbot: no background-thread announcer; notifications are in-app toasts, and
-there is no push, badge or ongoing-activity surface (confirmed by a search for
-`BackgroundThread`, `mobile-notifications`, APNs/FCM in `src`, `src-tauri/src`,
-`server/src`).
+dxbot already has an **agent board**, an attention memory for work that settled
+while the tab was hidden (`src/lib/chat/attention.ts`), unread tracking
+(`src/lib/chat/thread-unread.ts`) and an OS-notification gate that is
+**closed because the host op does not exist**
+(`src/lib/chat/os-notification-gate.ts`). What is missing is the OS/push half:
+no notification command, no badges, no APNs/FCM/Live Activities. Do not copy
+T3's announcer as if the in-app half were absent; copy its notification
+coordinator only where it adds OS delivery or badges.
 
 ### G7 - Thread lifecycle in the sidebar (MEDIUM-HIGH)
 
@@ -445,9 +449,13 @@ dxbot: `release.yml` matrix = macOS + Windows, GitHub Releases only.
 From T3 Code's contracts and docs: run graph, execution nodes, subagents,
 thread fork/lineage, provider handoff, worktree handoff, thread search across
 environments, per-agent resource telemetry, command receipts and durable
-events. dxbot has event sourcing, checkpoints, settlement and durable jobs, but
-a thread is one linear turn stream. Every feature that depends on "this thread
-was forked from that one" or "this run has three nodes" is blocked on this.
+dxbot has event sourcing, checkpoints, settlement and durable jobs, **and it
+already models subagents inside a turn** (`subagent-summary-row.tsx`,
+`agent-board.tsx`, `kind: "shell" | "monitor" | "subagent" | "loop"` in
+`src/types/agent.ts`). What it does not have is the **run graph and lineage**:
+thread fork, execution nodes, provider handoff and worktree handoff. A
+subagent that spans a separate thread, or a thread that remembers its parent,
+is still absent.
 
 ### G25 - Environment model (MEDIUM)
 
@@ -579,11 +587,13 @@ T3 Code's composer is a product of its own:
   user-input panel; plan follow-up banner; provider-state row; prompt-length
   validation.
 
-dxbot has a Plate composer, prompt recall (`prompt-recall.ts`), draft stash
-(`parkDraft` / `restoreStashed`), context chips (`context-chips.ts`), slash
-commands and skills. Missing pieces: plain/rich toggle, hard length cap,
-paste-to-attachment, code-block language picker, pending-approval actions, and
-a per-question user-input panel.
+dxbot already has a Plate composer, attachments, prompt recall
+(`prompt-recall.ts`), draft stash (`prompt-stash.ts`), context chips
+(`context-chips.ts`), slash commands, skills, a full queue pane
+(reorder/edit/delete/send-now), approvals and elicitation
+(`elicitation-part-view.tsx`, `elicitation-form.ts`). The missing pieces are
+narrow: plain/rich toggle, a hard length cap, paste-to-attachment, a code-block
+language picker, and drag-to-mention parity.
 
 ### G34 - Rendering, citations and selection (MEDIUM)
 
@@ -702,9 +712,13 @@ contains `PreviewBrowser`, `ServerBrowser`, `ServerBrowserContexts`,
 recording and annotations (`apps/desktop/src/preview/`). A browser context is
 server-owned and streamable to any client.
 
-dxbot has one browser tab and an iframe-level preview. This is a deeper gap
-than G4: even with a Tauri child WebView, there is no server-side browser
-context to stream or share.
+dxbot is further along than "an iframe": the app's own WebView supports
+same-origin `browser.snapshot` and `browser.action` through
+`src/features/browser/core/page-script.ts`, and `browser.navigate` is
+delivered. What it lacks is the **cross-origin/CDP half** and a server-owned
+context: no separate browser process, no streamable contexts, no passkeys,
+recording or annotations, and no browser context shared with another client.
+The refusal for cross-origin pages is named in `host.ts`, not silent.
 
 ### G43 - Multi-thread orchestrator (HIGH)
 
@@ -714,9 +728,10 @@ commands and sent messages to 3 threads" in the activity log
 (`docs/user/activity-log.md`, `packages/contracts/src/orchestratorMcp.ts`,
 `apps/server/src/mcp/toolkits/thread/`).
 
-dxbot's agent works inside one thread. There is no tool to create another
-thread, message it, or aggregate the results, so "do this in two repos in
-parallel" is a manual workflow.
+dxbot's agent works inside one thread. It can spawn subagents and fan out
+models (`agent-board.tsx`, `fan-out-desk.tsx`), but there is no tool to create
+another **thread**, message it, or aggregate results across threads - so "do
+this in two repos in parallel" is still a manual workflow.
 
 ### G44 - Evaluation harness (MEDIUM)
 
@@ -757,9 +772,11 @@ tables, binary files through a worker, images, and browser documents
 `DelimitedTablePreview`, `BinaryViewer`, `binaryPreview.worker`,
 `BrowserDocumentFrame`, `AttachmentFilePreview`).
 
-dxbot has a files pane and some document preview inside the vendored dsh
-tree, but not one integrated preview surface with worker-backed binary
-decoding and page navigation.
+dxbot has more here than "a files pane": `binary-preview.tsx` and
+`document-read-view.tsx` already render binary/document reads inside the chat,
+and the vendored dsh tree carries PDF/XLSX previews. What is missing is one
+integrated preview surface with PDF page navigation, audio, delimited tables
+and worker-backed decoding, wired to the files pane.
 
 ### G48 - Mobile feature set beyond chat (MEDIUM)
 
@@ -862,9 +879,11 @@ pin/snooze/settle/archive and deliberately skips subagent threads, which are
 first-class in `packages/contracts/src/orchestrationV2.ts`.
 
 dxbot's queue pane already supports drag-reorder, inline edit, delete and
-"send now" (`src/features/dx/components/chat/panes/prompt-queue-pane.tsx`).
-Missing: steering into a live run, and any subagent-thread concept for the
-agent or the UI.
+"send now" (`src/features/dx/components/chat/panes/prompt-queue-pane.tsx`),
+and it already renders **subagents inside a turn**
+(`subagent-summary-row.tsx`, `agent-board.tsx`). Missing: steering an entry
+into a live run, and subagent **threads** (a subagent that owns its own thread
+rather than a child row in this one).
 
 ### G56 - Thread search across environments (MEDIUM)
 

@@ -1,351 +1,243 @@
-# T3CODE-MERGE-PLAN.md - what dxbot has, what T3 Code has, and what can be copied
+# T3CODE-MERGE-PLAN.md - delta merge plan (revision 2)
 
-**Purpose.** A merge plan, not an implementation. It inventories both trees,
-separates T3 Code code that can be copied from code that must be rewritten for
-Tauri/Rust, and gives a wave order with exact source paths and destination
-paths. It is the companion to `GAPS.md` (the 65-gap measurement).
+**Why this revision exists.** Revision 1 proposed copying large parts of T3
+Code's UI as if dxbot were empty. It is not. dxbot already has a chat shell, a
+composer, a transcript, diffs, files, a terminal, a browser pane, a 14-tab
+right panel, a command palette, settings, notifications-in-app, queue,
+approvals, subagents and its own design system. This revision inventories
+**what we already have first**, and then copies only what is genuinely absent.
 
 **Provenance.**
 
 | Fact | Value |
 | --- | --- |
-| T3 Code source | `G:\Dx\t3code`, `6fc9144a` (2026-10-31) |
-| T3 Code licence | MIT, (c) 2026 T3 Tools Inc. |
-| dxbot source | `G:\Dx\bot`, `be20e485` |
-| dxbot licence | AGPL-3.0 |
-| Rule | MIT code may be merged into AGPL; keep the copyright and permission notice, and record the upstream commit in a PROVENANCE file beside the copy |
-
-**The one-line answer.** The **UI** is largely copyable; the **runtime** is not.
-T3 Code's visual layer is React + Base UI + Tailwind + zustand + Effect, and
-dxbot already has React 19, Base UI, Tailwind 4, zustand, Tiptap, dnd-kit,
-pdf.js and lucide. T3 Code's server, Electron main process, provider packages
-and mobile native modules are Node/Electron/Effect or Kotlin/Swift and must be
-rewritten for Tauri/Rust - copying them would rebuild the exact problem Tauri
-was chosen to avoid.
+| T3 Code source | `G:\Dx\t3code`, `6fc9144a` (2026-10-31), MIT |
+| dxbot source | `G:\Dx\bot`, `be20e485`, AGPL-3.0 |
+| Companion | `GAPS.md` - 65 measured gaps, corrected where this revision found overclaims |
 
 ---
 
-## 1. What dxbot already has
+## 1. What dxbot already has (do not copy these)
 
-Measured from the tree, not from memory.
+Measured from the tree. "Parity" means the capability exists; it does not mean
+pixel-identical UI.
 
-| Area | dxbot owner | State |
-| --- | --- | --- |
-| Desktop shell | Tauri 2 (`src-tauri/`) | Windows + macOS builds; tray, pill, toast windows |
-| Chat shell | `src/features/dx/components/chat/chat-shell.tsx` | streaming, queue, approvals, usage, checkpoints, 14 right-pane tabs |
-| Composer | `chat-input.tsx` + Plate (`plate-composer.tsx`) | context chips, slash commands, skills, recall, stash, attachments |
-| Transcript | `beui-transcript.tsx`, `message-list.tsx`, `message-parts.tsx` | markdown, citations, selection toolbar, diff parts, media |
-| Right pane | `right-pane.tsx` (14 tabs) | search, files, terminal, browser, review, preview, environment, dashboard, plan, memory, usage, settings |
-| Terminal | `terminal-workspace.tsx`, `terminal-view.tsx`, `features/terminal/core/*` | xterm 6, split panes, host-op PTY, session reuse |
-| Browser | `features/browser/*` | browser tab + per-origin policy |
-| Files | `files-panel.tsx` | tree, search, editor hooks |
-| Diff/review | `review-part-view.tsx`, `diff-review.tsx`, `github-prs-section.tsx` | turn diffs, review parts, GitHub PR section |
-| Settings | `features/settings/registry.ts` | 7 dialog tabs + 25 route tabs |
-| Voice | `features/pill`, `src-tauri/src/{recorder,transcribe,local_transcription,tts}.rs` | wake word, local ASR, TTS, dictation |
-| Grammar | `grammar.rs`, `grammar_overlay*.rs` | Harper engine + system-wide overlay |
-| Harness | `crates/`, `server/` | own agent engine, checkpointing, durable jobs, settlement |
-| Remote | `src-tauri/src/remote/`, `host_tailscale.rs`, `host_ssh.rs` | LAN, tailnet, SSH |
-
-**What we do not have, and T3 Code does:** the list is `GAPS.md` (65 items).
-The fusion-ready subset is the UI and the client-side logic; the rest is host
-work.
-
----
-
-## 2. The hard constraint: the UI is not standalone
-
-Measured coupling in `apps/web/src`:
-
-| Dependency | Files importing it |
-| --- | --- |
-| `@t3tools/contracts` | 940 |
-| `@t3tools/client-runtime` | 510 |
-| `effect` / `effect/*` | 424 |
-| `@effect/atom-react` | 177 |
-| `@tanstack/react-router` | 130 |
-| `@pierre/diffs` / `@pierre/trees` | 42 |
-| `@legendapp/list` | 16 |
-| `@clerk/*` | 16 |
-
-So "copy `components/chat`" is not a copy that compiles by itself. The chat
-containers read Effect atoms, the T3 runtime, the T3 contracts and TanStack
-Router. There are two honest strategies:
-
-### Strategy A - T3 surface island (fastest visual parity, a second runtime)
-
-Copy the T3 web app as an isolated build (its `apps/web/src`, the packages it
-imports) and mount it in a Tauri window or child WebView; adapt its RPC to the
-dxbot Rust server. The screens look and behave exactly like T3 Code because
-they are T3 Code. Cost: a second frontend runtime, a duplicated design system,
-and a compatibility layer that must track upstream. It is the fastest demo,
-not the cleanest merge.
-
-### Strategy B - incremental native merge (recommended)
-
-Copy, in this order: the UI kit, the pure logic modules, then surface by
-surface. Each surface is adapted to dxbot stores and the dxbot host/server.
-No second runtime; the T3 look arrives one screen at a time. Slower to first
-screenshot, cheaper forever.
-
-**Recommendation: B for the product, A only as a temporary preview if a
-screenshot is needed this week.** The rest of this plan is B.
-
----
-
-## 3. Copyability tiers
-
-### Tier 0 - copy nearly verbatim
-
-Pure presentational or pure logic; no Electron, no Node, no T3 runtime.
-
-| Source | Files | Notes |
-| --- | --- | --- |
-| `apps/web/src/components/ui/**` | 55 | Base UI + Tailwind primitives; dxbot already has `@base-ui/react` |
-| `apps/web/src/index.css` | 1 | theme tokens; scope under a `.t3-surface` root first |
-| `apps/web/src/appearanceContrast.ts`, `appearanceFonts.ts`, `themePalette.ts`, `vscodeThemeImport.ts`, `openVsxThemes.ts` | 5 | theme parity, theme import |
-| `apps/web/src/components/{MorphIcon,Icons,JetBrainsIcons,RelativeTime,AnimatedHeight,AnimatedWidth}.tsx` | 6 | small visual primitives |
-| `apps/web/src/components/RightPanelSheet.tsx`, `RightPanelTabs.tsx` | 2 | panel chrome, props-driven |
-| `apps/web/src/terminal/ghostty/**` | 16 | Ghostty VT adapter + WASM + Nerd Font (see terminal section) |
-| `packages/contracts/src/**` | 103 (74 non-test) | effect Schema; add `effect` dependency or transcribe types |
-| `packages/shared/src/{promptLinks,usageLimits,threadPullRequests,composerTrigger,...}.ts` | selective | pure helpers; see manifest |
-| `apps/web/src/*.ts` pure modules (composer, markdown, diff, keybindings, theme, stores) | ~120 | each has co-located tests; copy test with code |
-
-### Tier 1 - copy plus an adapter
-
-Stateful containers. They compile once the adapter layer exists (section 5).
-
-| Source | Files | Adapter needed |
-| --- | --- | --- |
-| `apps/web/src/components/chat/**` | 327 | Effect atoms -> zustand/react-query bridge; client-runtime -> dxbot store; router shims |
-| `apps/web/src/components/diffs/**` + `DiffPanel*.tsx` | ~20 | `@pierre/diffs`, worker pool |
-| `apps/web/src/components/files/**` | 101 | `@pierre/trees`, file host ops |
-| `apps/web/src/components/pullRequest/**` | 106 | source-control RPC |
-| `apps/web/src/components/preview/**` | 41 | Tauri child WebView + preview RPC |
-| `apps/web/src/components/device/**` | 34 | Rust device service |
-| `apps/web/src/components/usage/**` | 20 | usage RPC |
-| `apps/web/src/components/sidebar/**` | 22 | thread state + router shims |
-| `apps/web/src/components/{CommandPalette*,Sidebar.tsx,ChatView.tsx,...}` | ~40 | store + router |
-| `apps/web/src/components/{guest,media,permissions,promptLinks}/**` | 23 | small RPC surfaces |
-| `apps/web/src/hooks/**`, `apps/web/src/lib/**`, `apps/web/src/state/**` | 259 | selective; many are generic |
-
-### Tier 2 - rewrite for Tauri/Rust (do not copy)
-
-| Source | Why |
-| --- | --- |
-| `apps/desktop/src/**` (Electron main, preload, IPC, window, menus, updates, permissions, snapShot, WSL, SSH, preview host) | Electron APIs; Tauri equivalents are Rust commands/plugins |
-| `apps/server/src/**` (40 domains) | Node + Effect + PTY/browser/relay services; rewrite as Rust modules behind the existing `server/` or `src-tauri/` |
-| `packages/provider-*/**` | Effect services and Node install/auth/update logic; port data and contracts, not code |
-| `packages/source-control-*/**`, `secret-provider-*` | Node clients; Rust clients or existing `features/integrations` |
-| `apps/mobile/**` native modules | Kotlin/Swift; use as reference for Tauri mobile plugins |
-| `packages/effect-*`, `infra/`, `packaging/`, `third-party-licenses/spdx` | architecture/build; copy data only |
-
-### Tier 3 - do not merge at all
-
-Clerk hosted auth, Cloudflare relay infrastructure, hosted web app, app-store
-release pipelines, vendor demo data. These are services and processes, not
-files to merge.
-
----
-
-## 4. Direct copy manifest (recommended first copies)
-
-Destination convention: copied code lives under `src/features/t3ui/` (owned
-and adapted), not `src/vendor/` (verbatim, never edited). Each top-level copy
-gets a `PROVENANCE.md` naming `6fc9144a`, the licence and the adaptations.
-
-### 4.1 UI kit and theme (Wave 1)
-
-| From | To | Action |
-| --- | --- | --- |
-| `apps/web/src/components/ui/**` | `src/features/t3ui/ui/**` | copy; rewrite `~/components/ui` imports |
-| `apps/web/src/index.css` | `src/features/t3ui/theme/t3.css` | copy; scope tokens under `.t3-surface` |
-| `appearance*.ts`, `themePalette.ts`, `vscodeThemeImport.ts`, `openVsxThemes.ts` | `src/features/t3ui/theme/` | copy + tests |
-| `components/MorphIcon.tsx`, `Icons.tsx`, `JetBrainsIcons.tsx`, `RelativeTime.tsx`, `AnimatedHeight.tsx`, `AnimatedWidth.tsx` | `src/features/t3ui/primitives/` | copy |
-
-The kit needs `morphicons` and `@pierre/*` icons only where used; check each
-file before adding a dependency.
-
-### 4.2 Chat surface (Wave 2)
-
-| From | To | Action |
-| --- | --- | --- |
-| `apps/web/src/components/chat/Composer*.tsx`, `composer*.ts` | `src/features/t3ui/composer/` | copy; replace T3 atoms with dxbot composer store |
-| `components/chat/ComposerPromptEditorTiptap.tsx` | `src/features/t3ui/composer/` | keep Tiptap; dxbot already has `@tiptap/react` 3 |
-| `components/ChatMarkdown.tsx`, `markdown-*.ts` | `src/features/t3ui/markdown/` | copy; permissions tests included |
-| `components/chat/AssistantCitation*.tsx`, `AssistantSelectionToolbar.tsx` | `src/features/t3ui/citations/` | copy; map to dxbot message parts |
-| `components/chat/Message*`, `TimelineOverlays`, `ChatHeader`, `ChatBanner*` | `src/features/t3ui/chat/` | copy leaves first; containers after store bridge |
-| `components/chat/ChatCanvas.tsx`, `canvasStore.ts` | `src/features/t3ui/canvas/` | copy if canvas parity is wanted |
-
-### 4.3 Diffs, files, pull requests (Wave 3)
-
-| From | To | Action |
-| --- | --- | --- |
-| `components/diffs/**` | `src/features/t3ui/diffs/` | copy; add `@pierre/diffs` |
-| `DiffPanel.tsx`, `DiffPanelShell.tsx`, `DiffWorkerPoolProvider.tsx`, `ChangedFilesTree.tsx` | `src/features/t3ui/diffs/` | copy; add worker pool |
-| `components/files/**` | `src/features/t3ui/files/` | copy; add `@pierre/trees`; map file ops to `host_git`/`fs.*` |
-| `components/pullRequest/**` | `src/features/t3ui/pullrequest/` | copy; map to existing integrations clients |
-| `components/usage/**` | `src/features/t3ui/usage/` | copy; map to `token-usage.ts` |
-| `components/sidebar/**` + `Sidebar*.ts(x)` | `src/features/t3ui/sidebar/` | copy; router shims |
-
-### 4.4 Terminal (Wave 4)
-
-| From | To | Action |
-| --- | --- | --- |
-| `apps/web/src/terminal/ghostty/**` | `src/features/t3ui/terminal/ghostty/` | copy adapter + `vendor/ghostty-vt.wasm` + `ghostty-write-pty.wasm` + font |
-| `native/libghostty-vt/VERSION` | `src/features/t3ui/terminal/PROVENANCE.md` | record the pin |
-| `apps/web/scripts/build-libghostty-wasm.sh` | `scripts/t3-ghostty/` | copy build script; rebuild is optional |
-
-Keep dxbot's `terminal-workspace.tsx` splits; replace only `terminal-view.tsx`'s
-renderer with the Ghostty surface. Transport stays the dxbot PTY host op.
-
-### 4.5 Logic and stores (copy with tests, in parallel with the surface)
-
-| From | To |
-| --- | --- |
-| `apps/web/src/composer-*.ts` | `src/features/t3ui/logic/composer/` |
-| `apps/web/src/markdown-*.ts` | `src/features/t3ui/logic/markdown/` |
-| `apps/web/src/diff*.ts`, `diffPanelStore.ts` | `src/features/t3ui/logic/diffs/` |
-| `apps/web/src/keybindings.ts`, `shortcutModifierState.ts` | `src/features/t3ui/logic/keys/` |
-| `apps/web/src/pendingUserInput.ts`, `questionAttachments.ts` | `src/features/t3ui/logic/questions/` |
-| `apps/web/src/promptStashStore.ts`, `composerDraftStore.ts` | `src/features/t3ui/logic/drafts/` |
-| `apps/web/src/rightPanelStore.ts`, `rightPanelLayout.ts` | `src/features/t3ui/logic/panel/` |
-| `apps/web/src/threadNotifications.ts`, `reopenClosedView.ts`, `closedViewStore.ts` | `src/features/t3ui/logic/threads/` |
-| `apps/web/src/projectScripts.ts`, `projectIdentity.ts` | `src/features/t3ui/logic/projects/` |
-| `apps/web/src/theme*.ts`, `vscodeThemeImport.ts` | `src/features/t3ui/logic/theme/` |
-
-### 4.6 Contracts (foundation for everything)
-
-| From | To | Action |
-| --- | --- | --- |
-| `packages/contracts/src/**` | `src/features/t3ui/contracts/` | copy; add `effect` dependency; keep tests |
-| `packages/shared/src/{promptLinks,usageLimits,threadPullRequests,composerTrigger,...}.ts` | `src/features/t3ui/shared/` | copy the pure helpers only |
-| `packages/client-runtime/src/{handoff,load-balancing,linkRequest,changeRequestLinks,diffCount,filePreview,mediaActions,clock,composerThreadItems}.ts` | `src/features/t3ui/runtime/` | copy these pure modules first; the rest is state machinery |
-
-Do **not** copy `packages/client-runtime` wholesale on day one: it depends on
-`provider-*`, `source-control-*` and `three`.
-
----
-
-## 5. The adapter layer to build
-
-| T3 dependency | dxbot replacement | Files |
-| --- | --- | --- |
-| TanStack Router (`Link`, `useNavigate`, `useParams`, `useSearch`) | Next navigation + a `t3ui/router.tsx` shim exposing the same hooks | one shim file; 130 import sites |
-| `@effect/atom-react` atoms | dxbot zustand stores + `useT3Atom` shim; or add `@effect/atom-react` and a runtime provider | one bridge per store |
-| `@t3tools/client-runtime` environment/RPC | `src/lib/agent/host.ts` + `server/src/rpc.rs`; map environment/project/thread ids | transport module |
-| `@clerk/*` | `better-auth` session + device pairing | auth adapter |
-| Electron `window`, `clipboard`, `dialog`, `shell`, IPC | Tauri commands/plugins | `src-tauri/src/` commands |
-| Electron preview host | Tauri child WebView + CDP bridge | new Rust module |
-| Electron snapShot | Rust screen capture + annotation UI | new Rust module |
-| Electron auto-update/permissions/menus | Tauri updater, `platform/macos`, tray | existing + new commands |
-| T3 Node server (`terminal`, `preview`, `device`, `mcp`, `htmlRender`, `peer`, `relay`) | Rust modules in `server/` or `src-tauri/` | rewrite per `GAPS.md` G2/G26/G27/G28/G29/G42 |
-| Ghostty terminal | keep Ghostty renderer; adapt PTY bytes from `terminal.*` host ops | `terminal-view.tsx` |
-| T3 CSS variables | scope under `.t3-surface`; map to dxbot theme tokens | theme bridge |
-
----
-
-## 6. Gap to copy-source map (short form)
-
-| Gap | Copy these | Rewrite these |
-| --- | --- | --- |
-| G1 framed surfaces | all Tier 1 surfaces | remove `T3_NATIVE_ROUTES` entries as each lands |
-| G2 terminal | `terminal/ghostty/**` | server-owned scrollback in Rust |
-| G4 right panel | `RightPanelTabs`, `RightPanelSheet`, tab leaves | panel state adapter |
-| G5 project/branch | `BranchToolbar*`, `WorktreeBaseBranchPicker`, `ProjectScriptsControl` | worktree RPC |
-| G6 notifications | `BackgroundThreadAnnouncer`, `ThreadNotificationCoordinator` | push/APNs/FCM |
-| G7 sidebar | `Sidebar*`, `ThreadUndoNotice`, `ThreadHoverCard`, `CustomSnoozeDialog` | thread state adapter |
-| G8 palette | `CommandPalette*`, `commandPaletteStore` | command registry |
-| G9 links | `components/promptLinks/**`, `components/guest/**` | guest share service in Rust |
-| G11 snapShot | settings route UI only | capture/annotation in Rust |
-| G12 diagnostics | `ConnectionStatusDot`, freeze/slow-RPC toasts, error boundary | diagnostics RPC |
-| G16 PR | `components/pullRequest/**` | PR/source-control RPC |
-| G26 visual replies | `components/guest/**` | `htmlRender` + headless Chrome in Rust |
-| G27 device | `components/device/**` | device service in Rust |
-| G33 composer | `Composer*`, `composer-*.ts` | store bridge |
-| G34 rendering | `ChatMarkdown`, citation components | permission policy |
-| G35 diffs | `components/diffs/**`, `DiffWorkerPoolProvider` | worker host |
-| G47 files | `components/files/**` | file ops |
-| G53 client runtime | pure modules listed above | connection transport |
-| G60 source control | `sourceControlPresentation.tsx`, diff source picker | commit/restore RPC |
-| G64 protocol | `packages/contracts/src/rpc.ts` as the spec | Rust version handshake |
-
----
-
-## 7. Waves and rough effort
-
-Estimates are agent-days for one agent with review, not a promise.
-
-| Wave | Work | Output | Estimate |
+| Capability | dxbot evidence | T3 equivalent | Verdict |
 | --- | --- | --- | --- |
-| W0 | vendor dirs, PROVENANCE, deps (`effect`, `@pierre/diffs`, `@pierre/trees`, `@legendapp/list`, `morphicons`), router/atom/RPC shims, `.t3-surface` theme | copied kit compiles in a blank route | 5-8 |
-| W1 | UI kit, theme, RightPanelTabs/Sheet, Sidebar shell, CommandPalette shell | T3-looking shell with dxbot data | 8-12 |
-| W2 | Composer (Tiptap), ChatMarkdown, citations, message/timeline leaves | T3-looking transcript + composer | 12-18 |
-| W3 | Diffs, worker pool, files, PR, usage surfaces | T3-looking review panels | 15-20 |
-| W4 | Ghostty terminal adapter behind existing PTY | T3 terminal rendering | 5-8 |
-| W5 | Preview service + device panel + visual replies (Rust host) | live browser/device/HTML replies | 20-30 |
-| W6 | Provider breadth, protocol versioning, MCP server/OAuth, relay/peer | reach + interoperability | 30-50 |
-| W7 | Mobile surface set and native modules | mobile parity | 30-50 |
+| Chat shell + streaming turns | `chat-shell.tsx`, `live-response.tsx`, `streaming-markdown-cache.ts` | `ChatView.tsx` | parity |
+| Transcript rendering | `beui-transcript.tsx`, `message-list.tsx`, `message-parts.tsx`, `markdown.tsx` | `ChatMarkdown.tsx` | parity |
+| Citations + selection | `assistant-citation-chip.tsx`, `assistant-selection-toolbar.tsx` | citation components | parity (no comment editor) |
+| Composer | `plate-composer.tsx`, `chat-input.tsx`, `context-chips.ts`, `prompt-recall.ts`, `prompt-stash.ts` | Tiptap composer | parity |
+| Queue | `prompt-queue-pane.tsx` (reorder, edit, delete, send-now) | queued-run tools | parity (no steer) |
+| Approvals / questions | `question-part-view.tsx`, `elicitation-part-view.tsx`, `elicitation-form.ts` | pending approval/user input | parity |
+| Subagents / fan-out | `agent-board.tsx`, `fan-out-desk.tsx`, `subagent-summary-row.tsx`, `kind: "subagent"` in `types/agent.ts` | run nodes / subagent threads | partial (in-turn only) |
+| Right panel | `right-pane.tsx` - 14 tabs: menu, search, files, terminal, browser, chat, review, preview, environment, dashboard, plan, memory, usage, settings | 7 surfaces | parity+ (missing PR/device) |
+| Terminal | `terminal-workspace.tsx`, `terminal-view.tsx`, xterm 6, split/maximise, PTY session reuse | Ghostty VT | parity (different engine) |
+| Browser pane | `browser-view.tsx`, `browser/core/page-script.ts` - same-origin snapshot/action, navigate | CDP browser service | partial (no cross-origin/CDP) |
+| Diffs / review | `diff-review.tsx`, `review-part-view.tsx`, `git-diff-panel.tsx`, `changed-files-card.tsx` | DiffPanel + worker pool | partial (no source picker/worker) |
+| Files | `files-panel.tsx` (tree, editor, transfer), `binary-preview.tsx`, `document-read-view.tsx` | files + previews | partial (preview depth) |
+| Preview tab | `preview-pane.tsx` (TipTap markdown read/edit) | visual HTML replies | partial (not agent HTML) |
+| Usage / context | `token-usage.ts`, `token-usage-panel.tsx`, `context-usage.tsx`, `turn-stats.ts` | usage + telemetry | parity (usage) |
+| Settings | `settings/registry.ts` - 7 dialog + 25 route tabs | 27 routes | parity in breadth |
+| Command palette | `sidebar.tsx` "Search and Command Palette" + Quick Open | CommandPalette | partial (narrower actions) |
+| Sidebar / threads | spaces, tabs, shelves, bookmarks, archive, unread (`thread-unread.ts`), attention memory (`attention.ts`) | sidebar + snooze/pin | partial (no hover/undo) |
+| In-app notifications | attention memory, agent board, unread, OS-notification gate (`os-notification-gate.ts`, closed) | notification coordinator + push | partial (no OS/push) |
+| Theme editor | `features/settings/theme/*`, `/themes` route | themes + command palette switch | dxbot leads |
+| Voice / ASR / TTS | `recorder.rs`, `transcribe.rs`, `local_transcription.rs`, `tts.rs`, pill | voice input only | dxbot leads |
+| Grammar | `grammar.rs`, `grammar_overlay*.rs` | none | dxbot leads |
+| Harness | `crates/`, `server/` (checkpoints, jobs, settlement) | external CLIs | dxbot leads |
+| PR basics | `github-prs-section.tsx`, `features/integrations/core/*` (GitHub, GitLab, Bitbucket, Gitea, Azure) | PR workspace | partial (no surface) |
+| Canvas / notes / plan / memory / dashboard | right-pane tabs + features | some equivalents | dxbot leads in tabs |
 
-**What not to attempt in one go:** copying `apps/server` or `apps/desktop` and
-running Node under Tauri. That reintroduces the Electron/Node weight on mobile
-that Tauri was chosen to remove.
+**Rule that follows:** do not copy T3 Code's chat containers, composer,
+markdown renderer, sidebar state, command registry, settings fields, theme
+editor, terminal transport or browser pane. They would be second
+implementations of working features.
 
 ---
 
-## 8. Licensing and provenance rules
+## 2. What is genuinely missing (the delta)
 
-1. Every copied directory gets `PROVENANCE.md`: upstream repo, commit
-   `6fc9144a`, licence MIT, source paths, destination paths, adaptations.
-2. Keep the MIT copyright and permission text in the app's third-party notices.
-3. Do not copy T3 Code's trademarks, logos or app-store assets without the
-   same review; code licence and brand licence are different questions.
-4. Do not copy `third-party-licenses/spdx` as ours; generate notices from the
-   merged dependency graph instead.
-5. Record every adapter in the same PROVENANCE file. A copied file with an
-   unrecorded rewrite is a provenance defect.
+Grouped by what a user feels. Full evidence is in `GAPS.md`.
 
----
+### 2.1 Missing surfaces (copy T3 presentation, keep dxbot logic)
 
-## 9. Risks
+| Missing | dxbot state | Copy from |
+| --- | --- | --- |
+| Pull request workspace, linked PRs, per-file revisions, review comments | GitHub section + integrations clients; no tab | `apps/web/src/components/pullRequest/**`, `ThreadHoverCard` PR bits |
+| Device panel (live iOS Simulator / Android Emulator) | none; only browser device presets | `apps/web/src/components/device/**` |
+| Visual replies (agent-published sandboxed HTML) | preview tab renders markdown only | `apps/web/src/components/guest/**` |
+| Diff source picker (turn / branch / commit), worker pool, changed-files tree | diff parts + review view, no picker/worker | `components/DiffPanel*.tsx`, `components/diffs/**`, `DiffWorkerPoolProvider`, `ChangedFilesTree` |
+| File/document preview depth (PDF pages, audio, delimited tables, worker binary, browser document) | binary/document reads exist; previews shallow | selected leaves in `components/files/**` |
+| Command palette breadth (projects, all threads, themes, triage, prompt links) | suggestions + recent tabs | `CommandPalette*`, small adapters |
+| Sidebar polish (hover card, undo, reopen closed view, drag/reorder motion) | shelves/bookmarks/unread exist | `Sidebar*` leaves |
+| T3 visual language (if wanted) | own design system | `components/ui/**`, `index.css`, theme modules |
 
-| Risk | Mitigation |
+### 2.2 Missing client logic (copy pure modules)
+
+| Missing | Copy from |
 | --- | --- |
-| Copied containers do not compile without Effect/T3 runtime | Start with Tier 0/leaf components; add `effect` only when a surface needs it |
-| Two design systems (dxbot `@dx/ui` + T3 UI) | Scope `.t3-surface`; migrate one surface at a time; delete the old surface when replaced |
-| Upstream drift | Pin the commit; keep copied tests; re-sync on a schedule; never edit upstream copy without recording it |
-| Framed routes mistaken for ports | Each wave deletes its `T3_ROUTES` entry; `T3_NATIVE_ROUTES` grows by real components |
-| Router mismatch (TanStack vs Next) | One shim, not 130 edits |
-| Effect weight in the client | Copy pure modules first; use zustand bridge for containers until Effect is justified |
-| Licence/trademark | MIT code yes; brand assets and hosted services separately reviewed |
-| Copying server code | Do not; rewrite in Rust per G2/G12/G26/G27/G28/G29/G42/G59/G64 |
+| Prompt links | `packages/shared/src/promptLinks.ts`, `apps/web/src/components/promptLinks/**` |
+| Guest links / read-only live follow | `components/guest/**` + Rust guest share service |
+| Portable handoff + context compaction | `packages/client-runtime/src/handoff.ts`, `apps/server/src/context-handoffs` spec, `ContextHandoffServiceV2` design |
+| Thread search | `packages/contracts/src/threadSearch.ts` (spec), server implementation in Rust |
+| AI thread titles | `apps/server/src/textGeneration/*` as spec; use dxbot's provider |
+| Model manifest + catalog validation | `apps/server/src/provider/model-manifest.json`, `docs/internals/model-manifest.md` |
+| Usage limits / subscription usage | `packages/shared/src/usageLimits.ts`, provider usage limit JSON |
+| Diff/edit helpers | `apps/web/src/diff*.ts`, `diffFileActions.ts`, `reviewCommentContext.ts` |
+| Composer small deltas (plain mode, cap, paste-to-attachment, code-block language) | `composer-*.ts` logic, not the whole editor |
+| Protocol versioning | `packages/contracts/src/rpc.ts` as the spec; Rust handshake |
+
+### 2.3 Missing host/runtime work (rewrite in Rust, do not copy)
+
+| Missing | T3 source to read, then rewrite |
+| --- | --- |
+| WSL runtime on Windows | `apps/desktop/src/wsl/**`, `docs/user/install.md` |
+| Cross-origin browser + CDP + passkeys + recording + annotations | `apps/desktop/src/preview/**`, `apps/server/src/preview/**` |
+| Device service + `device_*` tools | `apps/server/src/device/**` |
+| HTML render service + headless Chrome verification | `apps/server/src/htmlRender/**` |
+| MCP server, MCP apps, outside-agent OAuth | `apps/server/src/mcp/**`, `mcpApps/**`, `auth/McpOAuth.ts` |
+| Peer environments, relay, cloud identity | `apps/server/src/{peer,relay,cloud}/**` |
+| Stable server launcher, staged updates, rollback | `apps/server/src/serviceLauncher.ts`, `docs/internals/server-updates.md` |
+| Outbox + run finalization + PR sync reactor | `apps/server/src/orchestration-v2/{EventSink,EffectWorker,RunFinalizationService,PullRequestSyncReactor}.ts` |
+| Protocol version negotiation | `packages/contracts/src/rpc.ts`, overview protocol-2 notes |
+| Provider install/update + capability probes | `packages/provider-*/**`, `provider/agentContextBudget.json`, `*CapabilitiesProbe.ts` |
+| Push / Live Activities / mobile apps | `apps/mobile/**` (native reference), APNs/FCM work |
+| Eval harness + perf lane + licence notices | `evals/**`, `docs/internals/performance-regressions.md`, `third-party-licenses/spdx` |
+
+### 2.4 Small deltas inside existing dxbot surfaces
+
+- Composer: plain/rich toggle, 120k cap, paste-to-attachment, code-block
+  language picker, drag-to-mention. (Everything else exists.)
+- Terminal: Ghostty renderer behind the existing PTY transport.
+- Browser: cross-origin/CDP path, server-owned contexts.
+- Files: PDF paging, audio, delimited tables, worker-backed binary preview.
+- Queue: steer into a live run.
+- Notifications: OS notification host op, badges, push.
+- Diff: source picker + worker pool.
+- Settings: wire the already-ported inheritance model and keybindings page.
 
 ---
 
-## 10. Immediate next ten commits (suggested)
+## 3. What to copy, concretely
 
-1. `chore(t3ui): add PROVENANCE and copy the UI kit + theme tokens`
-2. `chore(t3ui): add router, atom and RPC shims; mount one blank route`
-3. `feat(shell): replace sidebar chrome with T3 sidebar leaves`
-4. `feat(panel): replace right-pane chrome with RightPanelTabs/Sheet`
-5. `feat(command): add the T3 command palette shell over dxbot commands`
-6. `feat(composer): copy Tiptap composer + pure composer logic`
-7. `feat(markdown): copy ChatMarkdown + citation components`
-8. `feat(diffs): copy DiffPanel and the worker pool; wire dxbot diffs`
-9. `feat(terminal): Ghostty VT behind the existing PTY transport`
-10. `feat(pr): copy the pull-request surface and wire the integrations clients`
+Destination: `src/features/t3ui/` for adapted copies (not `src/vendor/`, which
+is verbatim and never edited). Every copied directory gets `PROVENANCE.md`
+with `6fc9144a`, MIT notice and adaptations.
 
-Each commit deletes one framed `/t3code/*` route or leaves it explicitly
-labelled as framed.
+### Copy first (no equivalent in dxbot)
+
+| Source | Files | Destination | Notes |
+| --- | --- | --- | --- |
+| `apps/web/src/components/pullRequest/**` | 106 | `t3ui/pullrequest/` | new surface; wire to `features/integrations` |
+| `apps/web/src/components/device/**` | 34 | `t3ui/device/` | new surface; Rust service behind it |
+| `apps/web/src/components/guest/**` | 6 | `t3ui/guest/` | visual replies + guest view |
+| `components/DiffPanel.tsx`, `DiffPanelShell.tsx`, `DiffWorkerPoolProvider.tsx`, `ChangedFilesTree.tsx`, `components/diffs/**` | ~20 | `t3ui/diffs/` | worker pool + source picker |
+| Selected `components/files/**` preview leaves (`DocumentPages`, `AudioPreview`, `DelimitedTablePreview`, `BinaryViewer`, `binaryPreview.worker`, `BrowserDocumentFrame`) | ~10 | `t3ui/files/preview/` | not the tree, not the panel |
+| `apps/web/src/terminal/ghostty/**` + WASM + font | 16 | `t3ui/terminal/ghostty/` | replaces xterm renderer only |
+| `components/ui/**` + `index.css` + theme modules (`themePalette`, `vscodeThemeImport`, `openVsxThemes`, `appearance*`) | ~61 | `t3ui/ui/`, `t3ui/theme/` | only if adopting T3 visual language |
+| `RightPanelTabs.tsx`, `RightPanelSheet.tsx` | 2 | `t3ui/panel/` | optional chrome |
+| `packages/shared/src/{promptLinks,usageLimits,threadPullRequests}.ts` | 3 | `t3ui/shared/` | pure helpers |
+| `packages/client-runtime/src/{handoff,diffCount,filePreview,composerThreadItems}.ts` | 4 | `t3ui/runtime/` | pure, no provider deps |
+| `packages/contracts/src/{rpc,threadSearch,pullRequest,device,usage}.ts` | 5 | `t3ui/contracts/` | types/spec for the missing surfaces, not all 74 |
+| `provider/model-manifest.json` | 1 | `t3ui/provider/` | data, validated in Rust |
+
+### Copy later, presentation only (optional T3 look)
+
+`CommandPalette*.tsx` presentation, `Sidebar*` leaves, chat message/timeline
+leaves, `ChatMarkdown.tsx` presentation. Keep dxbot's stores and data; do not
+copy `ChatView.tsx`, `Composer*` containers, or the T3 sidebar state.
+
+### Do not copy (already exists or wrong runtime)
+
+| T3 source | Why |
+| --- | --- |
+| `components/chat/**` containers, composer, composer logic | dxbot has Plate composer, queue, chips, stash, approvals, subagents |
+| `ChatMarkdown` logic beyond presentation | dxbot has markdown, citations, selection |
+| `Sidebar.tsx` state, `Sidebar.snooze.ts`, thread stores | dxbot has shelves, bookmarks, unread, attention |
+| command palette store/bus | dxbot has a palette; only presentation is wanted |
+| settings pages/fields | dxbot has 7+25 settings tabs |
+| theme editor | dxbot's is deeper |
+| terminal transport/PTY, browser pane | dxbot has PTY host ops and a same-origin browser |
+| `apps/server/**`, `apps/desktop/src/**` | Node/Electron; rewrite in Rust/Tauri |
+| `packages/provider-*`, `source-control-*`, `secret-provider-*` | Node/Effect; port data/contracts, not code |
+| `apps/mobile/**` native modules | Kotlin/Swift; reference for Tauri mobile plugins |
+| Clerk, relay, cloud, hosted app, store pipelines | services/processes, not files |
 
 ---
 
-## 11. What this plan does not claim
+## 4. Adapters needed (only for what is copied)
 
-- It does not claim any copied file compiles today; the dependency counts are
-  measured, the adaptation is work.
-- It does not claim T3 Code's server features come for free with the UI. The
-  UI is the cheap half; the host services are the expensive half.
-- It does not set a date. The effort column is a planning estimate.
+| Copied thing | Adapter |
+| --- | --- |
+| T3 UI kit + panel chrome | `.t3-surface` theme scope; map tokens to dxbot theme |
+| DiffPanel + worker | `@pierre/diffs`; worker entry; dxbot diff data |
+| Files preview leaves | dxbot `fs.*`/`host_git` file reads |
+| PR surface | existing `features/integrations` clients; new PR RPC |
+| Device surface | new Rust device service |
+| Guest/visual replies | Rust `htmlRender` + sandboxed WebView |
+| Ghostty terminal | dxbot PTY host ops; keep split layout |
+| Prompt links / guest links | dxbot deep links + Rust share service |
+| Contracts subset | Rust wire types; no `effect` dependency unless a copied file needs it |
+| Command palette/sidebar presentation | dxbot stores, Next navigation shims |
+
+This avoids the 424-file Effect dependency and the 510-file client-runtime
+adoption that revision 1 implied.
+
+---
+
+## 5. Waves (reduced)
+
+| Wave | Work | Estimate |
+| --- | --- | --- |
+| W0 | `t3ui/` skeleton + PROVENANCE + licence notices; theme scope if adopting T3 look | 2-3 |
+| W1 | Pull request surface + diff source picker/worker + files preview leaves | 10-14 |
+| W2 | Device panel, guest/visual replies, HTML render service (Rust) | 12-18 |
+| W3 | Ghostty renderer behind existing PTY | 4-6 |
+| W4 | Rust host work: WSL, cross-origin browser/CDP, MCP server/OAuth, peer/relay, server launcher, outbox/run finalization | 30-50 |
+| W5 | Client deltas: prompt/guest links, protocol versioning, AI titles, manifest, compaction, OS notifications | 12-20 |
+| W6 | Mobile apps + push (native reference from T3) | 30-50 |
+| W7 | Optional T3 visual reskin of chat/sidebar/command palette | 10-18 |
+
+Estimates are agent-days, planning only.
+
+---
+
+## 6. Licensing and provenance
+
+1. MIT permits the copy; keep the copyright/permission notice.
+2. Each copied directory gets `PROVENANCE.md`: upstream `6fc9144a`, source
+   path, destination path, adaptations, licence.
+3. Do not copy T3 trademarks/logos/store assets with the code.
+4. Generate our own third-party notices; do not copy their SPDX set.
+5. A copied file with an unrecorded rewrite is a provenance defect.
+
+---
+
+## 7. Immediate next commits (delta-sized)
+
+1. `chore(t3ui): skeleton + PROVENANCE + licence notices`
+2. `feat(pr): copy pull-request surface leaves; wire integrations clients`
+3. `feat(diff): copy source picker + worker pool; keep dxbot diff data`
+4. `feat(files): copy PDF/audio/table/binary preview leaves`
+5. `feat(device): copy device panel; add Rust device service`
+6. `feat(replies): copy guest page renderer; add Rust htmlRender`
+7. `feat(terminal): Ghostty renderer behind the existing PTY`
+8. `feat(links): prompt links + guest links`
+9. `feat(protocol): version handshake and capability advertisement`
+10. optional `feat(ui): T3 visual language for chat/sidebar/panel`
+
+Each commit removes the matching framed `/t3code/*` route only when the native
+surface actually renders.
+
+---
+
+## 8. What this plan does not claim
+
+- It does not claim the copied surfaces compile without the adapters named.
+- It does not claim T3's runtime comes with its UI; the runtime is Rust work.
+- It does not ask to replace working dxbot features with copies. Where a
+  feature exists, the plan says so and reuses it.
 
 MIT OR Apache-2.0
 updated: 2026-10-31 00:00 UTC
