@@ -290,7 +290,32 @@ hub does not own their CI. `README.md` therefore reports a **measured** document
 governance score for the hub, plus the child-repo numbers that already carry a receipt.
 Anything broader would be exactly the bare superlative §4 forbids.
 
+## 12. NO_ARGUE — the user's word is the spec
+
+When the user writes **NO_ARGUE**, *"just write it"*, *"stop arguing"*, *"do it"*,
+or says a decision is already made, the instruction **is** the specification. The
+job is to write what was asked, then stop.
+
+In practice:
+
+- Do not reopen the decision, re-explain the trade-off, or add a counter-argument
+  the user did not ask for.
+- Do not spend a turn asking a question the user already answered.
+- Write the code, copy or file exactly as described. Mechanical fixes (typos,
+  imports, formatting) are part of writing it.
+- Report the change in at most two lines: what changed and where. Then stop.
+- If a detail is genuinely missing and the work cannot be written without it, ask
+  one short question - never a debate.
+
+This is a per-request switch, like `fast` in a product repository, not a standing
+licence to skip the six hard rules in section 2. Destructive actions (deleting,
+absorbing a child repo, force-pushing) still need the approval those rules
+require; everything else is write-and-stop.
+
+The reason is cost: a paid turn spent arguing is a turn the user paid for and did
+not get.
+
 ---
 
 MIT OR Apache-2.0
-updated: 2026-10-20 00:00 UTC
+updated: 2026-10-28 00:00 UTC

@@ -1,0 +1,24 @@
+{
+  "id": "rahim3/qwen3-8-27b-bf16-on-kaggle-tpu-130-tok-s-api",
+  "id_no": 132929822,
+  "title": "Qwen3.8-27B-bf16 on Kaggle TPU: 130 tok/s API",
+  "code_file": "qwen3-8-27b-bf16-on-kaggle-tpu-130-tok-s-api.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": false,
+  "enable_tpu": true,
+  "enable_internet": true,
+  "keywords": [
+    "tpu"
+  ],
+  "dataset_sources": [
+    "rahim3/qwen3-8-27b-bf16",
+    "rahim3/qwen38-tpu-env-v5e8"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-images/python@sha256:dafd4ce5668bbf1ad422e4c109e0f18c9623c3a7c7f48b0235f13142755c40b9",
+  "machine_shape": "TpuV5E8"
+}

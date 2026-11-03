@@ -1,0 +1,16 @@
+{
+  "enable_gpu": true,
+  "language": "python",
+  "model_sources": [],
+  "is_private": true,
+  "dataset_sources": [],
+  "code_file": "notebook.ipynb",
+  "id": "essencefromexistence/deepseek-v41-flash-t4",
+  "kernel_sources": [],
+  "competition_sources": [],
+  "kernel_type": "notebook",
+  "enable_tpu": false,
+  "keywords": [],
+  "title": "DeepSeek V4.1 Flash 4Way 2xT4 (INFEASIBLE on Kaggle - see notes)",
+  "enable_internet": true
+}
