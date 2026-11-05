@@ -24,10 +24,11 @@ export function PortalShell({
     <div className="min-h-screen bg-paper">
       <header className="border-b border-khaki/30 bg-green text-paper">
         <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-6 px-5 py-6 sm:px-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo.png"
             alt="Al Quran Learning Institute"
-            className="h-10 w-10 rounded-full object-cover ring-1 ring-gold/40"
+            className="h-11 w-11 shrink-0 object-contain"
           />
           <div>
             <p className="eyebrow text-gold-light">
