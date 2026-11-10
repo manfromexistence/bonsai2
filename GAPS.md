@@ -24,6 +24,7 @@ document. No row is `executed`, `runtime` or `release-qualified`.
 
 ---
 
+
 ## 0. The brutal one-paragraph answer
 
 T3 Code is the better **agent cockpit**. Its terminal is Ghostty's VT engine,

@@ -9,6 +9,8 @@ approvals, subagents and its own design system. This revision inventories
 
 **Provenance.**
 
+
+
 | Fact | Value |
 | --- | --- |
 | T3 Code source | `G:\Dx\t3code`, `6fc9144a` (2026-10-31), MIT |

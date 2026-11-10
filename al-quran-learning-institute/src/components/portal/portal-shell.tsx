@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { leavePortal } from "@/interfaces/actions/portal";
+import * as React from "react";
+import { DashboardHeader } from "@/components/admin/dashboard-header";
 import { useLocale } from "@/lib/i18n";
 
 export function PortalShell({
@@ -20,42 +18,44 @@ export function PortalShell({
   aside?: React.ReactNode;
 }) {
   const { dict } = useLocale();
+
   return (
-    <div className="min-h-screen bg-paper">
-      <header className="border-b border-khaki/30 bg-green text-paper">
-        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-6 px-5 py-6 sm:px-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="Al Quran Learning Institute"
-            className="h-11 w-11 shrink-0 object-contain"
-          />
-          <div>
-            <p className="eyebrow text-gold-light">
-              {role} · {dict.portal.shell.portalSuffix}
-            </p>
-            <h1 className="mt-1 font-display text-[1.65rem] font-semibold leading-none">
-              {title}
-            </h1>
-            <p className="mt-2 text-[0.9rem] text-paper/70">{subtitle}</p>
-          </div>
-          <div className="ms-auto flex flex-wrap items-center gap-3">
-            {aside}
-            <Button asChild variant="ghostLight" size="sm">
-              <Link href="/">{dict.portal.shell.publicSite}</Link>
-            </Button>
-            <form action={leavePortal}>
-              <Button variant="ghostLight" size="sm" type="submit">
-                <LogOut className="h-3.5 w-3.5 rtl:-scale-x-100" />{" "}
-                {dict.portal.shell.logout}
-              </Button>
-            </form>
+    <div className="flex min-h-screen flex-col bg-paper">
+      {/* Unified Universal Dashboard Header */}
+      <DashboardHeader currentPageTitle={title} />
+
+      {/* Main Content Area */}
+      <main className="mx-auto w-full max-w-[1360px] p-5 sm:p-8">
+        {/* Folio Hero Banner */}
+        <div className="relative mb-8 overflow-hidden border border-khaki/30 bg-green p-6 text-paper shadow-sm sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="eyebrow text-gold-light">
+                  {role.toUpperCase()} WORKSPACE
+                </span>
+                <span className="h-1 w-1 rounded-full bg-gold" />
+                <span className="eyebrow text-paper/70">
+                  {dict.portal.shell.portalSuffix}
+                </span>
+              </div>
+              <h1 className="mt-2 font-display text-[clamp(1.75rem,3.2vw,2.5rem)] font-bold text-paper">
+                {title}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-paper/80">
+                {subtitle}
+              </p>
+            </div>
+            {aside ? (
+              <div className="flex flex-wrap items-center gap-2.5">
+                {aside}
+              </div>
+            ) : null}
           </div>
         </div>
-      </header>
-      <div className="mx-auto max-w-[1240px] px-5 py-10 sm:px-8">
+
         {children}
-      </div>
+      </main>
     </div>
   );
 }
@@ -70,12 +70,12 @@ export function StatCard({
   note?: string;
 }) {
   return (
-    <div className="border border-khaki/30 bg-sheet p-6 transition-colors hover:border-gold/50">
+    <div className="border border-khaki/30 bg-sheet p-5 transition-colors hover:border-gold/50 shadow-xs">
       <p className="eyebrow text-khaki">{label}</p>
-      <p className="mt-3 font-display text-[2.15rem] font-bold leading-none text-green tabular">
+      <p className="mt-2.5 font-display text-3xl font-bold leading-none text-green tabular-nums">
         {value}
       </p>
-      {note ? <p className="mt-2.5 text-[0.82rem] text-khaki">{note}</p> : null}
+      {note ? <p className="mt-2 text-xs text-ink-soft">{note}</p> : null}
     </div>
   );
 }
