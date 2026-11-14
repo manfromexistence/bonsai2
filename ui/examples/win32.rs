@@ -258,6 +258,9 @@ struct Engine {
     hud_text: String,
     /// Whether the HUD text changed this frame.
     hud_dirty: bool,
+    /// The damage regions actually painted in the last frame, so that the
+    /// GDI blit can also be sub-rect instead of the whole 8.3 MB frame.
+    last_damage: Vec<Rect>,
     width: usize,
     height: usize,
     frames: u64,
@@ -317,6 +320,7 @@ fn engine() -> &'static std::sync::Mutex<Engine> {
             last_touches: 0,
             hud_text: String::new(),
             hud_dirty: false,
+            last_damage: Vec::new(),
             width: 1280,
             height: 800,
             frames: 0,
@@ -669,6 +673,7 @@ fn render(engine: &mut Engine) -> Vec<u32> {
         }
     }
     engine.prev_card_rect = Some(cur_card);
+    engine.last_damage = damage.clone();
 
     // Rasterize.
     let t = Instant::now();
@@ -832,9 +837,14 @@ fn window_proc_impl(hwnd: Handle, msg: u32, wparam: usize, lparam: isize) -> isi
                         std::slice::from_raw_parts(pixels.as_ptr() as *const u8, pixels.len() * 4);
 
                     let dib = DIB.load(Ordering::Relaxed);
+                    // A freshly created DIB has no previous content, and an
+                    // empty damage list means the whole frame changed: both
+                    // need a full copy. Otherwise only the damaged rows are
+                    // copied, which is what damage tracking is for.
                     let fresh = dib.is_null()
                         || DIB_W.load(Ordering::Relaxed) != w as i32
                         || DIB_H.load(Ordering::Relaxed) != h as i32;
+                    let full_copy = fresh || eng.last_damage.is_empty();
 
                     if fresh {
                         if !dib.is_null() {
@@ -878,14 +888,61 @@ fn window_proc_impl(hwnd: Handle, msg: u32, wparam: usize, lparam: isize) -> isi
                     let dib = DIB.load(Ordering::Relaxed);
                     let bits = DIB_BITS.load(Ordering::Relaxed);
                     if !dib.is_null() && !bits.is_null() {
-                        std::ptr::copy_nonoverlapping(
-                            bytes.as_ptr(),
-                            bits,
-                            std::cmp::min(bytes.len(), w * h * 4),
-                        );
+                        if full_copy {
+                            std::ptr::copy_nonoverlapping(
+                                bytes.as_ptr(),
+                                bits,
+                                std::cmp::min(bytes.len(), w * h * 4),
+                            );
+                        } else {
+                            // Copy only the damaged rows: the DIB keeps its
+                            // previous content everywhere else, which is the
+                            // point of damage tracking in the first place.
+                            for region in &eng.last_damage {
+                                let x0 = region.x.floor().max(0.0) as usize;
+                                let y0 = region.y.floor().max(0.0) as usize;
+                                let x1 = ((region.x + region.w).ceil() as usize).min(w);
+                                let y1 = ((region.y + region.h).ceil() as usize).min(h);
+                                if x1 <= x0 || y1 <= y0 {
+                                    continue;
+                                }
+                                let row_bytes = (x1 - x0) * 4;
+                                for y in y0..y1 {
+                                    let src = (y * w + x0) * 4;
+                                    let dst = (y * w + x0) * 4;
+                                    if src + row_bytes <= bytes.len()
+                                        && dst + row_bytes <= w * h * 4
+                                    {
+                                        std::ptr::copy_nonoverlapping(
+                                            bytes.as_ptr().add(src),
+                                            bits.add(dst),
+                                            row_bytes,
+                                        );
+                                    }
+                                }
+                            }
+                        }
                         let mem_dc = CreateCompatibleDC(dc);
                         let old = SelectObject(mem_dc, dib as Handle);
-                        BitBlt(dc, 0, 0, w as i32, h as i32, mem_dc, 0, 0, SRCCOPY);
+                        // Blit only the damaged regions. The rasterizer
+                        // already touched ~10% of the frame; blitting the
+                        // whole 8.3 MB DIB would hand all of it to DWM
+                        // anyway and give back most of the bytes the
+                        // damage tracking just saved.
+                        let regions: &[Rect] = if full_copy {
+                            &[Rect::new(0.0, 0.0, w as f32, h as f32)]
+                        } else {
+                            &eng.last_damage
+                        };
+                        for region in regions {
+                            let rx = region.x.floor().max(0.0) as i32;
+                            let ry = region.y.floor().max(0.0) as i32;
+                            let rw = (region.w.ceil() as i32).min(w as i32 - rx).max(0);
+                            let rh = (region.h.ceil() as i32).min(h as i32 - ry).max(0);
+                            if rw > 0 && rh > 0 {
+                                BitBlt(dc, rx, ry, rw, rh, mem_dc, rx, ry, SRCCOPY);
+                            }
+                        }
                         SelectObject(mem_dc, old);
                         DeleteDC(mem_dc);
                     }

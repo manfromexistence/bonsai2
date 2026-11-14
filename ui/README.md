@@ -126,8 +126,25 @@ framebuffer into a `BI_RGB` DIB with **zero conversion**.
 The 2.4x gap says the 1080p fill is **memory-bound**, not compute-bound. And
 `-C target-cpu=native` (AVX2) buys only **+11%** on the fill (2 109 -> 2 342
 Mpx/s), because the remaining cost is bytes written, not ALU. So the next
-optimisation is **fewer bytes**, not wider registers - which is exactly what
-damage tracking does.
+optimisation is **fewer bytes**, not wider registers.
+
+**A proposed fix that was tested and rejected: L2 sub-rect tiling.** The idea
+was to split any damage region above 256x256 pixels into cache-resident tiles,
+so that a pass of the paint list over one tile writes lines that are already in
+L2. It was implemented and benchmarked:
+
+| Case | Untiled | Tiled (256x256) |
+| --- | --- | --- |
+| Single opaque fill, 1920x1080 | 2 215 Mpx/s | **1 710 Mpx/s (23% slower)** |
+| 8 translucent layers, 1920x1080 | 91.8 Mpx/s | **69.0 Mpx/s (25% slower)** |
+
+Tiling lost in both cases. The L2-resident 5 390 Mpx/s number is a benchmark
+artefact: it writes the *same* 262 KB two thousand times in a row, so the lines
+stay hot across iterations. A one-pass fill touches each line once, and a
+write-once line costs the same whether it sits in L2 or L3 - it still has to be
+fetched (read-for-ownership) and written back. Tiling only multiplies the
+per-row loop overhead by the tile count. The code was removed rather than
+shipped behind a flag that would never be true.
 
 ### 4.3 Native Windows host - real window, real compositor
 
@@ -152,11 +169,19 @@ graphics - *no discrete GPU*), Windows 11 Pro build 26300, 23.3 GB RAM.
 | Layout stage | 20 us | 20 us |
 | Paint-list build | 23 us | 28-45 us |
 | Pixel-touches per frame | ~2.03 M | **~190-218 k** (**~10x fewer**) |
-| CPU, animating | **101% of one core** | **7.8-18.8% of one core** |
+| CPU, animating | **101% of one core** | **3.1-7.8% of one core** |
 | CPU, idle | 0.00 s/s | 0.00 s/s (zero frames drawn) |
+| Bytes handed to the OS per frame | 8.3 MB (full DIB copy + full blit) | **~1.6 MB** (damage rows only) |
 | Working set | 21.9 MB | 22.1 MB (peak 26.2 MB) |
 | Private bytes | 10.5 MB | 10.5 MB |
 | Threads / handles | 5 / 183 | 5 / 183 |
+
+**The presentation path is damage-tracked too.** The Win32 host copies only
+the damaged rows into the DIB and blits only the damaged regions, so the
+bytes handed to the OS per frame dropped from 8.3 MB to roughly the size of
+the damage. That is what moved CPU from 7.8-18.8% to 3.1-7.8% of one core;
+the rasterizer measurement did not change, because this win happens after
+it.
 
 **Where the frame goes now:**
 
@@ -186,7 +211,7 @@ animating:
 | WorkBuddyAI - IDE, main | 1 844 MB | 48.4% |
 | WorkBuddyAI - helper | 109 MB | 13.8% |
 | PowerShell - this sampler | 103 MB | 12.0% |
-| **`ui` engine (win32.exe), animating** | **22.1 MB** | **7.8%** |
+| **`ui` engine (win32.exe), animating** | **22.1 MB** | **3.1-7.8%** |
 | `opencode` | 210 MB | 1.0% |
 | `zen` / `opencode` / terminal | 70-600 MB | 0.3-3.9% each |
 
@@ -199,8 +224,8 @@ process - while also being the **lightest** in memory at 21.9 MB.
 * **Memory: still the lightest thing measured.** 22.1 MB working set against
   1 844 MB for the IDE - about **83x smaller**. It does not appear in the
   machine's top RAM consumers at all; the smallest of those is ~70 MB.
-* **CPU: from heaviest to seventh.** 7.8% of one core while animating at 40
-  fps, and 0.00% when idle.
+* **CPU: from heaviest to eighth-or-lower.** 3.1-7.8% of one core while
+  animating at 40 fps, and 0.00% when idle.
 * **What actually bought that:** not AVX2, not the GPU, not the layout solver.
   An opaque fast path, span splitting, and damage regions.
 

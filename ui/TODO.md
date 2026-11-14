@@ -138,20 +138,32 @@ only **+11%** on it (2 109 -> 2 342 Mpx/s). The L2-resident case at 0.82
 cycles/px is still issuing roughly one `u32` store per cycle, so the fill loop
 itself is *also* not vectorising.
 
+**Two proposed fixes were tested; one worked, one was rejected.**
+
+* **Worked: damage-track the presentation path.** The Win32 host now copies
+  only the damaged rows into the DIB and blits only the damaged regions, so
+  the bytes handed to the OS per frame dropped from 8.3 MB to ~1.6 MB. That
+  moved CPU from 7.8-18.8% to **3.1-7.8%** of one core while animating.
+* **Rejected: L2 sub-rect tiling.** Splitting damage regions above 256x256
+  into cache-resident tiles was implemented and benchmarked. It lost in both
+  cases: the single-paint 1080p fill went **2 215 -> 1 710 Mpx/s** and eight
+  translucent layers went **91.8 -> 69.0 Mpx/s**. The L2-resident 5 390
+  Mpx/s figure is a benchmark artefact (the same 262 KB written 2 000 times
+  keeps its lines hot), not a property a one-pass fill can inherit. The code
+  was removed; README.md 4.2 records the numbers.
+
 **So the remaining work is, in order:**
 
-1. **Fewer bytes, not wider registers.** Damage tracking already does this;
-   the next step is per-layer damage (only the layers under the moved widget
-   need repainting, not everything intersecting the region).
+1. **Per-layer damage.** Only the layers under the moved widget need
+   repainting, not everything intersecting the region. The current damage
+   list is ~2x the damaged pixel area because the backdrop and the moved
+   widget are both repainted.
 2. **Vectorise the fill loop explicitly.** `slice::fill` on a `u32` does not
-   become a memset; a 16- or 32-byte chunked store loop would. Needs
-   `unsafe` + `core::arch`, or a chunked `copy_from_slice` that LLVM
-   recognises.
+   become a memset, and at 0.82 cycles/px the L2-resident case is still
+   issuing roughly one store per cycle. Needs `unsafe` + `core::arch`.
 3. **Vectorise the translucent blend**, where the ALU work is real. The
    integer `div255` blend is branchless and should vectorise once the
    compiler is pointed at it; it currently does not.
-4. Consider `Rgba8` rather than `Rgba8`+`u32` if a path ever needs
-   sub-byte precision.
 
 **Cost:** item 1 is a day; items 2-3 are a week each and need `unsafe`.
 

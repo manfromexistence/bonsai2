@@ -144,6 +144,37 @@ fn main() {
         );
     }
 
+    // --- many overlapping layers over the full frame ----------------------
+    // This is where per-tile cache residency could matter: with N layers,
+    // every framebuffer line is touched N times. Tiled, those N touches are
+    // consecutive and the lines stay hot; per-layer, each layer streams the
+    // whole 8.3 MB through L3.
+    println!("\n8 translucent layers over the full frame (measures per-layer overdraw)");
+    let mut layers: Vec<Paint> = Vec::new();
+    for i in 0..8 {
+        layers.push(Paint::Solid {
+            rect: ui::layout::Rect::new(0.0, 0.0, 1920.0, 1080.0),
+            color: Rgba::new(0.5, 0.5, 0.5, 0.25),
+        });
+        let _ = i;
+    }
+    {
+        let mut r = Rasterizer::new(1920, 1080);
+        let iters = 50;
+        let t = Instant::now();
+        for _ in 0..iters {
+            r.paint_all(&layers, &[]);
+        }
+        let el = t.elapsed();
+        let total = (1920.0 * 1080.0) * iters as f64;
+        println!(
+            "  {:<32} {:>8.2} Mpx/s   {:>7.2} GB/s written",
+            "8 layers, full frame",
+            total / el.as_secs_f64() / 1e6,
+            total * 4.0 / el.as_secs_f64() / 1e9
+        );
+    }
+
     // --- occlusion culling ------------------------------------------------
     println!("\nspan-occlusion culling (64 stacked opaque rects, 1920x1080)");
     // Painter's order: the first paint is the backmost. The front-most is a
