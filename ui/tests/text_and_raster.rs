@@ -85,16 +85,19 @@ fn glyph_coverage_is_inside_or_outside() {
 #[test]
 fn rounded_rect_is_antialiased() {
     let mut r = Rasterizer::new(32, 32);
-    let stats = r.paint_all(&[Paint::RoundedRect {
-        rect: ui::layout::Rect::new(4.0, 4.0, 24.0, 24.0),
-        radius: 8.0,
-        color: Rgba::rgb(1.0, 1.0, 1.0),
-    }]);
+    let stats = r.paint_all(
+        &[Paint::RoundedRect {
+            rect: ui::layout::Rect::new(4.0, 4.0, 24.0, 24.0),
+            radius: 8.0,
+            color: Rgba::rgb(1.0, 1.0, 1.0),
+        }],
+        &[],
+    );
     assert_eq!(stats.paints, 1);
     assert_eq!(stats.culled, 0);
     // The interior pixel is fully covered, the corner is not.
-    let center = r.data[(16 * 32 + 16) * 4 + 3];
-    let corner = r.data[(5 * 32 + 5) * 4 + 3];
+    let center = r.pixels[16 * 32 + 16] >> 24;
+    let corner = r.pixels[5 * 32 + 5] >> 24;
     assert_eq!(center, 255, "interior should be opaque");
     assert!(corner < 255, "rounded corner should be partially covered");
 }
@@ -102,18 +105,21 @@ fn rounded_rect_is_antialiased() {
 #[test]
 fn fully_occluded_opaque_paint_is_culled() {
     let mut r = Rasterizer::new(256, 256);
-    let stats = r.paint_all(&[
-        // Back: a small opaque square in the middle, entirely hidden.
-        Paint::Solid {
-            rect: ui::layout::Rect::new(64.0, 64.0, 64.0, 64.0),
-            color: Rgba::rgb(1.0, 0.0, 0.0),
-        },
-        // Front: an opaque sheet covering the whole frame.
-        Paint::Solid {
-            rect: ui::layout::Rect::new(0.0, 0.0, 256.0, 256.0),
-            color: Rgba::rgb(0.0, 1.0, 0.0),
-        },
-    ]);
+    let stats = r.paint_all(
+        &[
+            // Back: a small opaque square in the middle, entirely hidden.
+            Paint::Solid {
+                rect: ui::layout::Rect::new(64.0, 64.0, 64.0, 64.0),
+                color: Rgba::rgb(1.0, 0.0, 0.0),
+            },
+            // Front: an opaque sheet covering the whole frame.
+            Paint::Solid {
+                rect: ui::layout::Rect::new(0.0, 0.0, 256.0, 256.0),
+                color: Rgba::rgb(0.0, 1.0, 0.0),
+            },
+        ],
+        &[],
+    );
     assert_eq!(stats.paints, 2);
     assert_eq!(stats.culled, 1, "the hidden square should be culled");
 }
@@ -121,16 +127,19 @@ fn fully_occluded_opaque_paint_is_culled() {
 #[test]
 fn translucent_paint_is_never_culled() {
     let mut r = Rasterizer::new(256, 256);
-    let stats = r.paint_all(&[
-        Paint::Solid {
-            rect: ui::layout::Rect::new(0.0, 0.0, 256.0, 256.0),
-            color: Rgba::new(0.0, 0.0, 0.0, 0.5),
-        },
-        Paint::Solid {
-            rect: ui::layout::Rect::new(0.0, 0.0, 256.0, 256.0),
-            color: Rgba::new(1.0, 1.0, 1.0, 0.5),
-        },
-    ]);
+    let stats = r.paint_all(
+        &[
+            Paint::Solid {
+                rect: ui::layout::Rect::new(0.0, 0.0, 256.0, 256.0),
+                color: Rgba::new(0.0, 0.0, 0.0, 0.5),
+            },
+            Paint::Solid {
+                rect: ui::layout::Rect::new(0.0, 0.0, 256.0, 256.0),
+                color: Rgba::new(1.0, 1.0, 1.0, 0.5),
+            },
+        ],
+        &[],
+    );
     assert_eq!(stats.culled, 0);
 }
 

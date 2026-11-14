@@ -30,20 +30,30 @@ artefact, not an implementation.
 
 ## 1. The verdict-changing items
 
-### [ ] 1.0 Re-prioritise: the rasterizer is 99.6% of the frame
+### [x] 1.0 Re-prioritise: the rasterizer was 99.6% of the frame — **DONE**
 
-**Measured on native Windows** (README.md §4.1): a 27.3 ms frame breaks down as
+**Measured on native Windows** (README.md §4.3): a 27.3 ms frame broke down as
 **20 µs layout / 23 µs paint-list / 27 200 µs raster**. The GPU-layout work
-targets 0.07% of the frame.
+targeted 0.07% of the frame.
 
-Consequences, in order:
+**Resolved.** The rasterizer was rewritten around three ideas, none of which
+required SIMD intrinsics:
 
-1. **SIMD the rasterizer before doing anything GPU-shaped** (§2.2). A 4x16
-   strip rasterizer with `u8x16` blending should take the 27 ms frame into
-   single-digit milliseconds on its own.
-2. **Do not start the GPU layout port before the CPU rasterizer is
-   respectable** (M1 in PLAN.md). A GPU layout win against a 20 µs CPU layout
-   is a win against nothing.
+1. an opaque paint is a **copy**, not a blend (pattern fill),
+2. a rounded rectangle is **mostly a rectangle** (span split; the interior
+   needs no distance function),
+3. **damage regions** — a *list* of what changed, not a bounding box.
+
+Frame time went **27.3 ms -> 0.43 ms** and CPU **101% -> 7.8%** of one core.
+See README.md §4.1.
+
+What this changes in the plan:
+
+1. **The rasterizer is no longer the bottleneck** — but it is still 88% of the
+   frame, and it is now *memory-bound* (see §2.2), not compute-bound.
+2. **Still do not start the GPU layout port before the rasterizer is
+   respectable.** Layout is now ~5% of a 0.43 ms frame; a GPU layout win
+   against a 20 µs CPU layout is a win against almost nothing.
 3. Keep the analytic flex solver — it is correct, tested, and it removes the
    *theoretical* blocker — but stop treating it as the performance story.
 
@@ -110,14 +120,40 @@ caching the bitmap on the `Engine` — which is exactly the evidence that the
 `text.rs`: a `PreparedGlyph` that owns the flattened segments and the band
 index, produced once per outline change.
 
-### [ ] 2.2 SIMD the rasterizer
+### [ ] 2.2 SIMD the rasterizer — mostly done, and the remainder is memory-bound
 
-72.9 Mpx/s for a solid fill is scalar Rust, and the native Windows host
-measures **99.6% of the frame** in the rasterizer (README.md §4.1). A 4x16
-strip rasterizer with `u8x16` blending should reach several hundred Mpx/s.
-Until then, every CPU/GPU comparison is contaminated by the CPU being slow.
+The opaque fill went from **72.9 Mpx/s to 2 192 Mpx/s** (1080p), and the
+whole native frame from 27.3 ms to 0.43 ms, without any SIMD intrinsics
+(README.md §4.1).
 
-This is now the **highest-value performance item in the repository** (§1.0).
+**But the remainder is not ALU-bound.** Two working-set sizes:
+
+| Buffer | Throughput | Write bandwidth |
+| --- | --- | --- |
+| 256x256 (L2-resident) | 5 390 Mpx/s | 21.6 GB/s |
+| 1920x1080 (L3-resident) | 2 215 Mpx/s | 8.9 GB/s |
+
+The 1080p fill is **memory-bound**, and `-C target-cpu=native` (AVX2) buys
+only **+11%** on it (2 109 -> 2 342 Mpx/s). The L2-resident case at 0.82
+cycles/px is still issuing roughly one `u32` store per cycle, so the fill loop
+itself is *also* not vectorising.
+
+**So the remaining work is, in order:**
+
+1. **Fewer bytes, not wider registers.** Damage tracking already does this;
+   the next step is per-layer damage (only the layers under the moved widget
+   need repainting, not everything intersecting the region).
+2. **Vectorise the fill loop explicitly.** `slice::fill` on a `u32` does not
+   become a memset; a 16- or 32-byte chunked store loop would. Needs
+   `unsafe` + `core::arch`, or a chunked `copy_from_slice` that LLVM
+   recognises.
+3. **Vectorise the translucent blend**, where the ALU work is real. The
+   integer `div255` blend is branchless and should vectorise once the
+   compiler is pointed at it; it currently does not.
+4. Consider `Rgba8` rather than `Rgba8`+`u32` if a path ever needs
+   sub-byte precision.
+
+**Cost:** item 1 is a day; items 2-3 are a week each and need `unsafe`.
 
 ### [ ] 2.3 Re-test on discrete GPU hardware
 

@@ -101,10 +101,13 @@ fn main() {
     let iters = 200;
     let t = Instant::now();
     for _ in 0..iters {
-        r.paint_all(&[Paint::Solid {
-            rect: ui::layout::Rect::new(0.0, 0.0, 1920.0, 1080.0),
-            color: Rgba::rgb(0.2, 0.3, 0.4),
-        }]);
+        r.paint_all(
+            &[Paint::Solid {
+                rect: ui::layout::Rect::new(0.0, 0.0, 1920.0, 1080.0),
+                color: Rgba::rgb(0.2, 0.3, 0.4),
+            }],
+            &[],
+        );
     }
     let el = t.elapsed();
     let total = (1920.0 * 1080.0) * iters as f64;
@@ -113,6 +116,33 @@ fn main() {
         total / el.as_secs_f64() / 1e6,
         el.as_secs_f64() * 1e3 / iters as f64
     );
+
+    // --- fill: memory-bound or compute-bound? -------------------------------
+    println!("\nopaque fill at two working-set sizes (is the fill memory-bound?)");
+    for (w, h, label) in [
+        (256usize, 256usize, "256x256  (256 KB, L2-resident)"),
+        (1920, 1080, "1920x1080 (8.3 MB, L3-resident)"),
+    ] {
+        let mut r = Rasterizer::new(w, h);
+        let iters = if w == 256 { 2000 } else { 200 };
+        let t = Instant::now();
+        for _ in 0..iters {
+            r.paint_all(
+                &[Paint::Solid {
+                    rect: ui::layout::Rect::new(0.0, 0.0, w as f32, h as f32),
+                    color: Rgba::rgb(0.2, 0.3, 0.4),
+                }],
+                &[],
+            );
+        }
+        let el = t.elapsed();
+        let total = (w * h) as f64 * iters as f64;
+        println!(
+            "  {label:<32} {:>8.2} Mpx/s   {:>7.2} GB/s written",
+            total / el.as_secs_f64() / 1e6,
+            total * 4.0 / el.as_secs_f64() / 1e9
+        );
+    }
 
     // --- occlusion culling ------------------------------------------------
     println!("\nspan-occlusion culling (64 stacked opaque rects, 1920x1080)");
@@ -126,7 +156,7 @@ fn main() {
         });
     }
     let mut r = Rasterizer::new(1920, 1080);
-    let stats = r.paint_all(&paints);
+    let stats = r.paint_all(&paints, &[]);
     println!(
         "  painted {} of {} paints; {:.1}% of pixel-touches culled",
         stats.paints - stats.culled,

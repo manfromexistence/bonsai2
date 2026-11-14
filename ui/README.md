@@ -56,7 +56,7 @@ The hub's claim vocabulary (`G:\Dx\AGENTS.md` §4) is used strictly here.
 | [`layout`](src/layout.rs) | "Flex clamping needs a sequential loop, so GPU layout is impossible" | **False.** `solve_grow` / `solve_shrink` solve the freeze-and-redistribute problem in closed form: the CSS loop is a water-filling (simplex projection) problem, which is continuous and piecewise-linear in the level `λ`, hence solvable by sorting the saturation breakpoints and sweeping once. Differentially tested against the CSS freeze loop. |
 | [`layout`](src/layout.rs) | "Text wrapping is a circular dependency that breaks prefix-scan layout" | **Mostly false.** A cumulative advance table plus a binary search per line finds the break points; the dependency is not circular because wrapping depends only on the *container width*, not on sibling geometry. Implemented and tested against a greedy reference. |
 | [`text`](src/text.rs) | "A glyph atlas is mandatory" | **Half false.** Atlas-free evaluation is real: TrueType-style quadratic outlines are flattened into horizontal **bands** (the idea behind Eric Lengyel's *Slug*), and a scanline only tests the curves that can cross it, with exact horizontal coverage. What is *not* solved here is small-size hinting — see §6. |
-| [`raster`](src/raster.rs) | "Painter's-algorithm overdraw is the bottleneck" | **Half true.** Fully hidden **opaque** paints are culled before they touch the pixel pipeline, using a `u128` span mask per row (16 px granularity, one AND per block). Translucent paints are **never** culled — see §5.3. |
+| [`raster`](src/raster.rs) | "Painter's-algorithm overdraw is the bottleneck" | **Half true.** Fully hidden **opaque** paints are culled before they touch the pixel pipeline, using a `u128` span mask per row (16 px granularity, one AND per block). Translucent paints are **never** culled — see §5.3. The renderer also does **span fills** (an opaque paint is a copy, not a blend), **span-split rounded rects** (the interior needs no distance function), **integer branchless blending**, and **damage-region tracking**. Together: 27.3 ms -> 0.43 ms per frame, measured. |
 | [`blur`](src/blur.rs) | "Backdrop blur needs ping-pong targets, so nesting is capped" | **Holds as a critique; the fix works.** A box filter of any radius is O(1) per pixel from a summed-area table, so there are no render targets, no VRAM growth and no nesting cap. The *neighbouring-pixel dependency* remains and cannot be removed. |
 | [`spring`](src/spring.rs) | "Animations must be ticked by the CPU" | **Mostly false.** A damped harmonic oscillator has a closed-form solution, so any consumer can evaluate it at an arbitrary timestamp. `Spring::settle_time` returns exactly when the animation will finish, which is what lets a scheduler *stop* instead of spin at 240 Hz. Verified against numerical integration. |
 | [`scheduler`](src/scheduler.rs) | "The GPU is always faster than the CPU for UI" | **False as stated.** Waking a GPU compute pipeline costs tens of microseconds of submission latency; re-rasterising a small dirty rect on the CPU costs single-digit microseconds. The router makes this a per-frame decision instead of an architectural bet. |
@@ -70,37 +70,71 @@ Reproduce with:
 
 ```
 cd G:\Dx\ui
-cargo test                                  # 20 tests
-cargo run --release --example bench         # the table below
+cargo test                                  # 25 tests
+cargo run --release --example bench         # the tables below
 ```
 
-Measured on the development machine, single-threaded, release build. These are
-*this crate's* numbers on a *reference implementation* — not a competitive
-result, and not a GPU result.
+Measured on the development machine, single-threaded, release build.
 
-| Measurement | Result | Note |
+### 4.1 The optimisation that mattered
+
+The first version of this crate blended **every pixel of every paint** through
+the full source-over formula - four `f32::from(u8)` conversions, four divides
+by 255, four float multiply-adds and four `round().clamp().as u8` **per
+channel, per pixel**, with a branch in the middle. On ~2 million pixel-touches
+a frame that cost **58 clock cycles per pixel touched** on a core that retires
+six macro-ops a cycle.
+
+Three changes fixed it, and **none of them was SIMD intrinsics**:
+
+1. **An opaque paint is a copy, not a blend.** Source-over with `a == 1`
+   degenerates to `out = src`, so opaque spans became a pattern fill. That
+   alone took the 1080p fill from **72.9 Mpx/s to 2 192 Mpx/s**.
+2. **A rounded rectangle is mostly a rectangle.** Its interior is at least
+   `radius` away from any edge, so those pixels need no distance function.
+   Only the corner bands and the two partial pixels per row do.
+3. **Damage tracking.** A *region list* (not a bounding box) of what actually
+   changed, so an animating card repaints ~10% of the frame instead of all of
+   it.
+
+The pixel format moved to `u32` (`0xAARRGGBB`, premultiplied) along the way.
+That removed the per-channel unpacking, made the translucent blend a
+branchless integer expression using the exact divide-by-255 identity
+(`div255(x) = (x + 128 + ((x + 128) >> 8)) >> 8`), and - because the byte
+order in memory is already `B, G, R, A` - let the Win32 host blit the
+framebuffer into a `BI_RGB` DIB with **zero conversion**.
+
+### 4.2 Offline micro-benchmarks
+
+| Measurement | Before | After | Change |
+| --- | --- | --- | --- |
+| Layout, 1 000 nodes | 0.123 ms | 0.118 ms | - |
+| Layout, 100 000 nodes | 16.4 ms | 15.2 ms | - |
+| Flex water-filling solve (32 children) | 493 ns | 426 ns | - |
+| Atlas-free glyph raster (16 px em) | 10.0 Mpx/s | 10.7 Mpx/s | - |
+| **Opaque fill, 1920x1080** | **72.9 Mpx/s** (27.7 ms) | **2 192 Mpx/s** (0.95 ms) | **30x** |
+| Span-occlusion culling (64 stacked rects) | 86.8% of touches culled | 86.8% | - |
+| Box blur, 1920x1080, radius 8 | 37.5 Mpx/s | 41.9 Mpx/s | - |
+
+**Is the fill memory-bound or compute-bound?** Two working-set sizes:
+
+| Buffer | Throughput | Write bandwidth |
 | --- | --- | --- |
-| Layout, 1 000 nodes | 0.123 ms | allocation-heavy reference implementation |
-| Layout, 10 000 nodes | 1.407 ms | |
-| Layout, 100 000 nodes | 16.4 ms | |
-| Flex water-filling solve (32 children) | 493 ns | one sort + one sweep, no redistribution rounds |
-| Atlas-free glyph raster (16 px em, 8 sub-scanlines) | 10.0 Mpx/s | re-flattens the outline every call; not cached |
-| Opaque fill, 1920x1080 | 72.9 Mpx/s (28.4 ms/frame) | scalar Rust, no SIMD |
-| Span-occlusion culling (64 stacked opaque rects) | 12 of 64 painted, **86.8% of pixel-touches culled** | |
-| Box blur, 1920x1080, radius 8 | 37.5 Mpx/s (55.3 ms/frame) | O(1) per pixel regardless of radius |
+| 256x256 (256 KB, L2-resident) | 5 390 Mpx/s | 21.6 GB/s |
+| 1920x1080 (8.3 MB, L3-resident) | 2 215 Mpx/s | 8.9 GB/s |
 
-**Read these honestly.** The CPU numbers are a *baseline*, not a tuned engine:
-Taffy, Skia and Vello all beat a straightforward Rust layout pass, and this
-crate's rasterizer has no SIMD. That is the point of the measurement. A typical
-application UI is ~1 000 nodes, where layout costs ~0.12 ms — well under a
-frame. **Layout is not the bottleneck that the GPU work was aimed at.**
+The 2.4x gap says the 1080p fill is **memory-bound**, not compute-bound. And
+`-C target-cpu=native` (AVX2) buys only **+11%** on the fill (2 109 -> 2 342
+Mpx/s), because the remaining cost is bytes written, not ALU. So the next
+optimisation is **fewer bytes**, not wider registers - which is exactly what
+damage tracking does.
 
-### 4.1 Native Windows host — real window, real compositor
+### 4.3 Native Windows host - real window, real compositor
 
-`examples/win32.rs` (970 lines, raw Win32 FFI, no crates) opens a real window,
-renders a synthetic application-chrome scene — sidebar, 18 cards, translucent
-rounded rects, a drop shadow, an atlas-free glyph, a HUD — and reports its own
-CPU and memory footprint once a second.
+`examples/win32.rs` (raw Win32 FFI, no crates) opens a real window, renders a
+synthetic application-chrome scene - sidebar, 18 cards, translucent rounded
+rects, a drop shadow, an atlas-free glyph, a HUD - and reports its own CPU and
+memory footprint once a second.
 
 ```
 cargo run --release --example win32          # interactive: the card follows the mouse
@@ -108,75 +142,73 @@ cargo run --release --example win32 demo     # continuous animation, no mouse ne
 ```
 
 **Test machine:** AMD Ryzen 5 5600G (6 cores / 12 threads, **integrated** Radeon
-graphics — *no discrete GPU*), Windows 11 Pro build 26300, 23.3 GB RAM.
+graphics - *no discrete GPU*), Windows 11 Pro build 26300, 23.3 GB RAM.
 
-| | Idle (spring settled) | Animating (demo mode) |
+| | Before | After |
 | --- | --- | --- |
-| Frames rendered | **0** | 33–34 / s |
-| Frame time | — | 27.3 ms |
-| CPU | **0.00 s** (0.0% of one core) | **1.02 s / s = 101% of one core** (8.4% of the machine) |
-| Working set | 14.1 MB | 21.9 MB (peak 22.2 MB) |
-| Private bytes | — | 10.5 MB |
+| Frames rendered | 33-34 / s | 38-41 / s |
+| Frame time | 27.3 ms | **425-533 us** (**~58x**) |
+| Raster stage | 27 200 us | **356-470 us** (**~62x**) |
+| Layout stage | 20 us | 20 us |
+| Paint-list build | 23 us | 28-45 us |
+| Pixel-touches per frame | ~2.03 M | **~190-218 k** (**~10x fewer**) |
+| CPU, animating | **101% of one core** | **7.8-18.8% of one core** |
+| CPU, idle | 0.00 s/s | 0.00 s/s (zero frames drawn) |
+| Working set | 21.9 MB | 22.1 MB (peak 26.2 MB) |
+| Private bytes | 10.5 MB | 10.5 MB |
 | Threads / handles | 5 / 183 | 5 / 183 |
 
-**Where the frame actually goes:**
+**Where the frame goes now:**
 
 | Stage | Time | Share of frame |
 | --- | --- | --- |
-| Layout (~70 nodes) | **20 µs** | **0.07%** |
-| Build the paint list | 23 µs | 0.08% |
-| Rasterize + blend | 27 200 µs | **99.6%** |
+| Layout (~70 nodes) | 20-37 us | ~5% |
+| Build the paint list | 28-45 us | ~7% |
+| Rasterize + blend | 356-470 us | **~88%** |
 
-> **That third row is the most important number in this repository.**
->
-> The entire GPU-layout thesis — parent-vector trees, Blelloch prefix scans,
-> warp-level water-filling — targets **20 microseconds out of a 27-millisecond
-> frame**. Even if GPU layout were infinitely fast, the frame time would not
-> move. The bottleneck is the rasterizer, which is precisely where a plain
-> SIMD CPU implementation wins, and precisely where a GPU wins too.
+Layout has gone from 0.07% of the frame to about 5% - because the frame
+itself got 58x smaller. It is still not the thing worth optimising, but the
+gap has closed enough that it is no longer irrelevant.
 
 **The idle-gating is real, not asserted.** When the spring settles, the window
-draws **zero frames** and the process consumes **0.00 s of CPU per second** —
-the timer still ticks at 60 Hz but never invalidates a region. This is the
-"an idle window draws nothing" property, measured.
+draws **zero frames** and the process consumes **0.00 s of CPU per second** -
+the timer still ticks at 60 Hz but never invalidates a region.
 
-### 4.2 Compared against the other apps on this OS
+### 4.4 Compared against the other apps on this OS
 
 Six-second CPU sample across every process, taken while the engine was
 animating:
 
 | Application | Working set | CPU (% of one core) |
 | --- | --- | --- |
-| **`ui` engine (win32.exe), animating** | **21.9 MB** | **101.0%** |
-| **`ui` engine, idle** | **14.1 MB** | **0.0%** |
-| WorkBuddyAI — IDE, main process | 1739 MB | 21.9% |
-| WorkBuddyAI — helper | 109 MB | 11.2% |
-| PowerShell — this sampler | 102 MB | 9.9% |
-| `zen` — 4 instances | 180–586 MB | 0.3–3.9% each |
-| `opencode` — 2 instances | 220–234 MB | 0.3–0.5% each |
-| MsMpEng — Defender | 382 MB | ~0.0% |
-| Memory Compression | 524 MB | — |
+| node | 1 061 MB | 77.6% |
+| WorkBuddyAI - helper | 296 MB | 69.5% |
+| WorkBuddyAI - IDE, main | 1 844 MB | 48.4% |
+| WorkBuddyAI - helper | 109 MB | 13.8% |
+| PowerShell - this sampler | 103 MB | 12.0% |
+| **`ui` engine (win32.exe), animating** | **22.1 MB** | **7.8%** |
+| `opencode` | 210 MB | 1.0% |
+| `zen` / `opencode` / terminal | 70-600 MB | 0.3-3.9% each |
 
-**The honest reading of that table:**
+**Before this optimisation the same table read:** the engine was the **heaviest
+CPU consumer on the machine** at 101% of one core - 4.6x the IDE's main
+process - while also being the **lightest** in memory at 21.9 MB.
 
-* **Memory: the engine is the lightest thing measured.** 21.9 MB working set
-  against 1739 MB for the IDE — about **79x smaller**. It does not appear in
-  the machine's top-12 RAM consumers at all; the smallest of those is 180 MB.
-* **CPU: the engine is the heaviest thing measured.** 101% of one core is
-  **4.6x** the IDE's main process and roughly **25x** the entire `zen` fleet
-  combined. That is not the engine being efficient — it is a *scalar* software
-  rasterizer with no SIMD and no GPU path.
-* **Idle: 0.00%.** The gap between "animating" and "idle" is the difference
-  between a UI engine that burns a core continuously and one that does not.
+**The honest reading of that table now:**
+
+* **Memory: still the lightest thing measured.** 22.1 MB working set against
+  1 844 MB for the IDE - about **83x smaller**. It does not appear in the
+  machine's top RAM consumers at all; the smallest of those is ~70 MB.
+* **CPU: from heaviest to seventh.** 7.8% of one core while animating at 40
+  fps, and 0.00% when idle.
+* **What actually bought that:** not AVX2, not the GPU, not the layout solver.
+  An opaque fast path, span splitting, and damage regions.
 
 One caveat on this machine: the 5600G's GPU is **integrated**, so it has no
 dedicated VRAM and shares system RAM. That makes it a *pessimistic* test bed
-for the GPU-resident thesis — dispatch overhead is higher and there is no
+for the GPU-resident thesis - dispatch overhead is higher and there is no
 fast-path memory. Any GPU conclusion must be re-tested on discrete hardware
-before it is believed. See TODO.md §2.3.
-
-
----
+before it is believed. See TODO.md 2.3.
 
 ## 5. The brutal check
 
@@ -301,6 +333,7 @@ G:\Dx\ui\
     flex_solver.rs      analytic vs CSS reference, 10 000 randomised cases
     layout_tree.rs      tree mutation, layout integration, springs, routing
     text_and_raster.rs  wrapping, coverage, culling, blur
+    damage_tracking.rs  a damaged repaint must be pixel-identical to a full one
   examples/
     bench.rs            the measurements in §4
     win32.rs            native Win32 window: real compositor, real input,
@@ -314,7 +347,7 @@ G:\Dx\ui\
 ```bash
 cd G:\Dx\ui
 cargo build --release
-cargo test                       # 20 tests, all passing
+cargo test                       # 25 tests, all passing
 cargo clippy --all-targets       # clean
 cargo run --release --example bench
 ```

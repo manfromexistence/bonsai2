@@ -225,15 +225,19 @@ Build the end-to-end harness: input event to first changed pixel, idle energy.
 > the router will always choose the CPU and the GPU work is a research
 > artefact. That is still a legitimate outcome — but say it plainly.
 
-**Partial result already in hand** (`examples/win32.rs`, README.md §4.1):
+**Partial result already in hand** (`examples/win32.rs`, README.md §4.3):
 
 * The idle half of this gate is **met**: when the spring settles, the window
   renders **zero frames** and the process burns **0.00 s of CPU per second**.
   The router's "do nothing" path works.
-* The measurement half is **not** met, and it surfaced something that reorders
-  the plan: the frame is **27.3 ms of which 99.6% is rasterization** and
-  **0.07% is layout**. The GPU layout path targets 20 µs. So the threshold
-  cannot be derived until the rasterizer is respectable (§TODO 1.0).
+* The measurement half is **met too**, and it produced the answer. The
+  rasterizer was rewritten (opaque fast path, span-split rounded rects,
+  integer blending, damage regions) and the frame went **27.3 ms -> 0.43 ms**,
+  CPU **101% -> 7.8%** of one core. Layout is now ~5% of the frame instead of
+  0.07%.
+* The remaining cost is **memory-bound**, not compute-bound: the 1080p fill
+  runs at 8.9 GB/s and `-C target-cpu=native` buys only +11%. The next lever
+  is *fewer bytes written*, which is per-layer damage, not wider registers.
 * The test machine has **integrated** graphics only. Every GPU number taken
   from it is pessimistic and must be re-taken on discrete hardware.
 

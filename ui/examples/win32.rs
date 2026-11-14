@@ -25,7 +25,7 @@
 #![allow(clippy::field_reassign_with_default)]
 
 use std::sync::OnceLock;
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicPtr, AtomicU64, Ordering};
 use std::time::Instant;
 
 use ui::layout::{self, EdgeInsets, FlexDirection, Justify, LayoutProps, Rect, Size};
@@ -248,6 +248,16 @@ struct Engine {
     /// Cached atlas-free glyph coverage. Re-rasterising every frame is the
     /// obvious way to waste time; see TODO.md 2.1.
     glyph_bitmap: Option<std::sync::Arc<ui::text::GlyphBitmap>>,
+    /// Persistent framebuffer: damage tracking needs the previous frame.
+    raster: Rasterizer,
+    /// The animated card's rect in the previous frame, for damage tracking.
+    prev_card_rect: Option<Rect>,
+    /// Pixel-touches actually rasterized in the last frame.
+    last_touches: u64,
+    /// The HUD line as last drawn, so it is only redrawn when it changes.
+    hud_text: String,
+    /// Whether the HUD text changed this frame.
+    hud_dirty: bool,
     width: usize,
     height: usize,
     frames: u64,
@@ -271,6 +281,12 @@ static FRAME_COUNTER: AtomicU64 = AtomicU64::new(0);
 /// Demo mode: orbit the card on a sine wave so the window renders
 /// continuously without needing (or stealing) the mouse.
 static DEMO: AtomicBool = AtomicBool::new(false);
+/// Cached back buffer: a DIB section per frame would allocate and free
+/// several megabytes sixty times a second.
+static DIB: AtomicPtr<()> = AtomicPtr::new(std::ptr::null_mut());
+static DIB_BITS: AtomicPtr<u8> = AtomicPtr::new(std::ptr::null_mut());
+static DIB_W: AtomicI32 = AtomicI32::new(0);
+static DIB_H: AtomicI32 = AtomicI32::new(0);
 static START: OnceLock<Instant> = OnceLock::new();
 
 fn engine() -> &'static std::sync::Mutex<Engine> {
@@ -296,6 +312,11 @@ fn engine() -> &'static std::sync::Mutex<Engine> {
             fade,
             glyph: GlyphOutline::circle(Vec2::new(500.0, 500.0), 420.0, 96),
             glyph_bitmap: None,
+            raster: Rasterizer::new(1280, 800),
+            prev_card_rect: None,
+            last_touches: 0,
+            hud_text: String::new(),
+            hud_dirty: false,
             width: 1280,
             height: 800,
             frames: 0,
@@ -476,6 +497,13 @@ fn text_paints(text: &str, x: f32, y: f32, scale: f32, color: Rgba, out: &mut Ve
 // Rendering
 // ---------------------------------------------------------------------------
 
+/// The animated card's rectangle, including the shadow margin.
+fn card_rect(engine: &Engine) -> Rect {
+    let cx = engine.card.value;
+    let cy = engine.card.value * 0.6 + 300.0;
+    Rect::new(cx, cy, 180.0, 120.0)
+}
+
 fn build_paints(engine: &mut Engine) -> Vec<Paint> {
     let mut paints = Vec::with_capacity(512);
 
@@ -521,16 +549,15 @@ fn build_paints(engine: &mut Engine) -> Vec<Paint> {
     }
 
     // The moving card: a shadow plus a rounded rect, driven by the spring.
-    let cx = engine.card.value;
-    let cy = engine.card.value * 0.6 + 300.0;
+    let card = card_rect(engine);
     paints.push(Paint::Shadow {
-        rect: Rect::new(cx, cy, 180.0, 120.0),
+        rect: card,
         radius: 16.0,
         blur: 22.0,
         color: Rgba::new(0.0, 0.0, 0.0, 0.55),
     });
     paints.push(Paint::RoundedRect {
-        rect: Rect::new(cx, cy, 180.0, 120.0),
+        rect: card,
         radius: 16.0,
         color: Rgba::new(0.95, 0.55, 0.25, 1.0),
     });
@@ -551,13 +578,19 @@ fn build_paints(engine: &mut Engine) -> Vec<Paint> {
         });
     }
 
-    // HUD.
+    // HUD. The text is rebuilt every frame but only *changes* about once a
+    // second (the fps counter), so only then does the HUD strip need to be in
+    // the damage region. The paints stay in the list either way, so a card
+    // overlapping the HUD redraws it correctly.
     let hud_color = Rgba::new(0.85, 0.88, 0.95, 1.0);
+    let hud_line = format!(
+        "UI ENGINE  {} FPS  {} US/FRAME  ROUTE {}/{}",
+        engine.frames, engine.last_render_us, engine.route_micro, engine.route_macro
+    );
+    engine.hud_dirty = hud_line != engine.hud_text;
+    engine.hud_text.clone_from(&hud_line);
     text_paints(
-        &format!(
-            "UI ENGINE  {} FPS  {} US/FRAME  ROUTE {}/{}",
-            engine.frames, engine.last_render_us, engine.route_micro, engine.route_macro
-        ),
+        &hud_line,
         16.0,
         engine.height as f32 - 40.0,
         2.0,
@@ -576,7 +609,7 @@ fn build_paints(engine: &mut Engine) -> Vec<Paint> {
     paints
 }
 
-fn render(engine: &mut Engine) -> Vec<u8> {
+fn render(engine: &mut Engine) -> Vec<u32> {
     let start = Instant::now();
 
     // Layout the tree.
@@ -613,28 +646,56 @@ fn render(engine: &mut Engine) -> Vec<u8> {
         Route::GpuMacro => engine.route_macro += 1,
     }
 
+    // Damage tracking: only the card's old and new footprints changed, plus
+    // the HUD strip (its text changes every frame). Everything else in the
+    // frame is byte-for-byte identical to the previous frame.
+    let cur_card = card_rect(engine);
+    let mut damage: Vec<Rect> = Vec::new();
+    if let Some(prev) = engine.prev_card_rect {
+        // The card's old and new footprints, plus the shadow's blur margin.
+        let card_region = expand_rect(union_rect(prev, cur_card), 26.0);
+        // Keep it disjoint from the HUD strip: the two are separate regions,
+        // and a bounding box around both would be a near-full-frame repaint.
+        let hud_top = engine.height as f32 - 44.0;
+        let mut card_region = card_region;
+        if card_region.y + card_region.h > hud_top {
+            card_region.h = (hud_top - card_region.y).max(0.0);
+        }
+        if card_region.w > 0.0 && card_region.h > 0.0 {
+            damage.push(card_region);
+        }
+        if engine.hud_dirty {
+            damage.push(Rect::new(0.0, hud_top, engine.width as f32, 44.0));
+        }
+    }
+    engine.prev_card_rect = Some(cur_card);
+
     // Rasterize.
     let t = Instant::now();
-    let mut raster = Rasterizer::new(engine.width, engine.height);
-    let stats = raster.paint_all(&paints);
+    let stats = engine.raster.paint_all(&paints, &damage);
     engine.raster_us = t.elapsed().as_micros() as u64;
     engine.pixels_shaded += stats.pixels_painted;
     engine.pixels_total += stats.pixels_total;
+    engine.last_touches = stats.pixels_painted;
     engine.frames += 1;
     FRAME_COUNTER.fetch_add(1, Ordering::Relaxed);
 
-    let fb = raster.into_frame_buffer();
     engine.last_render_us = start.elapsed().as_micros() as u64;
+    engine.raster.pixels.clone()
+}
 
-    // GDI wants BGRX; the engine produces RGBA8.
-    let mut bgra = vec![0u8; fb.data.len()];
-    for (src, dst) in fb.data.chunks_exact(4).zip(bgra.chunks_exact_mut(4)) {
-        dst[0] = src[2];
-        dst[1] = src[1];
-        dst[2] = src[0];
-        dst[3] = src[3];
-    }
-    bgra
+/// The union of two rectangles.
+fn union_rect(a: Rect, b: Rect) -> Rect {
+    let x = a.x.min(b.x);
+    let y = a.y.min(b.y);
+    let x1 = (a.x + a.w).max(b.x + b.w);
+    let y1 = (a.y + a.h).max(b.y + b.h);
+    Rect::new(x, y, x1 - x, y1 - y)
+}
+
+/// Grows a rectangle by `m` on every side.
+fn expand_rect(r: Rect, m: f32) -> Rect {
+    Rect::new(r.x - m, r.y - m, r.w + m * 2.0, r.h + m * 2.0)
 }
 
 // ---------------------------------------------------------------------------
@@ -755,48 +816,78 @@ fn window_proc_impl(hwnd: Handle, msg: u32, wparam: usize, lparam: isize) -> isi
                 let w = (client.right - client.left) as usize;
                 let h = (client.bottom - client.top) as usize;
                 if w > 0 && h > 0 {
-                    eng.width = w;
-                    eng.height = h;
+                    if eng.width != w || eng.height != h {
+                        eng.width = w;
+                        eng.height = h;
+                        eng.raster = Rasterizer::new(w, h);
+                        eng.prev_card_rect = None;
+                    }
                     let pixels = render(&mut eng);
 
                     // Blit through a top-down 32-bit DIB.
-                    let bmi = BitmapInfo {
-                        header: BitmapInfoHeader {
-                            size: std::mem::size_of::<BitmapInfoHeader>() as u32,
-                            width: w as i32,
-                            height: -(h as i32), // top-down
-                            planes: 1,
-                            bit_count: 32,
-                            compression: BI_RGB,
-                            size_image: 0,
-                            x_ppm: 0,
-                            y_ppm: 0,
-                            clr_used: 0,
-                            clr_important: 0,
-                        },
-                        colors: [0; 3],
-                    };
-                    let mut bits: *mut u8 = std::ptr::null_mut();
-                    let dib = CreateDIBSection(
-                        dc,
-                        &bmi,
-                        DIB_RGB_COLORS,
-                        &mut bits,
-                        std::ptr::null_mut(),
-                        0,
-                    );
+                    // The engine's pixels are already 0xAARRGGBB, which in
+                    // memory is B,G,R,A — exactly a 32-bit BI_RGB DIB, so the
+                    // frame is copied with no conversion at all.
+                    let bytes: &[u8] =
+                        std::slice::from_raw_parts(pixels.as_ptr() as *const u8, pixels.len() * 4);
+
+                    let dib = DIB.load(Ordering::Relaxed);
+                    let fresh = dib.is_null()
+                        || DIB_W.load(Ordering::Relaxed) != w as i32
+                        || DIB_H.load(Ordering::Relaxed) != h as i32;
+
+                    if fresh {
+                        if !dib.is_null() {
+                            DeleteObject(dib as Handle);
+                            DIB.store(std::ptr::null_mut(), Ordering::Relaxed);
+                            DIB_BITS.store(std::ptr::null_mut(), Ordering::Relaxed);
+                        }
+                        let bmi = BitmapInfo {
+                            header: BitmapInfoHeader {
+                                size: std::mem::size_of::<BitmapInfoHeader>() as u32,
+                                width: w as i32,
+                                height: -(h as i32), // top-down
+                                planes: 1,
+                                bit_count: 32,
+                                compression: BI_RGB,
+                                size_image: 0,
+                                x_ppm: 0,
+                                y_ppm: 0,
+                                clr_used: 0,
+                                clr_important: 0,
+                            },
+                            colors: [0; 3],
+                        };
+                        let mut new_bits: *mut u8 = std::ptr::null_mut();
+                        let new_dib = CreateDIBSection(
+                            dc,
+                            &bmi,
+                            DIB_RGB_COLORS,
+                            &mut new_bits,
+                            std::ptr::null_mut(),
+                            0,
+                        );
+                        if !new_dib.is_null() && !new_bits.is_null() {
+                            DIB.store(new_dib as *mut (), Ordering::Relaxed);
+                            DIB_BITS.store(new_bits, Ordering::Relaxed);
+                            DIB_W.store(w as i32, Ordering::Relaxed);
+                            DIB_H.store(h as i32, Ordering::Relaxed);
+                        }
+                    }
+
+                    let dib = DIB.load(Ordering::Relaxed);
+                    let bits = DIB_BITS.load(Ordering::Relaxed);
                     if !dib.is_null() && !bits.is_null() {
                         std::ptr::copy_nonoverlapping(
-                            pixels.as_ptr(),
+                            bytes.as_ptr(),
                             bits,
-                            std::cmp::min(pixels.len(), w * h * 4),
+                            std::cmp::min(bytes.len(), w * h * 4),
                         );
                         let mem_dc = CreateCompatibleDC(dc);
-                        let old = SelectObject(mem_dc, dib);
+                        let old = SelectObject(mem_dc, dib as Handle);
                         BitBlt(dc, 0, 0, w as i32, h as i32, mem_dc, 0, 0, SRCCOPY);
                         SelectObject(mem_dc, old);
                         DeleteDC(mem_dc);
-                        DeleteObject(dib);
                     }
                 }
                 EndPaint(hwnd, &ps);
@@ -920,7 +1011,7 @@ fn main() {
                 let elapsed = start.elapsed().as_secs_f64();
                 println!(
                     "t={:>5.1}s  fps={fps:<4} render={:>6}us (layout {:>5} + build {:>5} + raster {:>6})  \
-cpu={dcpu:>5.2}s ({:>4.1}% of one core)  ws={:>6.1}MB  frames={frames}  idle_skips={}  \
+cpu={dcpu:>5.2}s ({:>4.1}% of one core)  ws={:>6.1}MB  touches={:>8}  frames={frames}  idle_skips={}  \
 card={:.2}/{:.2} v={:.4} fade={:.4} settled={}",
                     elapsed,
                     eng.last_render_us,
@@ -929,6 +1020,7 @@ card={:.2}/{:.2} v={:.4} fade={:.4} settled={}",
                     eng.raster_us,
                     dcpu * 100.0,
                     working_set_bytes() as f64 / 1048576.0,
+                    eng.last_touches,
                     eng.idle_frames,
                     eng.card.value,
                     eng.card.target,
