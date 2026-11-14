@@ -152,20 +152,33 @@ itself is *also* not vectorising.
   keeps its lines hot), not a property a one-pass fill can inherit. The code
   was removed; README.md 4.2 records the numbers.
 
-**So the remaining work is, in order:**
+**Sub-timers settle the order.** The native frame is now split per paint kind
+(README.md 4.3): opaque solid fills **24-41 us**, rounded rects **5-20 us**,
+**shadow 136-231 us**, glyph ~0 us, on a ~500 us frame.
 
-1. **Per-layer damage.** Only the layers under the moved widget need
-   repainting, not everything intersecting the region. The current damage
-   list is ~2x the damaged pixel area because the backdrop and the moved
-   widget are both repainted.
-2. **Vectorise the fill loop explicitly.** `slice::fill` on a `u32` does not
-   become a memset, and at 0.82 cycles/px the L2-resident case is still
-   issuing roughly one store per cycle. Needs `unsafe` + `core::arch`.
-3. **Vectorise the translucent blend**, where the ALU work is real. The
-   integer `div255` blend is branchless and should vectorise once the
-   compiler is pointed at it; it currently does not.
+Consequences:
 
-**Cost:** item 1 is a day; items 2-3 are a week each and need `unsafe`.
+1. **Per-layer damage is dead as a priority.** The opaque backdrop fill is
+   ~30 us of a ~500 us frame; any span-subtraction machinery that costs more
+   than that to run loses. The hypothesis that "the backdrop and the moved
+   widget are both repainted" is the bottleneck was tested and the numbers
+   say otherwise. (Mechanism A - overlapping damage rects - is closed by
+   construction: the damage list is built disjoint and `paint_all`
+   `debug_assert`s it.)
+2. **The shadow is the target, and its easy half is done.** The erf falloff
+   is now a 256-entry lookup table (the profile depends only on `sdf/blur`),
+   and the middle band uses the purely horizontal distance
+   `|px - cx| - hw` instead of the `sqrt`-based signed distance. Shadow:
+   207-281 -> 136-231 us. What remains is the translucent blend per pixel.
+3. **The translucent blend is the last big item, and it needs SIMD.** The
+   8-layer benchmark runs it at 91.8 Mpx/s, roughly 48 cycles per pixel,
+   against an opaque fill at ~2 cycles. That needs `unsafe` + `core::arch`
+   (or LLVM being shown an explicitly chunked loop), which is a decision
+   about the unsafe policy, not an algorithm. Until then the library stays
+   unsafe-free and the frame is ~0.5 ms.
+
+**Cost:** item 3 is about a week and needs the unsafe policy decided. Items
+remaining under item 1 are closed.
 
 ### [ ] 2.3 Re-test on discrete GPU hardware
 

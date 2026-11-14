@@ -10,7 +10,7 @@
 use std::time::Instant;
 use ui::blur::box_blur_rgba8;
 use ui::layout::{self, FlexDirection, LayoutProps, Size};
-use ui::raster::{Paint, Rasterizer, Rgba};
+use ui::raster::{FrameBuffer, Paint, Rgba};
 use ui::text::{GlyphOutline, Vec2};
 use ui::tree::NodeTree;
 
@@ -97,7 +97,7 @@ fn main() {
 
     // --- solid fill -------------------------------------------------------
     println!("\nopaque rectangle fill (1920x1080)");
-    let mut r = Rasterizer::new(1920, 1080);
+    let mut r = FrameBuffer::new(1920, 1080);
     let iters = 200;
     let t = Instant::now();
     for _ in 0..iters {
@@ -123,7 +123,7 @@ fn main() {
         (256usize, 256usize, "256x256  (256 KB, L2-resident)"),
         (1920, 1080, "1920x1080 (8.3 MB, L3-resident)"),
     ] {
-        let mut r = Rasterizer::new(w, h);
+        let mut r = FrameBuffer::new(w, h);
         let iters = if w == 256 { 2000 } else { 200 };
         let t = Instant::now();
         for _ in 0..iters {
@@ -159,7 +159,7 @@ fn main() {
         let _ = i;
     }
     {
-        let mut r = Rasterizer::new(1920, 1080);
+        let mut r = FrameBuffer::new(1920, 1080);
         let iters = 50;
         let t = Instant::now();
         for _ in 0..iters {
@@ -186,7 +186,7 @@ fn main() {
             color: Rgba::rgb(0.1, 0.2, 0.3),
         });
     }
-    let mut r = Rasterizer::new(1920, 1080);
+    let mut r = FrameBuffer::new(1920, 1080);
     let stats = r.paint_all(&paints, &[]);
     println!(
         "  painted {} of {} paints; {:.1}% of pixel-touches culled",

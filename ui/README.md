@@ -56,7 +56,7 @@ The hub's claim vocabulary (`G:\Dx\AGENTS.md` §4) is used strictly here.
 | [`layout`](src/layout.rs) | "Flex clamping needs a sequential loop, so GPU layout is impossible" | **False.** `solve_grow` / `solve_shrink` solve the freeze-and-redistribute problem in closed form: the CSS loop is a water-filling (simplex projection) problem, which is continuous and piecewise-linear in the level `λ`, hence solvable by sorting the saturation breakpoints and sweeping once. Differentially tested against the CSS freeze loop. |
 | [`layout`](src/layout.rs) | "Text wrapping is a circular dependency that breaks prefix-scan layout" | **Mostly false.** A cumulative advance table plus a binary search per line finds the break points; the dependency is not circular because wrapping depends only on the *container width*, not on sibling geometry. Implemented and tested against a greedy reference. |
 | [`text`](src/text.rs) | "A glyph atlas is mandatory" | **Half false.** Atlas-free evaluation is real: TrueType-style quadratic outlines are flattened into horizontal **bands** (the idea behind Eric Lengyel's *Slug*), and a scanline only tests the curves that can cross it, with exact horizontal coverage. What is *not* solved here is small-size hinting — see §6. |
-| [`raster`](src/raster.rs) | "Painter's-algorithm overdraw is the bottleneck" | **Half true.** Fully hidden **opaque** paints are culled before they touch the pixel pipeline, using a `u128` span mask per row (16 px granularity, one AND per block). Translucent paints are **never** culled — see §5.3. The renderer also does **span fills** (an opaque paint is a copy, not a blend), **span-split rounded rects** (the interior needs no distance function), **integer branchless blending**, and **damage-region tracking**. Together: 27.3 ms -> 0.43 ms per frame, measured. |
+| [`raster`](src/raster.rs) | "Painter's-algorithm overdraw is the bottleneck" | **Half true.** Fully hidden **opaque** paints are culled before they touch the pixel pipeline, using a `u128` span mask per row (16 px granularity, one AND per block). Translucent paints are **never** culled — see §5.3. The renderer also does **span fills** (an opaque paint is a copy, not a blend), **span-split rounded rects** (the interior needs no distance function), **integer branchless blending**, and **damage-region tracking**. Together: 27.3 ms -> 0.49 ms per frame, measured. |
 | [`blur`](src/blur.rs) | "Backdrop blur needs ping-pong targets, so nesting is capped" | **Holds as a critique; the fix works.** A box filter of any radius is O(1) per pixel from a summed-area table, so there are no render targets, no VRAM growth and no nesting cap. The *neighbouring-pixel dependency* remains and cannot be removed. |
 | [`spring`](src/spring.rs) | "Animations must be ticked by the CPU" | **Mostly false.** A damped harmonic oscillator has a closed-form solution, so any consumer can evaluate it at an arbitrary timestamp. `Spring::settle_time` returns exactly when the animation will finish, which is what lets a scheduler *stop* instead of spin at 240 Hz. Verified against numerical integration. |
 | [`scheduler`](src/scheduler.rs) | "The GPU is always faster than the CPU for UI" | **False as stated.** Waking a GPU compute pipeline costs tens of microseconds of submission latency; re-rasterising a small dirty rect on the CPU costs single-digit microseconds. The router makes this a per-frame decision instead of an architectural bet. |
@@ -161,43 +161,57 @@ cargo run --release --example win32 demo     # continuous animation, no mouse ne
 **Test machine:** AMD Ryzen 5 5600G (6 cores / 12 threads, **integrated** Radeon
 graphics - *no discrete GPU*), Windows 11 Pro build 26300, 23.3 GB RAM.
 
-| | Before | After |
+| | First run | Now |
 | --- | --- | --- |
 | Frames rendered | 33-34 / s | 38-41 / s |
-| Frame time | 27.3 ms | **425-533 us** (**~58x**) |
-| Raster stage | 27 200 us | **356-470 us** (**~62x**) |
-| Layout stage | 20 us | 20 us |
-| Paint-list build | 23 us | 28-45 us |
-| Pixel-touches per frame | ~2.03 M | **~190-218 k** (**~10x fewer**) |
-| CPU, animating | **101% of one core** | **3.1-7.8% of one core** |
+| Frame time | 27.3 ms | **488-588 us** (**~52x**) |
+| Raster stage | 27 200 us | **417-569 us** |
+| Layout stage | 20 us | 22-28 us |
+| Pixel-touches per frame | ~2.03 M | **~189-218 k** (~10x fewer) |
+| CPU, animating | **101% of one core** | **1.6-7.8% of one core** |
 | CPU, idle | 0.00 s/s | 0.00 s/s (zero frames drawn) |
-| Bytes handed to the OS per frame | 8.3 MB (full DIB copy + full blit) | **~1.6 MB** (damage rows only) |
-| Working set | 21.9 MB | 22.1 MB (peak 26.2 MB) |
-| Private bytes | 10.5 MB | 10.5 MB |
+| Working set | 21.9 MB | **18.2 MB** |
+| Bytes handed to the OS per frame | 8.3 MB | **~1.6 MB** |
 | Threads / handles | 5 / 183 | 5 / 183 |
 
-**The presentation path is damage-tracked too.** The Win32 host copies only
-the damaged rows into the DIB and blits only the damaged regions, so the
-bytes handed to the OS per frame dropped from 8.3 MB to roughly the size of
-the damage. That is what moved CPU from 7.8-18.8% to 3.1-7.8% of one core;
-the rasterizer measurement did not change, because this win happens after
-it.
+**The framebuffer is the DIB.** `Rasterizer::paint_all` takes the pixel slice
+as a parameter rather than owning a buffer, so the Win32 host wraps the
+`CreateDIBSection` bits and the rasterizer writes the compositor's bytes
+directly. There is no engine-to-DIB copy at all - which is why the working set
+dropped from 22.1 MB to 18.2 MB (one framebuffer instead of two) and why the
+presentation path has nothing left to copy. The only `unsafe` in the example is
+the `from_raw_parts_mut` that wraps those bits; the library stays unsafe-free.
 
-**Where the frame goes now:**
+**Where the frame goes, per paint kind** (the `profile` flag collects this):
 
-| Stage | Time | Share of frame |
+| Paint kind | Time | Share |
 | --- | --- | --- |
-| Layout (~70 nodes) | 20-37 us | ~5% |
-| Build the paint list | 28-45 us | ~7% |
-| Rasterize + blend | 356-470 us | **~88%** |
+| Opaque solid fills | 24-41 us | ~6% |
+| Rounded rectangles | 5-20 us | ~3% |
+| **Shadow** | **136-231 us** | **~40%** |
+| Glyph blit | 0-1 us | - |
 
-Layout has gone from 0.07% of the frame to about 5% - because the frame
-itself got 58x smaller. It is still not the thing worth optimising, but the
-gap has closed enough that it is no longer irrelevant.
+That table answered the question this session set out to settle. The opaque
+backdrop fill costs ~30 us of a ~500 us frame; building per-layer occlusion or
+span-subtraction to avoid painting the backdrop under the moving widget would
+save at most those 30 us, and would lose if its bookkeeping cost more. The
+actual dominant cost is the **shadow**, which is a translucent, per-pixel blend
+- the same path the 8-layer benchmark measures at 91.8 Mpx/s. Two things were
+done about it: the erf falloff became a 256-entry lookup table (the profile
+depends only on `sdf / blur`), and the shadow's middle band uses the purely
+horizontal distance `|px - cx| - hw` instead of the full `sqrt`-based signed
+distance. The shadow went 207-281 -> 136-231 us. What remains is the
+translucent blend itself, which needs SIMD (`unsafe` + `core::arch`) and is
+tracked as TODO 2.2 item 3 - a decision about the unsafe policy, not an
+algorithm.
+
+**Mechanism A (overlapping damage rects) is closed by construction.** The
+damage list is built as disjoint regions and `paint_all` carries a
+`debug_assert` that rejects overlapping damage, so the double-blend failure
+mode cannot ship in a debug build.
 
 **The idle-gating is real, not asserted.** When the spring settles, the window
-draws **zero frames** and the process consumes **0.00 s of CPU per second** -
-the timer still ticks at 60 Hz but never invalidates a region.
+draws **zero frames** and the process consumes **0.00 s of CPU per second**.
 
 ### 4.4 Compared against the other apps on this OS
 
@@ -211,7 +225,7 @@ animating:
 | WorkBuddyAI - IDE, main | 1 844 MB | 48.4% |
 | WorkBuddyAI - helper | 109 MB | 13.8% |
 | PowerShell - this sampler | 103 MB | 12.0% |
-| **`ui` engine (win32.exe), animating** | **22.1 MB** | **3.1-7.8%** |
+| **`ui` engine (win32.exe), animating** | **18.2 MB** | **1.6-7.8%** |
 | `opencode` | 210 MB | 1.0% |
 | `zen` / `opencode` / terminal | 70-600 MB | 0.3-3.9% each |
 
@@ -221,10 +235,10 @@ process - while also being the **lightest** in memory at 21.9 MB.
 
 **The honest reading of that table now:**
 
-* **Memory: still the lightest thing measured.** 22.1 MB working set against
-  1 844 MB for the IDE - about **83x smaller**. It does not appear in the
+* **Memory: still the lightest thing measured.** 18.2 MB working set against
+  1 844 MB for the IDE - about **101x smaller**. It does not appear in the
   machine's top RAM consumers at all; the smallest of those is ~70 MB.
-* **CPU: from heaviest to eighth-or-lower.** 3.1-7.8% of one core while
+* **CPU: from heaviest to eighth-or-lower.** 1.6-7.8% of one core while
   animating at 40 fps, and 0.00% when idle.
 * **What actually bought that:** not AVX2, not the GPU, not the layout solver.
   An opaque fast path, span splitting, and damage regions.

@@ -6,7 +6,7 @@
 //! the same pixels** as a full repaint of the same scene.
 
 use ui::layout::Rect;
-use ui::raster::{Paint, Rasterizer, Rgba};
+use ui::raster::{FrameBuffer, Paint, Rgba};
 
 /// A scene with overlapping opaque and translucent layers.
 fn scene() -> Vec<Paint> {
@@ -43,12 +43,12 @@ fn damaged_repaint_matches_full_repaint() {
     let paints = scene();
 
     // Full repaint.
-    let mut full = Rasterizer::new(200, 150);
+    let mut full = FrameBuffer::new(200, 150);
     full.paint_all(&paints, &[]);
 
     // Incremental: repaint the same scene, but only inside a damage region
     // that does not cover the whole frame.
-    let mut incremental = Rasterizer::new(200, 150);
+    let mut incremental = FrameBuffer::new(200, 150);
     // Start from a full repaint so the untouched region has the right pixels.
     incremental.paint_all(&paints, &[]);
     // Now damage a region and repaint only that region.
@@ -65,7 +65,7 @@ fn damaged_repaint_matches_full_repaint() {
 fn damaged_repaint_of_a_different_scene_updates_the_region() {
     // Start with a red square, then damage a region and paint a blue square
     // there. The damaged region must change; the rest must not.
-    let mut r = Rasterizer::new(100, 100);
+    let mut r = FrameBuffer::new(100, 100);
     r.paint_all(
         &[Paint::Solid {
             rect: Rect::new(0.0, 0.0, 100.0, 100.0),
@@ -114,7 +114,7 @@ fn damaged_repaint_of_a_different_scene_updates_the_region() {
 
 #[test]
 fn opaque_span_fill_writes_exact_bytes() {
-    let mut r = Rasterizer::new(16, 16);
+    let mut r = FrameBuffer::new(16, 16);
     r.paint_all(
         &[Paint::Solid {
             rect: Rect::new(0.0, 0.0, 16.0, 16.0),
@@ -136,7 +136,7 @@ fn opaque_span_fill_writes_exact_bytes() {
 #[test]
 fn translucent_blend_is_order_dependent_and_correct() {
     // 50% white over 50% black, then the result composited over the frame.
-    let mut r = Rasterizer::new(4, 4);
+    let mut r = FrameBuffer::new(4, 4);
     r.paint_all(
         &[
             Paint::Solid {
@@ -160,7 +160,7 @@ fn translucent_blend_is_order_dependent_and_correct() {
 
 #[test]
 fn rounded_rect_interior_is_exactly_opaque_and_corners_are_not() {
-    let mut r = Rasterizer::new(64, 64);
+    let mut r = FrameBuffer::new(64, 64);
     r.paint_all(
         &[Paint::RoundedRect {
             rect: Rect::new(8.0, 8.0, 48.0, 48.0),

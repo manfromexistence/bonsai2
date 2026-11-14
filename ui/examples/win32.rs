@@ -29,7 +29,7 @@ use std::sync::atomic::{AtomicBool, AtomicI32, AtomicPtr, AtomicU64, Ordering};
 use std::time::Instant;
 
 use ui::layout::{self, EdgeInsets, FlexDirection, Justify, LayoutProps, Rect, Size};
-use ui::raster::{Paint, Rasterizer, Rgba};
+use ui::raster::{Paint, Pixel, Rasterizer, Rgba};
 use ui::scheduler::{FrameCost, Route, Scheduler};
 use ui::spring::Spring;
 use ui::text::{GlyphOutline, Vec2};
@@ -248,8 +248,6 @@ struct Engine {
     /// Cached atlas-free glyph coverage. Re-rasterising every frame is the
     /// obvious way to waste time; see TODO.md 2.1.
     glyph_bitmap: Option<std::sync::Arc<ui::text::GlyphBitmap>>,
-    /// Persistent framebuffer: damage tracking needs the previous frame.
-    raster: Rasterizer,
     /// The animated card's rect in the previous frame, for damage tracking.
     prev_card_rect: Option<Rect>,
     /// Pixel-touches actually rasterized in the last frame.
@@ -261,6 +259,8 @@ struct Engine {
     /// The damage regions actually painted in the last frame, so that the
     /// GDI blit can also be sub-rect instead of the whole 8.3 MB frame.
     last_damage: Vec<Rect>,
+    /// Sub-timers from the last frame, only collected when profiling is on.
+    us_by_kind: [u64; 4],
     width: usize,
     height: usize,
     frames: u64,
@@ -315,12 +315,12 @@ fn engine() -> &'static std::sync::Mutex<Engine> {
             fade,
             glyph: GlyphOutline::circle(Vec2::new(500.0, 500.0), 420.0, 96),
             glyph_bitmap: None,
-            raster: Rasterizer::new(1280, 800),
             prev_card_rect: None,
             last_touches: 0,
             hud_text: String::new(),
             hud_dirty: false,
             last_damage: Vec::new(),
+            us_by_kind: [0; 4],
             width: 1280,
             height: 800,
             frames: 0,
@@ -613,7 +613,7 @@ fn build_paints(engine: &mut Engine) -> Vec<Paint> {
     paints
 }
 
-fn render(engine: &mut Engine) -> Vec<u32> {
+fn render(engine: &mut Engine, pixels: &mut [Pixel]) {
     let start = Instant::now();
 
     // Layout the tree.
@@ -675,9 +675,12 @@ fn render(engine: &mut Engine) -> Vec<u32> {
     engine.prev_card_rect = Some(cur_card);
     engine.last_damage = damage.clone();
 
-    // Rasterize.
+    // Rasterize. `pixels` IS the Win32 DIB, so there is no engine-to-DIB
+    // copy at all: the rasterizer writes the compositor's bytes directly.
     let t = Instant::now();
-    let stats = engine.raster.paint_all(&paints, &damage);
+    let mut raster = Rasterizer::new(engine.width, engine.height);
+    raster.profile = true;
+    let stats = raster.paint_all(pixels, &paints, &damage);
     engine.raster_us = t.elapsed().as_micros() as u64;
     engine.pixels_shaded += stats.pixels_painted;
     engine.pixels_total += stats.pixels_total;
@@ -686,7 +689,7 @@ fn render(engine: &mut Engine) -> Vec<u32> {
     FRAME_COUNTER.fetch_add(1, Ordering::Relaxed);
 
     engine.last_render_us = start.elapsed().as_micros() as u64;
-    engine.raster.pixels.clone()
+    engine.us_by_kind = stats.us_by_kind;
 }
 
 /// The union of two rectangles.
@@ -824,27 +827,13 @@ fn window_proc_impl(hwnd: Handle, msg: u32, wparam: usize, lparam: isize) -> isi
                     if eng.width != w || eng.height != h {
                         eng.width = w;
                         eng.height = h;
-                        eng.raster = Rasterizer::new(w, h);
                         eng.prev_card_rect = None;
                     }
-                    let pixels = render(&mut eng);
-
-                    // Blit through a top-down 32-bit DIB.
-                    // The engine's pixels are already 0xAARRGGBB, which in
-                    // memory is B,G,R,A — exactly a 32-bit BI_RGB DIB, so the
-                    // frame is copied with no conversion at all.
-                    let bytes: &[u8] =
-                        std::slice::from_raw_parts(pixels.as_ptr() as *const u8, pixels.len() * 4);
 
                     let dib = DIB.load(Ordering::Relaxed);
-                    // A freshly created DIB has no previous content, and an
-                    // empty damage list means the whole frame changed: both
-                    // need a full copy. Otherwise only the damaged rows are
-                    // copied, which is what damage tracking is for.
                     let fresh = dib.is_null()
                         || DIB_W.load(Ordering::Relaxed) != w as i32
                         || DIB_H.load(Ordering::Relaxed) != h as i32;
-                    let full_copy = fresh || eng.last_damage.is_empty();
 
                     if fresh {
                         if !dib.is_null() {
@@ -888,48 +877,20 @@ fn window_proc_impl(hwnd: Handle, msg: u32, wparam: usize, lparam: isize) -> isi
                     let dib = DIB.load(Ordering::Relaxed);
                     let bits = DIB_BITS.load(Ordering::Relaxed);
                     if !dib.is_null() && !bits.is_null() {
-                        if full_copy {
-                            std::ptr::copy_nonoverlapping(
-                                bytes.as_ptr(),
-                                bits,
-                                std::cmp::min(bytes.len(), w * h * 4),
-                            );
-                        } else {
-                            // Copy only the damaged rows: the DIB keeps its
-                            // previous content everywhere else, which is the
-                            // point of damage tracking in the first place.
-                            for region in &eng.last_damage {
-                                let x0 = region.x.floor().max(0.0) as usize;
-                                let y0 = region.y.floor().max(0.0) as usize;
-                                let x1 = ((region.x + region.w).ceil() as usize).min(w);
-                                let y1 = ((region.y + region.h).ceil() as usize).min(h);
-                                if x1 <= x0 || y1 <= y0 {
-                                    continue;
-                                }
-                                let row_bytes = (x1 - x0) * 4;
-                                for y in y0..y1 {
-                                    let src = (y * w + x0) * 4;
-                                    let dst = (y * w + x0) * 4;
-                                    if src + row_bytes <= bytes.len()
-                                        && dst + row_bytes <= w * h * 4
-                                    {
-                                        std::ptr::copy_nonoverlapping(
-                                            bytes.as_ptr().add(src),
-                                            bits.add(dst),
-                                            row_bytes,
-                                        );
-                                    }
-                                }
-                            }
-                        }
+                        // The DIB is the framebuffer: the rasterizer writes
+                        // the compositor's bytes directly, so there is no
+                        // engine-to-DIB copy at all. Wrapping the raw bits is
+                        // the only unsafe in this example; the library stays
+                        // unsafe-free.
+                        let dib_pixels: &mut [Pixel] =
+                            std::slice::from_raw_parts_mut(bits.cast(), w * h);
+                        render(&mut eng, dib_pixels);
+
                         let mem_dc = CreateCompatibleDC(dc);
                         let old = SelectObject(mem_dc, dib as Handle);
-                        // Blit only the damaged regions. The rasterizer
-                        // already touched ~10% of the frame; blitting the
-                        // whole 8.3 MB DIB would hand all of it to DWM
-                        // anyway and give back most of the bytes the
-                        // damage tracking just saved.
-                        let regions: &[Rect] = if full_copy {
+                        // Blit only the damaged regions; nothing unchanged is
+                        // handed to DWM.
+                        let regions: &[Rect] = if eng.last_damage.is_empty() {
                             &[Rect::new(0.0, 0.0, w as f32, h as f32)]
                         } else {
                             &eng.last_damage
@@ -1069,7 +1030,7 @@ fn main() {
                 println!(
                     "t={:>5.1}s  fps={fps:<4} render={:>6}us (layout {:>5} + build {:>5} + raster {:>6})  \
 cpu={dcpu:>5.2}s ({:>4.1}% of one core)  ws={:>6.1}MB  touches={:>8}  frames={frames}  idle_skips={}  \
-card={:.2}/{:.2} v={:.4} fade={:.4} settled={}",
+us[solid {:>4} rnd {:>4} shdw {:>4} glyph {:>4}]  card={:.2}/{:.2} v={:.4} fade={:.4} settled={}",
                     elapsed,
                     eng.last_render_us,
                     eng.layout_us,
@@ -1079,6 +1040,10 @@ card={:.2}/{:.2} v={:.4} fade={:.4} settled={}",
                     working_set_bytes() as f64 / 1048576.0,
                     eng.last_touches,
                     eng.idle_frames,
+                    eng.us_by_kind[0],
+                    eng.us_by_kind[1],
+                    eng.us_by_kind[2],
+                    eng.us_by_kind[3],
                     eng.card.value,
                     eng.card.target,
                     eng.card.velocity,

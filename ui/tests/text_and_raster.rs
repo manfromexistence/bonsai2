@@ -1,6 +1,6 @@
 //! Text wrapping, glyph coverage, and rasterization behaviour.
 
-use ui::raster::{Paint, Rasterizer, Rgba};
+use ui::raster::{FrameBuffer, Paint, Rgba};
 use ui::text::{GlyphOutline, TextRun, Vec2};
 
 #[test]
@@ -84,7 +84,7 @@ fn glyph_coverage_is_inside_or_outside() {
 
 #[test]
 fn rounded_rect_is_antialiased() {
-    let mut r = Rasterizer::new(32, 32);
+    let mut r = FrameBuffer::new(32, 32);
     let stats = r.paint_all(
         &[Paint::RoundedRect {
             rect: ui::layout::Rect::new(4.0, 4.0, 24.0, 24.0),
@@ -104,7 +104,7 @@ fn rounded_rect_is_antialiased() {
 
 #[test]
 fn fully_occluded_opaque_paint_is_culled() {
-    let mut r = Rasterizer::new(256, 256);
+    let mut r = FrameBuffer::new(256, 256);
     let stats = r.paint_all(
         &[
             // Back: a small opaque square in the middle, entirely hidden.
@@ -126,7 +126,7 @@ fn fully_occluded_opaque_paint_is_culled() {
 
 #[test]
 fn translucent_paint_is_never_culled() {
-    let mut r = Rasterizer::new(256, 256);
+    let mut r = FrameBuffer::new(256, 256);
     let stats = r.paint_all(
         &[
             Paint::Solid {
