@@ -100,11 +100,15 @@ Pillars, as they were framed in the source conversation:
 * **P2 is not novel as a technique** (Slug 2021, Windfoil 2025-ish), but the
   *default text path* of every shipping engine still uses a CPU-rasterised
   atlas. Adopting it wholesale is still an open opportunity.
-* **P1 is genuinely unexplored.** No production UI engine computes flex layout
-  on the GPU. And the usual reason — "the clamp-freeze loop is sequential" —
-  **turns out to be wrong**; it has an exact closed form, implemented and
-  differentially tested in `layout.rs`. This is the most defensible piece of
-  the original proposal.
+* **P1 is genuinely unexplored.** No *production* UI engine was found that
+  computes flex layout on the GPU — GPUI and Rune both lay out on the CPU
+  (Taffy). An academic sweep for parallel-layout literature was **not
+  completed** in this session, so the precise claim is "no shipping engine,
+  and no paper found in the searches that were run", not "nobody has ever
+  done this". The usual reason given for the gap — "the clamp-freeze loop is
+  sequential" — **turns out to be wrong**; it has an exact closed form,
+  implemented and differentially tested in `layout.rs`. This is the most
+  defensible piece of the original proposal.
 * **P4 is half novel.** Analytic time evaluation is real and useful. Shader-spawned
   producers are not available in WebGPU.
 

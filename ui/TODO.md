@@ -126,6 +126,19 @@ include the blur kernel's support.
 covers 4 pixels of a 16 px block is not culled at all. A per-scanline exact
 coverage mask (or a 4 px granularity) would cull more and cost more memory.
 
+### [ ] 2.8 Finish the academic prior-art sweep for GPU layout
+
+**Why:** PLAN.md §2 claims no shipping engine computes flex layout on the GPU.
+That claim is *verified for the shipping engines checked* (GPUI, Rune, Vello,
+Xilem) but the **academic** sweep — SIGGRAPH, Eurographics, PACMPL HPG, PPoPP,
+IEEE TVCG, CHI — was not completed. If someone published a parallel flexbox
+solver, the novelty claim in PLAN.md §2 has to be rewritten.
+
+**Acceptance:** a documented search across those venues, with hits and misses
+recorded, and PLAN.md §2 updated to match whatever is found.
+
+**Cost:** half a day.
+
 ---
 
 ## 3. Structural work
