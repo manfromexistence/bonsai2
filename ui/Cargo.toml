@@ -1,0 +1,46 @@
+[package]
+name = "ui"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Hybrid CPU/GPU UI rendering core: flat parent-vector layout solved with an analytic flex water-filling solver, atlas-free analytic glyph coverage, span-occlusion rasterization, and a hardware-adaptive frame router."
+license = "MIT"
+repository = "https://github.com/essence-dx/ui"
+publish = false
+
+# Zero external dependencies on purpose.
+#
+# Every algorithm in this crate is implemented against the standard library so
+# that `cargo check`, `cargo test` and the benchmark example run with no
+# network access and no vendored dependency tree. The GPU side is expressed as
+# WGSL source (see `shaders/`) plus `repr(C)` buffer layouts that are
+# statically checked against the Rust-side structs; wiring an actual wgpu
+# device is tracked in TODO.md as a separate, opt-in milestone.
+[dependencies]
+
+[dev-dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+correctness = { level = "deny", priority = -1 }
+# `pedantic` is deliberately allowed rather than warned: this crate is a
+# numeric/pixel pipeline where explicit casts and f32 comparisons are the
+# subject matter, not accidents. `correctness` (which contains the lints that
+# actually find bugs) stays denied.
+pedantic = { level = "allow", priority = -1 }
+
+[lib]
+name = "ui"
+path = "src/lib.rs"
+
+[[example]]
+name = "bench"
+path = "examples/bench.rs"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

@@ -29,6 +29,15 @@
 !/RENDERER.md
 !/TODO.md
 !/docs/
+
+# ui/ — the hybrid CPU/GPU UI rendering core (Rust crate `ui`).
+# Tracked by the hub rather than being a separate product repo: it is a
+# library crate with no distributed binary, so it belongs with the hub's
+# own artefacts. If it grows into a standalone product it needs its own
+# repository and its own origin, per AGENTS.md section 1.
+!/ui/
+!/ui/*
+!/ui/**
 !/docs/policies/
 !/docs/superpowers/
 !/docs/superpowers/plans/
