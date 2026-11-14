@@ -115,10 +115,7 @@ impl Spring {
             let b = v0 + w0 * x0;
             let decay = (-w0 * dt).exp();
             let inner = a + b * dt;
-            (
-                self.target + decay * inner,
-                decay * (b - w0 * inner),
-            )
+            (self.target + decay * inner, decay * (b - w0 * inner))
         } else {
             let root = (zeta * zeta - 1.0).sqrt();
             let r1 = -w0 * (zeta - root);
@@ -167,7 +164,10 @@ impl Spring {
             return f32::INFINITY;
         }
         let zeta = self.zeta();
-        let amplitude = (self.value - self.target).abs().max(self.velocity.abs() / w0).max(epsilon);
+        let amplitude = (self.value - self.target)
+            .abs()
+            .max(self.velocity.abs() / w0)
+            .max(epsilon);
         if amplitude <= epsilon {
             return 0.0;
         }

@@ -95,6 +95,87 @@ crate's rasterizer has no SIMD. That is the point of the measurement. A typical
 application UI is ~1 000 nodes, where layout costs ~0.12 ms — well under a
 frame. **Layout is not the bottleneck that the GPU work was aimed at.**
 
+### 4.1 Native Windows host — real window, real compositor
+
+`examples/win32.rs` (970 lines, raw Win32 FFI, no crates) opens a real window,
+renders a synthetic application-chrome scene — sidebar, 18 cards, translucent
+rounded rects, a drop shadow, an atlas-free glyph, a HUD — and reports its own
+CPU and memory footprint once a second.
+
+```
+cargo run --release --example win32          # interactive: the card follows the mouse
+cargo run --release --example win32 demo     # continuous animation, no mouse needed
+```
+
+**Test machine:** AMD Ryzen 5 5600G (6 cores / 12 threads, **integrated** Radeon
+graphics — *no discrete GPU*), Windows 11 Pro build 26300, 23.3 GB RAM.
+
+| | Idle (spring settled) | Animating (demo mode) |
+| --- | --- | --- |
+| Frames rendered | **0** | 33–34 / s |
+| Frame time | — | 27.3 ms |
+| CPU | **0.00 s** (0.0% of one core) | **1.02 s / s = 101% of one core** (8.4% of the machine) |
+| Working set | 14.1 MB | 21.9 MB (peak 22.2 MB) |
+| Private bytes | — | 10.5 MB |
+| Threads / handles | 5 / 183 | 5 / 183 |
+
+**Where the frame actually goes:**
+
+| Stage | Time | Share of frame |
+| --- | --- | --- |
+| Layout (~70 nodes) | **20 µs** | **0.07%** |
+| Build the paint list | 23 µs | 0.08% |
+| Rasterize + blend | 27 200 µs | **99.6%** |
+
+> **That third row is the most important number in this repository.**
+>
+> The entire GPU-layout thesis — parent-vector trees, Blelloch prefix scans,
+> warp-level water-filling — targets **20 microseconds out of a 27-millisecond
+> frame**. Even if GPU layout were infinitely fast, the frame time would not
+> move. The bottleneck is the rasterizer, which is precisely where a plain
+> SIMD CPU implementation wins, and precisely where a GPU wins too.
+
+**The idle-gating is real, not asserted.** When the spring settles, the window
+draws **zero frames** and the process consumes **0.00 s of CPU per second** —
+the timer still ticks at 60 Hz but never invalidates a region. This is the
+"an idle window draws nothing" property, measured.
+
+### 4.2 Compared against the other apps on this OS
+
+Six-second CPU sample across every process, taken while the engine was
+animating:
+
+| Application | Working set | CPU (% of one core) |
+| --- | --- | --- |
+| **`ui` engine (win32.exe), animating** | **21.9 MB** | **101.0%** |
+| **`ui` engine, idle** | **14.1 MB** | **0.0%** |
+| WorkBuddyAI — IDE, main process | 1739 MB | 21.9% |
+| WorkBuddyAI — helper | 109 MB | 11.2% |
+| PowerShell — this sampler | 102 MB | 9.9% |
+| `zen` — 4 instances | 180–586 MB | 0.3–3.9% each |
+| `opencode` — 2 instances | 220–234 MB | 0.3–0.5% each |
+| MsMpEng — Defender | 382 MB | ~0.0% |
+| Memory Compression | 524 MB | — |
+
+**The honest reading of that table:**
+
+* **Memory: the engine is the lightest thing measured.** 21.9 MB working set
+  against 1739 MB for the IDE — about **79x smaller**. It does not appear in
+  the machine's top-12 RAM consumers at all; the smallest of those is 180 MB.
+* **CPU: the engine is the heaviest thing measured.** 101% of one core is
+  **4.6x** the IDE's main process and roughly **25x** the entire `zen` fleet
+  combined. That is not the engine being efficient — it is a *scalar* software
+  rasterizer with no SIMD and no GPU path.
+* **Idle: 0.00%.** The gap between "animating" and "idle" is the difference
+  between a UI engine that burns a core continuously and one that does not.
+
+One caveat on this machine: the 5600G's GPU is **integrated**, so it has no
+dedicated VRAM and shares system RAM. That makes it a *pessimistic* test bed
+for the GPU-resident thesis — dispatch overhead is higher and there is no
+fast-path memory. Any GPU conclusion must be re-tested on discrete hardware
+before it is believed. See TODO.md §2.3.
+
+
 ---
 
 ## 5. The brutal check
@@ -222,6 +303,8 @@ G:\Dx\ui\
     text_and_raster.rs  wrapping, coverage, culling, blur
   examples/
     bench.rs            the measurements in §4
+    win32.rs            native Win32 window: real compositor, real input,
+                        self-reported CPU/RAM (§4.1, §4.2)
 ```
 
 ---

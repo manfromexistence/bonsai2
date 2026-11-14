@@ -31,7 +31,11 @@ fn greedy_wrap_matches_reference() {
                 if b <= start {
                     continue;
                 }
-                let base = if start == 0 { 0.0 } else { run.advances[start - 1] };
+                let base = if start == 0 {
+                    0.0
+                } else {
+                    run.advances[start - 1]
+                };
                 let w = run.advances[b - 1] - base;
                 if w <= width {
                     last_fit = Some(b);

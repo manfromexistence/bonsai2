@@ -194,7 +194,10 @@ impl GlyphOutline {
                 let c = pts[(i + 2) % n];
                 let p0 = Vec2::new(a.x, a.y);
                 if b.on_curve {
-                    segments.push(Line { a: p0, b: Vec2::new(b.x, b.y) });
+                    segments.push(Line {
+                        a: p0,
+                        b: Vec2::new(b.x, b.y),
+                    });
                 } else {
                     let p1 = Vec2::new(b.x, b.y);
                     let p2 = Vec2::new(c.x, c.y);
@@ -485,7 +488,12 @@ impl TextRun {
         let mut widest = 0.0f32;
         let mut prev = 0usize;
         for &b in &self.break_points {
-            let w = self.advances[b - 1] - if prev == 0 { 0.0 } else { self.advances[prev - 1] };
+            let w = self.advances[b - 1]
+                - if prev == 0 {
+                    0.0
+                } else {
+                    self.advances[prev - 1]
+                };
             widest = widest.max(w);
             prev = b;
         }
@@ -506,7 +514,11 @@ impl TextRun {
         let width = width.max(0.0);
         let mut start = 0usize;
         loop {
-            let base = if start == 0 { 0.0 } else { self.advances[start - 1] };
+            let base = if start == 0 {
+                0.0
+            } else {
+                self.advances[start - 1]
+            };
             let limit = width + base;
             let first = self.break_points.partition_point(|&b| b <= start);
             // Last break point whose segment still fits.
@@ -538,6 +550,8 @@ impl TextRun {
     /// Number of lines the run occupies at the given width.
     #[must_use]
     pub fn line_count(&self, width: f32) -> usize {
-        self.line_ranges(width).len().max(if self.advances.is_empty() { 0 } else { 1 })
+        self.line_ranges(width)
+            .len()
+            .max(if self.advances.is_empty() { 0 } else { 1 })
     }
 }

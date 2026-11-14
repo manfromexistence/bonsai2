@@ -130,8 +130,14 @@ fn layout_honours_max_width_clamps() {
     layout::layout(&mut tree, Size::new(300.0, 50.0));
     let wa = tree.node(a).unwrap().w;
     let wb = tree.node(b).unwrap().w;
-    assert!((wa - 60.0).abs() < 1e-3, "clamped child should be 60, got {wa}");
-    assert!((wb - 240.0).abs() < 1e-3, "sibling absorbs the rest, got {wb}");
+    assert!(
+        (wa - 60.0).abs() < 1e-3,
+        "clamped child should be 60, got {wa}"
+    );
+    assert!(
+        (wb - 240.0).abs() < 1e-3,
+        "sibling absorbs the rest, got {wb}"
+    );
 }
 
 #[test]
@@ -207,7 +213,12 @@ fn spring_settle_time_is_finite_and_accurate() {
     for _ in 0..steps {
         spring.step(0.001);
     }
-    assert!(spring.is_settled(), "value={} velocity={}", spring.value, spring.velocity);
+    assert!(
+        spring.is_settled(),
+        "value={} velocity={}",
+        spring.value,
+        spring.velocity
+    );
 }
 
 #[test]

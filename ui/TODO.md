@@ -30,6 +30,23 @@ artefact, not an implementation.
 
 ## 1. The verdict-changing items
 
+### [ ] 1.0 Re-prioritise: the rasterizer is 99.6% of the frame
+
+**Measured on native Windows** (README.md §4.1): a 27.3 ms frame breaks down as
+**20 µs layout / 23 µs paint-list / 27 200 µs raster**. The GPU-layout work
+targets 0.07% of the frame.
+
+Consequences, in order:
+
+1. **SIMD the rasterizer before doing anything GPU-shaped** (§2.2). A 4x16
+   strip rasterizer with `u8x16` blending should take the 27 ms frame into
+   single-digit milliseconds on its own.
+2. **Do not start the GPU layout port before the CPU rasterizer is
+   respectable** (M1 in PLAN.md). A GPU layout win against a 20 µs CPU layout
+   is a win against nothing.
+3. Keep the analytic flex solver — it is correct, tested, and it removes the
+   *theoretical* blocker — but stop treating it as the performance story.
+
 ### [ ] 1.1 Actually measure the GPU against the CPU
 
 **Why:** the entire premise is "GPU layout is faster than CPU layout". Nothing
@@ -87,32 +104,64 @@ an honest README paragraph.
 why the glyph number in README.md §4 is 10 Mpx/s. Flatten once, cache the
 segments and the band index, and re-flatten only when the outline changes.
 
+The native Windows host (`examples/win32.rs`) already works around this by
+caching the bitmap on the `Engine` — which is exactly the evidence that the
+*library API* is missing the capability, not the callers. The fix belongs in
+`text.rs`: a `PreparedGlyph` that owns the flattened segments and the band
+index, produced once per outline change.
+
 ### [ ] 2.2 SIMD the rasterizer
 
-72.9 Mpx/s for a solid fill is scalar Rust. A 4x16 strip rasterizer with
-`u8x16` blending should reach several hundred Mpx/s. Until then, every CPU/GPU
-comparison is contaminated by the CPU being slow.
+72.9 Mpx/s for a solid fill is scalar Rust, and the native Windows host
+measures **99.6% of the frame** in the rasterizer (README.md §4.1). A 4x16
+strip rasterizer with `u8x16` blending should reach several hundred Mpx/s.
+Until then, every CPU/GPU comparison is contaminated by the CPU being slow.
 
-### [ ] 2.3 Remove the allocation from layout
+This is now the **highest-value performance item in the repository** (§1.0).
+
+### [ ] 2.3 Re-test on discrete GPU hardware
+
+**Why:** the only machine available for measurement has an **integrated**
+Radeon (Ryzen 5 5600G) — no dedicated VRAM, shared system RAM, higher dispatch
+overhead. Every GPU claim made from that machine is pessimistic and must be
+re-measured on discrete hardware before it is believed. A discrete GPU with
+its own VRAM changes the fragment-bandwidth picture completely, which is
+exactly the axis the rasterizer bottleneck lives on.
+
+**Acceptance:** the native Windows host and the benchmark both run on a
+discrete GPU, and README.md §4 carries numbers from both machines.
+
+### [ ] 2.4 Measure input-to-pixel latency, not just frame time
+
+**Why:** frame time is not latency. The number a user feels is *input event →
+first changed pixel*, which includes the OS event queue, the compositor, and
+the display's own pipeline delay. None of the engine's internal measurements
+touch that.
+
+**Acceptance:** a latency harness that timestamps a synthetic mouse event and
+the first pixel change, with the compositor's contribution separated out where
+the platform allows it.
+
+### [ ] 2.5 Remove the allocation from layout
 
 `NodeTree::sibling_list` allocates a `Vec` per node per measure pass, and
 `measure` is called once per child during arrange — so the pass is
 `O(n · depth)` in work and `O(n)` in allocations. Use a flat children array
 with a sibling count, or pre-order indexing.
 
-### [ ] 2.4 Write the missing flexbox
+### [ ] 2.6 Write the missing flexbox
 
 Documented as absent in README.md §6, listed here so it is not forgotten:
 grid, `position`, `float`, writing modes, margin collapsing, `flex-basis`
 percentages against an indefinite container, `min-content`/`max-content`
 intrinsic sizing as a first-class query, `aspect-ratio`.
 
-### [ ] 2.5 Text shaping
+### [ ] 2.7 Text shaping
 
 `TextRun` takes pre-shaped advances. There is no HarfBuzz/Parley integration, no
 bidi, no ligatures, no script/itemisation. Any real use needs it.
 
-### [ ] 2.6 Backdrop blur as a real barrier
+### [ ] 2.8 Backdrop blur as a real barrier
 
 `blur.rs` proves the *allocation* and *nesting* problems go away with a summed
 area table. It does not implement the *dependency* problem: a blurred region
@@ -120,13 +169,12 @@ needs its background rendered first. The GPU path needs an explicit two-pass
 structure with a barrier, and the CPU path needs the dirty region expanded to
 include the blur kernel's support.
 
-### [ ] 2.7 Make the culler handle partial occlusion
-
+### [ ] 2.9 Make the culler handle partial occlusion
 `OcclusionMask` works at 16 px granularity, so a shape that is 90% hidden but
 covers 4 pixels of a 16 px block is not culled at all. A per-scanline exact
 coverage mask (or a 4 px granularity) would cull more and cost more memory.
 
-### [ ] 2.8 Finish the academic prior-art sweep for GPU layout
+### [ ] 2.10 Finish the academic prior-art sweep for GPU layout
 
 **Why:** PLAN.md §2 claims no shipping engine computes flex layout on the GPU.
 That claim is *verified for the shipping engines checked* (GPUI, Rune, Vello,
@@ -164,7 +212,7 @@ The flex solver is differentially tested against a CSS reference *algorithm*
 written here. That proves the solver is self-consistent, not that it matches
 Chromium's layout. The real test is: render the same tree with `yoga`
 (CSS flexbox in Rust), Taffy, and `ui`, and compare geometry pixel for pixel.
-That would also expose the subset gaps in §2.4.
+That would also expose the subset gaps in §2.6.
 
 ---
 

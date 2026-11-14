@@ -225,6 +225,18 @@ Build the end-to-end harness: input event to first changed pixel, idle energy.
 > the router will always choose the CPU and the GPU work is a research
 > artefact. That is still a legitimate outcome — but say it plainly.
 
+**Partial result already in hand** (`examples/win32.rs`, README.md §4.1):
+
+* The idle half of this gate is **met**: when the spring settles, the window
+  renders **zero frames** and the process burns **0.00 s of CPU per second**.
+  The router's "do nothing" path works.
+* The measurement half is **not** met, and it surfaced something that reorders
+  the plan: the frame is **27.3 ms of which 99.6% is rasterization** and
+  **0.07% is layout**. The GPU layout path targets 20 µs. So the threshold
+  cannot be derived until the rasterizer is respectable (§TODO 1.0).
+* The test machine has **integrated** graphics only. Every GPU number taken
+  from it is pessimistic and must be re-taken on discrete hardware.
+
 ### M5 — Differential test against Yoga/Taffy
 
 Render the same tree with `ui`, `yoga` and `taffy`; compare geometry.

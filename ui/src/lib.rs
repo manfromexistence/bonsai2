@@ -45,11 +45,11 @@ pub mod text;
 pub mod tree;
 
 pub use layout::{Align, EdgeInsets, FlexDirection, Justify, LayoutProps, Rect, Size};
-pub use raster::{FrameBuffer, Paint, Rgba, RasterStats, Rasterizer};
+pub use raster::{FrameBuffer, Paint, RasterStats, Rasterizer, Rgba};
 pub use scheduler::{FrameCost, Route, Scheduler, Telemetry};
 pub use spring::Spring;
 pub use text::{GlyphBitmap, GlyphOutline, TextRun};
-pub use tree::{EulerSnapshot, Node, NodeId, NodeTree, GAP_PERIOD, NONE};
+pub use tree::{EulerSnapshot, GAP_PERIOD, NONE, Node, NodeId, NodeTree};
 
 /// Crate version, mirrored so the GPU shaders can assert they were built
 /// against the same layout revision.

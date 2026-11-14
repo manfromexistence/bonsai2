@@ -276,13 +276,7 @@ fn clamp_f(v: f32, lo: f32, hi: f32) -> f32 {
 /// item hit its `max`), the leftover stays unallocated for `justify-content` to
 /// place.
 #[must_use]
-pub fn solve_grow(
-    base: &[f32],
-    grow: &[f32],
-    min: &[f32],
-    max: &[f32],
-    free: f32,
-) -> Vec<f32> {
+pub fn solve_grow(base: &[f32], grow: &[f32], min: &[f32], max: &[f32], free: f32) -> Vec<f32> {
     let n = base.len();
     // Hypothetical main size: the base clamped into [min, max].
     let bases: Vec<f32> = (0..n).map(|i| clamp_f(base[i], min[i], max[i])).collect();
@@ -496,7 +490,10 @@ pub fn solve_shrink_reference(
     let mut frozen = vec![false; n];
     let mut remaining = deficit;
     loop {
-        let total: f32 = (0..n).filter(|&i| !frozen[i]).map(|i| scaled_shrink[i]).sum();
+        let total: f32 = (0..n)
+            .filter(|&i| !frozen[i])
+            .map(|i| scaled_shrink[i])
+            .sum();
         if total <= 0.0 {
             break;
         }
@@ -550,7 +547,13 @@ pub struct LayoutStats {
 pub fn layout(tree: &mut NodeTree, viewport: Size) -> LayoutStats {
     let root = tree.root();
     let mut stats = LayoutStats::default();
-    arrange(tree, root, Rect::new(0.0, 0.0, viewport.w, viewport.h), &mut stats, 0);
+    arrange(
+        tree,
+        root,
+        Rect::new(0.0, 0.0, viewport.w, viewport.h),
+        &mut stats,
+        0,
+    );
     stats.nodes = tree.len();
     stats
 }
@@ -627,13 +630,7 @@ fn measure(tree: &NodeTree, id: NodeId, avail: Size, depth: usize) -> Size {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn arrange(
-    tree: &mut NodeTree,
-    id: NodeId,
-    rect: Rect,
-    stats: &mut LayoutStats,
-    depth: usize,
-) {
+fn arrange(tree: &mut NodeTree, id: NodeId, rect: Rect, stats: &mut LayoutStats, depth: usize) {
     if depth > 512 {
         return;
     }
@@ -707,7 +704,11 @@ fn arrange(
         let b = clamp_f(raw, lo, hi.unwrap_or(f32::INFINITY));
         base.push(b);
         cross.push(m.cross(dir));
-        grow.push(if definite.is_some() { 0.0 } else { cp.grow.max(0.0) });
+        grow.push(if definite.is_some() {
+            0.0
+        } else {
+            cp.grow.max(0.0)
+        });
         shrink.push(if definite.is_some() {
             0.0
         } else {

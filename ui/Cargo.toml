@@ -21,7 +21,10 @@ publish = false
 [dev-dependencies]
 
 [lints.rust]
-unsafe_code = "forbid"
+# `deny` rather than `forbid`: the library and tests stay unsafe-free, and the
+# native Win32 example opts in locally with `#[allow(unsafe_code)]` because a
+# window needs FFI. `forbid` cannot be overridden per-target.
+unsafe_code = "deny"
 missing_debug_implementations = "warn"
 
 [lints.clippy]
@@ -40,6 +43,11 @@ path = "src/lib.rs"
 [[example]]
 name = "bench"
 path = "examples/bench.rs"
+
+[[example]]
+name = "win32"
+path = "examples/win32.rs"
+required-features = []
 
 [profile.release]
 lto = "thin"

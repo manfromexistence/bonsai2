@@ -55,8 +55,7 @@ pub fn box_blur_plane(src: &[f32], width: usize, height: usize, radius: usize) -
         for x in 0..width {
             let x0 = (x as i32 - r).max(0);
             let x1 = (x as i32 + r + 1).min(width as i32);
-            let s = sat[bottom + x1 as usize] - sat[bottom + x0 as usize]
-                - sat[top + x1 as usize]
+            let s = sat[bottom + x1 as usize] - sat[bottom + x0 as usize] - sat[top + x1 as usize]
                 + sat[top + x0 as usize];
             out[y * width + x] = s / (area * (x1 - x0) as f32);
         }

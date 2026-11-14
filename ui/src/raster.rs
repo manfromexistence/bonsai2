@@ -118,17 +118,13 @@ impl Paint {
     pub fn bounds(&self) -> Option<Rect> {
         match self {
             Paint::Solid { rect, .. } | Paint::RoundedRect { rect, .. } => Some(*rect),
-            Paint::Shadow {
-                rect, blur, ..
-            } => Some(Rect::new(
+            Paint::Shadow { rect, blur, .. } => Some(Rect::new(
                 rect.x - blur,
                 rect.y - blur,
                 rect.w + blur * 2.0,
                 rect.h + blur * 2.0,
             )),
-            Paint::Glyph {
-                bitmap, origin, ..
-            } => Some(Rect::new(
+            Paint::Glyph { bitmap, origin, .. } => Some(Rect::new(
                 origin.0,
                 origin.1,
                 bitmap.width as f32,

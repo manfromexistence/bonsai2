@@ -1,9 +1,7 @@
 //! Differential test: the analytic water-filling solver against the CSS
 //! freeze-and-redistribute reference algorithm.
 
-use ui::layout::{
-    solve_grow, solve_grow_reference, solve_shrink, solve_shrink_reference,
-};
+use ui::layout::{solve_grow, solve_grow_reference, solve_shrink, solve_shrink_reference};
 
 /// xorshift64, so the test is deterministic without a dependency.
 struct Rng(u64);
@@ -45,8 +43,16 @@ fn random_case(rng: &mut Rng) -> Case {
         let hi = lo + rng.range(0.0, 90.0);
         let b = rng.range(0.0, 120.0).clamp(lo, hi);
         base.push(b);
-        grow.push(if rng.next_u32() % 5 == 0 { 0.0 } else { rng.range(0.0, 3.0) });
-        shrink.push(if rng.next_u32() % 5 == 0 { 0.0 } else { rng.range(0.0, 3.0) });
+        grow.push(if rng.next_u32() % 5 == 0 {
+            0.0
+        } else {
+            rng.range(0.0, 3.0)
+        });
+        shrink.push(if rng.next_u32() % 5 == 0 {
+            0.0
+        } else {
+            rng.range(0.0, 3.0)
+        });
         min.push(lo);
         max.push(hi);
     }
